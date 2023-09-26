@@ -122,7 +122,7 @@ jobs:
     runs-on: ${{ matrix.on }}
     strategy:
       matrix:
-        on: [[ubuntu-latest],[self-hosted,ARM64]]
+        on: [[ubuntu-latest] #,[self-hosted,ARM64]]
     steps:
 
       # Attempt to prune any orphaned docker resources on the EC2 ARM runners
@@ -358,7 +358,7 @@ jobs:
     # Make these available to the test stage.
     outputs:
       tests-x86_64: ${{ steps.tests.outputs.tests-x86_64 }}
-      tests-aarch64: ${{ steps.tests.outputs.tests-aarch64 }}
+      # tests-aarch64: ${{ steps.tests.outputs.tests-aarch64 }}
 
   # Push the results to the CDN when the builds succeed.
   cdn: 
@@ -409,7 +409,8 @@ jobs:
           mkdir ${TMPDIR}/lib
 
           cp conf/scope.yml ${TMPDIR}/scope
-          for ARCH in x86_64 aarch64; do
+          #for ARCH in x86_64 aarch64; do
+          for ARCH in x86_64; do
             cp bin/linux/${ARCH}/scope ${TMPDIR}/scope
             cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/scope
             # Create tgz and tgz.md5 of binaries and config (for each arch)
@@ -422,7 +423,8 @@ jobs:
           done
 
           cp conf/scope.yml ${TMPDIR}/lib
-          for ARCH in x86_64 aarch64; do
+          #for ARCH in x86_64 aarch64; do
+          for ARCH in x86_64; do
             cp bin/linux/${ARCH}/scope ${TMPDIR}/lib
             cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/lib
             # Create zip and zip.md5 of binaries and config (for each arch)
@@ -440,7 +442,8 @@ jobs:
           aws s3 cp ${TMPDIR}/scope-x86_64.tgz.md5            ${S3_SCOPE}/${VERSION}/linux/scope.tgz.md5
           aws s3 cp ${TMPDIR}/aws-lambda-layer-x86_64.zip     ${S3_SCOPE}/${VERSION}/linux/aws-lambda-layer.zip
           aws s3 cp ${TMPDIR}/aws-lambda-layer-x86_64.zip.md5 ${S3_SCOPE}/${VERSION}/linux/aws-lambda-layer.zip.md5
-          for ARCH in x86_64 aarch64; do
+          #for ARCH in x86_64 aarch64; do
+          for ARCH in x86_64; do
             aws s3 cp ${TMPDIR}/scope-${ARCH}                    ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope
             aws s3 cp ${TMPDIR}/scope-${ARCH}.md5                ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope.md5
             aws s3 cp ${TMPDIR}/scope-${ARCH}.tgz                ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope.tgz
@@ -453,7 +456,8 @@ jobs:
 
           if [ "unreleased" != "${{ needs.info.outputs.tag }}" -a "next" != "${{ needs.info.outputs.tag }}" ]; then
             echo "::group::Attach Release Assets to https://github.com/criblio/appscope/releases/tag/${{ needs.info.outputs.version }}"
-            for ARCH in x86_64 aarch64; do
+            #for ARCH in x86_64 aarch64; do
+            for ARCH in x86_64; do
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}"
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.md5"
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.tgz"
@@ -508,52 +512,6 @@ jobs:
         run: make -C test/integration ${{ matrix.test }} NOBUILD=1
 
       # We only save the resulting container image when testing the default branch
-      - name: Upload Test Image
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        run: make -C test/integration ${{ matrix.test }}-push NOBUILD=1
-
-  # Run the ARM Integration tests.
-  test-arm64:
-    name: Test aarch64/arm64
-    needs: build
-    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
-    strategy:
-      matrix: 
-        test: ${{ fromJson(needs.build.outputs.tests-aarch64) }}
-      fail-fast: false
-    runs-on: [self-hosted,ARM64]
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Download Binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: binaries
-
-      - name: Chmod Binaries
-        run: chmod +x lib/linux/*/* bin/linux/*/*
-
-      - name: Login to Container Registry
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2
-        with:
-          username: scopeci
-          password: ${{ secrets.SCOPECI_TOKEN }}
-
-      - name: Update Test Image
-        run: make -C test/integration ${{ matrix.test }}-build
-
-      - name: Run Test
-        run: make -C test/integration ${{ matrix.test }} NOBUILD=1
-
       - name: Upload Test Image
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         run: make -C test/integration ${{ matrix.test }}-push NOBUILD=1

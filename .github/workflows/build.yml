@@ -125,14 +125,6 @@ jobs:
         on: [[ubuntu-latest]]
     steps:
 
-      # Attempt to prune any orphaned docker resources on the EC2 ARM runners
-      - name: Prune Docker Resources
-        if: ${{ matrix.on == 'ARM64' }}
-        run: |
-            docker rm --force $(docker ps -a -q) || exit 0
-            docker network prune --force || exit 0
-            docker volume prune --force || exit 0
-
       # Some diagnostic info on the build environment. This also outputs `arch`
       # which we use elsewhere for architecture-specific things.
       - name: Dump Environment
@@ -369,32 +361,6 @@ jobs:
       - name: Chmod Binaries
         run: chmod +x lib/linux/*/* bin/linux/*/*
 
-      # We skip this step if we're not going to push the resulting container image
-      - name: Login to Container Registry
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2
-        with:
-          username: scopeci
-          password: ${{ secrets.SCOPECI_TOKEN }}
-
-      - name: Update Test Image
-        run: make -C test/integration ${{ matrix.test }}-build
-
-      - name: Run Test
-        run: make -C test/integration ${{ matrix.test }} NOBUILD=1
-
-      # We only save the resulting container image when testing the default branch
-      - name: Upload Test Image
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
-        run: make -C test/integration ${{ matrix.test }}-push NOBUILD=1
-
   # Build the container image
   image:
     name: Build Image
@@ -448,7 +414,7 @@ jobs:
           docker buildx build \
                 --builder ${{ steps.buildx.outputs.name }} \
                 --tag cribl/scope:${VERSION} \
-                --platform linux/amd64,linux/arm64/v8 \
+                --platform linux/amd64 \
                 --output type=${TYPE} \
                 --file docker/base/Dockerfile \
                 .

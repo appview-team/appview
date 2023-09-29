@@ -122,7 +122,7 @@ jobs:
     runs-on: ${{ matrix.on }}
     strategy:
       matrix:
-        on: [[ubuntu-latest]
+        on: [[ubuntu-latest]]
     steps:
 
       # Attempt to prune any orphaned docker resources on the EC2 ARM runners

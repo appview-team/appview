@@ -174,12 +174,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2
-        with:
-          username: scopeci
-          password: ${{ secrets.SCOPECI_TOKEN }}
-
       # This installs the `/proc/sys/fs/binfmt` entries that allow the CI host
       # to build for other architectures under QEMU emulation. It's not really
       # needed here since we're only building natively but we're leaving it in
@@ -286,12 +280,6 @@ jobs:
           key: ${{ runner.os }}-${{ steps.env.outputs.arch }}-coredumper-${{ hashFiles('contrib/*', 'contrib/coredumper/**') }}
           upload-chunk-size: 1000000
 
-      - name: Login to Dockerhub
-        uses: docker/login-action@v2
-        with:
-          username: scopeci
-          password: ${{ secrets.SCOPECI_TOKEN }}
-
       # Build our `appscope-builder` image. This should only end up using the
       # cached image but because it needs to transfer the results from the
       # builder container into the local Docker registry, it stills take more
@@ -358,115 +346,6 @@ jobs:
     # Make these available to the test stage.
     outputs:
       tests-x86_64: ${{ steps.tests.outputs.tests-x86_64 }}
-      # tests-aarch64: ${{ steps.tests.outputs.tests-aarch64 }}
-
-  # Push the results to the CDN when the builds succeed.
-  cdn: 
-    name: Update CDN
-    needs: [info,build]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-    if: ${{ github.event_name == 'push' }}
-    steps:
-      # Clone the repos
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      # Download the built binaries
-      - name: Download Binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: binaries
-
-      # Fix permissions on the binaries
-      - name: Chmod Binaries
-        run: chmod +x lib/linux/*/* bin/linux/*/*
-
-      # Deploy to the CDN
-      - name: configure AWS creds
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.APPSCOPEDEPLOYROLE }}
-          role-session-name: appscope-deploy
-          aws-region: us-west-2
-      - name: Deploy
-        env:
-          CF_DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if [ "unreleased" = "${{ needs.info.outputs.tag }}" ]; then
-            VERSION=${{ needs.info.outputs.branch }}
-          else
-            VERSION=${{ needs.info.outputs.tag }}
-          fi
-          S3_SCOPE=s3://io.cribl.cdn/dl/scope
-          TMPDIR=${RUNNER_TEMP}
-
-          echo "::group::Prep Content"
-          mkdir ${TMPDIR}/scope
-          mkdir ${TMPDIR}/lib
-
-          cp conf/scope.yml ${TMPDIR}/scope
-          #for ARCH in x86_64 aarch64; do
-          for ARCH in x86_64; do
-            cp bin/linux/${ARCH}/scope ${TMPDIR}/scope
-            cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/scope
-            # Create tgz and tgz.md5 of binaries and config (for each arch)
-            (cd ${TMPDIR} && tar cfz scope.tgz scope)
-            (cd ${TMPDIR} && md5sum scope.tgz > scope-${ARCH}.tgz.md5)
-            (cd ${TMPDIR} && mv scope.tgz scope-${ARCH}.tgz)
-            # Copy scope binary and create scope.md5 (for each arch)
-            (cd ${TMPDIR}/scope && md5sum scope > ../scope-${ARCH}.md5)
-            cp ${TMPDIR}/scope/scope ${TMPDIR}/scope-${ARCH}
-          done
-
-          cp conf/scope.yml ${TMPDIR}/lib
-          #for ARCH in x86_64 aarch64; do
-          for ARCH in x86_64; do
-            cp bin/linux/${ARCH}/scope ${TMPDIR}/lib
-            cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/lib
-            # Create zip and zip.md5 of binaries and config (for each arch)
-            (cd ${TMPDIR} && zip -r aws-lambda-layer.zip ./lib)
-            (cd ${TMPDIR} && md5sum aws-lambda-layer.zip > aws-lambda-layer-${ARCH}.zip.md5)
-            (cd ${TMPDIR} && mv aws-lambda-layer.zip aws-lambda-layer-${ARCH}.zip)
-          done
-          ls -laR ${TMPDIR}
-          echo "::endgroup::"
-
-          echo "::group::Deploy to https://cdn.cribl.io/dl/scope/${VERSION}"
-          aws s3 cp ${TMPDIR}/scope-x86_64                    ${S3_SCOPE}/${VERSION}/linux/scope
-          aws s3 cp ${TMPDIR}/scope-x86_64.md5                ${S3_SCOPE}/${VERSION}/linux/scope.md5
-          aws s3 cp ${TMPDIR}/scope-x86_64.tgz                ${S3_SCOPE}/${VERSION}/linux/scope.tgz
-          aws s3 cp ${TMPDIR}/scope-x86_64.tgz.md5            ${S3_SCOPE}/${VERSION}/linux/scope.tgz.md5
-          aws s3 cp ${TMPDIR}/aws-lambda-layer-x86_64.zip     ${S3_SCOPE}/${VERSION}/linux/aws-lambda-layer.zip
-          aws s3 cp ${TMPDIR}/aws-lambda-layer-x86_64.zip.md5 ${S3_SCOPE}/${VERSION}/linux/aws-lambda-layer.zip.md5
-          #for ARCH in x86_64 aarch64; do
-          for ARCH in x86_64; do
-            aws s3 cp ${TMPDIR}/scope-${ARCH}                    ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope
-            aws s3 cp ${TMPDIR}/scope-${ARCH}.md5                ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope.md5
-            aws s3 cp ${TMPDIR}/scope-${ARCH}.tgz                ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope.tgz
-            aws s3 cp ${TMPDIR}/scope-${ARCH}.tgz.md5            ${S3_SCOPE}/${VERSION}/linux/${ARCH}/scope.tgz.md5
-            aws s3 cp ${TMPDIR}/aws-lambda-layer-${ARCH}.zip     ${S3_SCOPE}/${VERSION}/linux/${ARCH}/aws-lambda-layer.zip
-            aws s3 cp ${TMPDIR}/aws-lambda-layer-${ARCH}.zip.md5 ${S3_SCOPE}/${VERSION}/linux/${ARCH}/aws-lambda-layer.zip.md5
-          done
-          aws cloudfront create-invalidation --distribution-id ${CF_DISTRIBUTION_ID} --paths '/dl/scope/'"$VERSION"'/*'
-          echo "::endgroup::"
-
-          if [ "unreleased" != "${{ needs.info.outputs.tag }}" -a "next" != "${{ needs.info.outputs.tag }}" ]; then
-            echo "::group::Attach Release Assets to https://github.com/criblio/appscope/releases/tag/${{ needs.info.outputs.version }}"
-            #for ARCH in x86_64 aarch64; do
-            for ARCH in x86_64; do
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.md5"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.tgz"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.tgz.md5"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/aws-lambda-layer-${ARCH}.zip"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/aws-lambda-layer-${ARCH}.zip.md5"
-            done
-            echo "::endgroup::"
-          fi
 
   # Run the x86 Integration tests.
   test-amd64:

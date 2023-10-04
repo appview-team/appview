@@ -387,7 +387,7 @@ jobs:
           username: iapaddler
           password: ${{ secrets.SCOPE_TEAM_TOKEN }}
 
-      - name: Download Binaries
+      - name: Download Binary
         uses: actions/download-artifact@v3
         with:
           name: binaries

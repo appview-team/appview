@@ -1,4 +1,5 @@
 The intention of this setup is to retrieve information useful for adding support for new Go version.
+Access symbols inthepclntab
 
 Action performed by the script:
 

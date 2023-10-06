@@ -405,7 +405,7 @@ jobs:
         run: |
           # TODO only if needs.test-*.results == 'success'
           if [ "${PUSH}" ]; then
-            echo "::group::Build cribl/scope:${VERSION} Image"
+            echo "::group::Build iapaddler/appscope:${VERSION} Image"
             TYPE=registry
           else
             echo "::group::Build Test Image (no upload after)"
@@ -413,7 +413,7 @@ jobs:
           fi
           docker buildx build \
                 --builder ${{ steps.buildx.outputs.name }} \
-                --tag cribl/scope:${VERSION} \
+                --tag iapaddler/appscope:${VERSION} \
                 --platform linux/amd64 \
                 --output type=${TYPE} \
                 --file docker/base/Dockerfile \

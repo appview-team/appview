@@ -413,7 +413,7 @@ jobs:
           fi
           docker buildx build \
                 --builder ${{ steps.buildx.outputs.name }} \
-                --tag iapaddler/appscope:${VERSION} \
+                --tag iapaddler/appscope:scope-${VERSION} \
                 --platform linux/amd64 \
                 --output type=${TYPE} \
                 --file docker/base/Dockerfile \

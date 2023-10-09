@@ -1,3 +1,7 @@
+/*
+ * Copyright 2021 Cribl, Inc
+ * Copyright 2019-2023 Donn Rochette
+ */
 #ifndef __STATE_PRIVATE_H__
 #define __STATE_PRIVATE_H__
 
@@ -212,6 +216,8 @@ typedef struct fs_info_t {
     metric_t data_type;
     int fd;
     int active;
+    bool enforceWR;
+    bool enforceRD;
     fs_content_type_t content_type;
     fs_type_t type;
     counters_element_t numOpen;

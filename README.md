@@ -31,7 +31,7 @@ graph LR
     style H fill:#fafafa,stroke:#a6a6a6
 ```
 
-## 🛟Support
+## 🛟 Support
 
 AppScope runs on most Linux distributions and is able to instrument most applications. However, AppScope **cannot**:
 - Instrument Go executables built with Go 1.10 or earlier.
@@ -67,7 +67,7 @@ scope events -f
 scope detach --all --rootdir /hostfs
 ```
 
-## ℹ️ Resources
+## ℹ️  Resources
 
 On the [AppScope Website](https://appscope.dev/) you can:
 
@@ -118,7 +118,7 @@ Either way, the resulting binaries will be in `lib/linux/$(uname -m)/libscope.so
 
 We support building `x86_64` (amd64) or `aarch64` (arm64/v8) binaries by adding `ARCH=x86_64` or `ARCH=aarch64` to the `make build` command. See the [BUILD](docs/BUILD.md) doc for details.
 
-## ✏️ Contributing
+## ✏️  Contributing
 
 If you're interested in contributing to the project, you can:
 

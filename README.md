@@ -31,7 +31,7 @@ graph LR
     style H fill:#fafafa,stroke:#a6a6a6
 ```
 
-## Support
+## 🛟Support
 
 AppScope runs on most Linux distributions and is able to instrument most applications. However, AppScope **cannot**:
 - Instrument Go executables built with Go 1.10 or earlier.

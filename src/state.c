@@ -14,6 +14,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <netinet/in.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -36,15 +37,21 @@
 #define NUM_ATTEMPTS 100
 #define MAX_CONVERT (size_t)256
 
+// Enforce and privacy vars
+// TODO: remove the defaults when we add these to config
+static bool g_enforce_enable = DEFAULT_ENFORCE_ENABLE;
+static bool g_enforce_files = DEFAULT_ENFORCE_FILES_ENABLE;
+static bool g_exfil_enable = DEFAULT_EXFIL_ENABLE;
+
 // path sub-strings that should not be modified
-const char *enforce_wr[] = {
-    "/etc",
-    "/lib"
+static const char *g_enforce_wr[] = {
+    DEFAULT_ENFORCE_FILE_WRITE
 };
 
+// Enforce and privacy lists
 // path sub-strings that should not be accessed
-const char *enforce_rd[] = {
-    ".ssh",
+static const char *g_enforce_rd[] = {
+    DEFAULT_ENFORCE_FILE_READ
 };
 
 extern rtconfig g_cfg;
@@ -1289,22 +1296,23 @@ static void
 enforceNotify(void)
 {
     // TODO: add notify config and detail
-    // TODO: need the process name
+    // process name is included in the CLI log
     scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file", getpid());
     exit(EXIT_FAILURE);
 }
 
 static void
-doEnforce(const char *path, fs_info *fs)
+doEnforceFile(const char *path, fs_info *fs)
 {
-    if (!fs || !path) return;
+    if ((g_enforce_enable == FALSE) || (g_enforce_files == FALSE) ||
+        !fs || !path) return;
 
     int i, num_write, num_read;
 
     // Should this path be enforced for write access?
-    num_write = sizeof(enforce_wr) / sizeof(enforce_wr[0]);
+    num_write = sizeof(g_enforce_wr) / sizeof(g_enforce_wr[0]);
     for (i = 0; i < num_write; i++) {
-        if (scope_strstr(path, enforce_wr[i])) {
+        if (scope_strstr(path, g_enforce_wr[i])) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1312,12 +1320,40 @@ doEnforce(const char *path, fs_info *fs)
 
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
-    num_read = sizeof(enforce_rd) / sizeof(enforce_rd[0]);
+    num_read = sizeof(g_enforce_rd) / sizeof(g_enforce_rd[0]);
     for (i = 0; i < num_read; i++) {
-        if (scope_strstr(path, enforce_rd[i])) {
+        if (scope_strstr(path, g_enforce_rd[i])) {
             fs->enforceRD = TRUE;
             break;
         }
+    }
+}
+
+static void
+doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
+{
+    if ((g_exfil_enable == FALSE) || !fsrd || !fsrd->path[0]) return;
+
+    char rip[INET6_ADDRSTRLEN];
+    rip[0] = '\0';
+
+    if (nettx) {
+        if (nettx->remoteConn.ss_family == AF_INET) {
+            scope_inet_ntop(AF_INET,
+                            &((struct sockaddr_in *)&nettx->remoteConn)->sin_addr,
+                            rip, sizeof(rip));
+        } else if (nettx->remoteConn.ss_family == AF_INET6) {
+            scope_inet_ntop(AF_INET6,
+                            &((struct sockaddr_in6 *)&nettx->remoteConn)->sin6_addr,
+                            rip, sizeof(rip));
+        }
+    }
+
+    // TODO: append to a file? post to a CLI server?
+    if (rip[0] != '\0') {
+        scopeLogError("The file %s has been exfiltrated to %s", fsrd->path, rip);
+    } else {
+        scopeLogError("The file %s has been exfiltrated", fsrd->path);
     }
 }
 
@@ -2495,7 +2531,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
-        doEnforce(path, &g_fsinfo[fd]);
+        doEnforceFile(path, &g_fsinfo[fd]);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }
@@ -2511,6 +2547,7 @@ doSendFile(int out_fd, int in_fd, uint64_t initialTime, int rc, const char *func
         if (nettx) {
             doSetAddrs(out_fd);
             doSend(out_fd, rc, NULL, 0, NONE);
+            doExfil(nettx, fsrd);
         }
 
         if (fsrd) {

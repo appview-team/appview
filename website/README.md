@@ -11,3 +11,10 @@ See the Gatsby docs for complete details but to spin up a local environment for 
 4. Access the local development version of the website at [`http://127.0.0.1:8000/`](http://127.0.0.1:8000/).
 
 > Using Node 16 or higher breaks some of this. It works with 14.
+
+
+
+# Configuration
+
+url, title, description are configured in gatsby-config
+ 

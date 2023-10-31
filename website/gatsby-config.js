@@ -7,7 +7,7 @@ module.exports = {
     description:
       "AppScope is an open source instrumentation utility for any application, regardless of its runtime, with no code modification required. Collect only the data you need for full observability of your applications, systems and infrastructure.",
     url: "https://team-appscope.github.io",
-    siteUrl: "https://team-appscope.github.io",
+    siteUrl: "https://team-appscope.github.io/appscope",
     image: "/images/isoarchitecture.png",
     twitterUsername: "@cribl",
   },

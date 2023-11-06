@@ -261,7 +261,6 @@ var flowsCmd = &cobra.Command{
 			}
 			return
 		}
-		fmt.Println(flowsList)
 		util.PrintObj(fields, flowsList)
 	},
 }

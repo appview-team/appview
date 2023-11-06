@@ -79,14 +79,13 @@ var reportCmd = &cobra.Command{
 			flowsList := fm.List()
 		*/
 
-		// loop through all events
+		// Read through all events
 
 		// Filter events to those of interest
 		// Let's do net and fs events together so we only have to walk the event file once
 		em := events.EventMatch{
 			Sources: []string{"fs.open", "fs.close", "net.open", "net.close", "http.req", "http.resp"},
 		}
-		// TODO add http events http.req http.resp
 
 		// Create an async event file reader
 		in := make(chan libscope.EventBody)
@@ -102,31 +101,77 @@ var reportCmd = &cobra.Command{
 			}
 		}()
 
-		// TODO add values instead of replacing
+		// TODO join IP and port in net index
 
 		// Consume events from the reader and build a report
-		// indexed by unique file path
+		// indexed by unique file path; or unique IP:Port
 		fileReport := map[string]fileEntry{} // where index is the Filename
-		netReport := map[string]netEntry{}   // where index is the IP
+		netReport := map[string]netEntry{}   // where index is the IP:Port
 		for evt := range in {
-			fmt.Println(evt.SourceType)
-			if evt.SourceType == "file" {
+			if evt.SourceType == "fs" {
 				fe := fileEntry{}
 				err := mapstructure.Decode(evt.Data, &fe)
 				if err != nil {
 					util.ErrAndExit("error decoding fs event: %v", err)
 				}
-				if fe.File != "" {
-					fileReport[fe.File] = fe
+				// Clean the Data
+				if fe.BytesWritten < 0 {
+					fe.BytesWritten = 0
 				}
-			} else if evt.SourceType == "net" || evt.SourceType == "http" { // TODO or http Join http and net events
+				if fe.BytesRead < 0 {
+					fe.BytesRead = 0
+				}
+				// Add to (or Update) Report
+				if fe.File != "" {
+					existing, exists := fileReport[fe.File]
+					if !exists {
+						fileReport[fe.File] = fe
+					} else {
+						fileReport[fe.File] = fileEntry{
+							File:         fe.File,
+							BytesWritten: existing.BytesWritten + fe.BytesWritten,
+							BytesRead:    existing.BytesRead + fe.BytesRead,
+						}
+					}
+				}
+			} else if evt.SourceType == "net" || evt.SourceType == "http" { // Joins http and net events
 				ne := netEntry{}
 				err := mapstructure.Decode(evt.Data, &ne)
 				if err != nil {
 					util.ErrAndExit("error decoding net event: %v", err)
 				}
+				// Clean the Data
+				if ne.URL == "" {
+					ne.URL = "-"
+				}
+				if ne.BytesSent < 0 {
+					ne.BytesSent = 0
+				}
+				if ne.BytesReceived < 0 {
+					ne.BytesReceived = 0
+				}
+				if ne.Duration < 0 {
+					ne.Duration = 0
+				}
+				// Add to (or Update) Report
 				if ne.IP != "" {
-					netReport[ne.IP] = ne
+					existing, exists := netReport[ne.IP]
+					if !exists {
+						netReport[ne.IP] = ne
+					} else {
+						url := ne.URL
+						if existing.URL != "-" { // Don't overwrite a URL once present
+							url = existing.URL
+						}
+						netReport[ne.IP] = netEntry{
+							URL:           url,
+							IP:            ne.IP,
+							Port:          ne.Port,
+							Duration:      existing.Duration + ne.Duration,
+							BytesSent:     existing.BytesSent + ne.BytesSent,
+							BytesReceived: existing.BytesReceived + ne.BytesReceived,
+						}
+					}
 				}
 			}
 		}
@@ -138,10 +183,6 @@ var reportCmd = &cobra.Command{
 		/*
 			return ret, nil
 		*/
-
-		// gather unique connections
-
-		// gather unique filenames
 
 		// Convert netReport map to netEntries slice
 		netEntries := make([]netEntry, 0, len(netReport))
@@ -157,9 +198,9 @@ var reportCmd = &cobra.Command{
 
 		// Print Network Activity
 		netFields := []util.ObjField{
-			{Name: "URL", Field: "url"},
 			{Name: "IP", Field: "ip"},
 			{Name: "Port", Field: "port"},
+			{Name: "URL", Field: "url"},
 			{Name: "Duration", Field: "duration"},
 			{Name: "Bytes Sent", Field: "bytes_sent"},
 			{Name: "Bytes Received", Field: "bytes_received"},
@@ -192,7 +233,7 @@ var reportCmd = &cobra.Command{
 			util.PrintObj(fileFields, fileEntries)
 		}
 
-		// TODO Save the report on disk for diffing
+		// TODO Save the report on disk in session directory for diffing
 	},
 }
 

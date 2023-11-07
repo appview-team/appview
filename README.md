@@ -31,13 +31,34 @@ graph LR
     style H fill:#fafafa,stroke:#a6a6a6
 ```
 
+## 💎 Features
+
+- Generate metrics on process and application performance.
+- Generate events, reporting on network, file, and http/s activity.
+- Capture (decrypted) payload data without the need for keys.
+- Generate a stack trace, and core dump when an application crashes.
+- Using the CLI, you can:
+  - Load AppScope into into a new process with `scope run`.
+  - Load AppScope into an already-running process with `scope attach`.
+  - Unload AppScope from an already-running process with `scope detach`.
+  - Output events for a session with `scope events`.
+  - Output metrics for a session with `scope metrics`.
+  - Output network flows from the session, potentially including payloads, with `scope flows`.
+  - Create a report on unique file and network activity for a session with `scope report`.
+  - Install AppScope in a Kubernetes cluster with `scope k8s`.
+  - See the [docs](https://appscope.dev) for a full list of CLI commands.
+
 ## 🛟 Support
 
-AppScope runs on most Linux distributions and is able to instrument most applications. However, AppScope **cannot**:
+AppScope runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppScope is even able to instrument static applications, and applications running in other containers. 
+
+However, AppScope **cannot**:
 - Instrument Go executables built with Go 1.10 or earlier.
 - Instrument static stripped Go executables built with Go 1.12 or earlier.
 - Instrument Java executables that use Open JVM 6 or earlier, or Oracle JVM 6 or earlier.
 - Obtain a core dump either (a) for a Go executable, or (b) in a musl libc environment.
+
+We have an extensive set of integration tests, validating support for common applications including `postgres`, `sshd`, `kafka`, `node`, `python`, `nginx` on both ARM and x86 architectures, even in musl-based distributions like alpine.
 
 ## 🚀 Try It Out
 

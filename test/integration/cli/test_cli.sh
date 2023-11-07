@@ -422,6 +422,26 @@ is_file /tmp/top_events.log
 endtest
 
 
+#
+# Scope Report
+#
+starttest "Scope report"
+
+unset SCOPE_EVENT_DEST
+
+scope run -- curl -Lso /dev/null https://wttr.in
+sleep 1
+
+run scope report
+outputs "wttr.in"
+outputs "/usr/lib/ssl/openssl.cnf"
+outputs "/etc/ssl/certs/ca-certificates.crt"
+outputs "/dev/null"
+
+endtest
+export SCOPE_EVENT_DEST=file:///opt/test/logs/events.log
+
+
 ################# END TESTS ################# 
 
 #

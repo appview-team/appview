@@ -101,8 +101,6 @@ var reportCmd = &cobra.Command{
 			}
 		}()
 
-		// TODO join IP and port in net index
-
 		// Consume events from the reader and build a report
 		// indexed by unique file path; or unique IP:Port
 		fileReport := map[string]fileEntry{} // where index is the Filename
@@ -155,15 +153,16 @@ var reportCmd = &cobra.Command{
 				}
 				// Add to (or Update) Report
 				if ne.IP != "" {
-					existing, exists := netReport[ne.IP]
+					index := fmt.Sprintf("%s%d", ne.IP, ne.Port) // Because you could have multiple ports at one IP
+					existing, exists := netReport[index]
 					if !exists {
-						netReport[ne.IP] = ne
+						netReport[index] = ne
 					} else {
 						url := ne.URL
 						if existing.URL != "-" { // Don't overwrite a URL once present
 							url = existing.URL
 						}
-						netReport[ne.IP] = netEntry{
+						netReport[index] = netEntry{
 							URL:           url,
 							IP:            ne.IP,
 							Port:          ne.Port,

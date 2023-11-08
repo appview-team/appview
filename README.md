@@ -36,17 +36,10 @@ graph LR
 - Generate metrics on process and application performance.
 - Generate events, reporting on network, file, and http/s activity.
 - Capture (decrypted) payload data without the need for keys.
-- Generate a stack trace, and core dump when an application crashes.
-- Using the CLI, you can:
-  - Load AppScope into into a new process with `scope run`.
-  - Load AppScope into an already-running process with `scope attach`.
-  - Unload AppScope from an already-running process with `scope detach`.
-  - Output events for a session with `scope events`.
-  - Output metrics for a session with `scope metrics`.
-  - Output network flows from the session, potentially including payloads, with `scope flows`.
-  - Create a report on unique file and network activity for a session with `scope report`.
-  - Install AppScope in a Kubernetes cluster with `scope k8s`.
-  - See the [docs](https://appscope.dev) for a full list of CLI commands.
+- Generate a stack trace, and a core dump when an application crashes.
+- Generate network flow information.
+- Create a report on unique file and network activity.
+- Install AppScope in a Kubernetes cluster.
 
 ## 🛟 Support
 
@@ -92,7 +85,7 @@ scope detach --all --rootdir /hostfs
 
 On the [AppScope Website](https://appscope.dev/) you can:
 
-- Learn about the CLI commands [in more depth](https://appscope.dev/docs/cli-using).
+- Learn about all of the CLI commands [in more depth](https://appscope.dev/docs/cli-using).
 - Get an [overview](https://appscope.dev/docs/how-works/) of AppScope beyond the CLI.
 - Discover what people are [doing](https://appscope.dev/docs/what-do-with-scope) with AppScope.
 - Review advanced [examples](https://appscope.dev/docs/examples-use-cases).
@@ -100,7 +93,6 @@ On the [AppScope Website](https://appscope.dev/) you can:
 - See what happens when you [connect AppScope to Cribl Stream or Cribl Edge](https://appscope.dev/docs/cribl-integration).
 
 _The content on that site is built from the [website/](website/) directory in this project._
-
 
 ## 🔧 Build From Source
 
@@ -110,29 +102,19 @@ AppScope is not built or distributed like most traditional Linux software.
 .
 - We don't build OS installation packages like DEBs or RPMs. This way, when you want to investigate a running system or build a custom container image, you can simply drop AppScope in and use it.
 
-Pull a copy of the code with:
+Build from source:
 
 ```text
 git clone https://github.com/appscope-team/appscope.git
 cd appscope
-```
-
-If you are on Ubuntu, install the build dependencies with:
-
-```text
-./install_build_tools.sh
-```
-
-Then, build and test the code with:
-
-```text
-make all test
+./install_build_tools.sh # Install dependencies (ubuntu)
+make all test # Build and test
 ```
 
 If you aren't on Ubuntu, or would prefer not to install the dependencies, ensure that [Docker], [BuildX], and `make` are installed, then build in a container with:
 
 ```text
-make build
+make build CMD="make all"
 ```
 
 Either way, the resulting binaries will be in `lib/linux/$(uname -m)/libscope.so` and `bin/linux/$(uname -m)/scope`.

@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <curl/curl.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -1293,11 +1294,52 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 }
 
 static void
+sendNotify(const char *msg)
+{
+    // The Slack API token
+    const char *slackApiToken = SLACK_API_TOKEN;
+
+    // The Slack channel to which msg will be sent
+    const char *channel = SLACK_API_CHANNEL;
+
+    // Slack API URL for chat.postMessage
+    const char *slackApiUrl = SLACK_API_URL;
+
+    // Initialize libcurl
+    CURL *curl;
+    curl = curl_easy_init();
+
+    if (curl) {
+        // URL
+        curl_easy_setopt(curl, CURLOPT_URL, slackApiUrl);
+
+        // POST data
+        char postData[256];
+        snprintf(postData, sizeof(postData), "token=%s&channel=%s&text=%s", slackApiToken, channel, msg);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData);
+
+        // Perform the HTTP POST request
+        CURLcode res = curl_easy_perform(curl);
+
+        // Check for errors
+        if (res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        }
+
+        // Clean up
+        curl_easy_cleanup(curl);
+    }
+
+    return;
+}
+
+static void
 enforceNotify(void)
 {
     // TODO: add notify config and detail
     // process name is included in the CLI log
     scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file", getpid());
+    sendNotify("Process is accessing a prohibited file");
     exit(EXIT_FAILURE);
 }
 

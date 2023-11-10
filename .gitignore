@@ -31,3 +31,12 @@ scope.log
 /website/public/
 /website/node_modules/
 /website/.cache/
+
+# CLI
+cli/run/bundle.go
+cli/build/*
+cli/!build/.gitkeep
+cli/coverage.out
+cli/demo/demo-scripts/willsee.txt
+cli/demo/demo-scripts/wontsee.log
+cli/VERSION

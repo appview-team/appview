@@ -34,6 +34,7 @@
 #include "os.h"
 #include "utils.h"
 #include "scopestdlib.h"
+#include "notify.h"
 
 #define NUM_ATTEMPTS 100
 #define MAX_CONVERT (size_t)256
@@ -1294,52 +1295,17 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 }
 
 static void
-sendNotify(const char *msg)
+enforceNotify(const char *path)
 {
-    // The Slack API token
-    const char *slackApiToken = SLACK_API_TOKEN;
+    char msg[PATH_MAX];
 
-    // The Slack channel to which msg will be sent
-    const char *channel = SLACK_API_CHANNEL;
-
-    // Slack API URL for chat.postMessage
-    const char *slackApiUrl = SLACK_API_URL;
-
-    // Initialize libcurl
-    CURL *curl;
-    curl = curl_easy_init();
-
-    if (curl) {
-        // URL
-        curl_easy_setopt(curl, CURLOPT_URL, slackApiUrl);
-
-        // POST data
-        char postData[256];
-        snprintf(postData, sizeof(postData), "token=%s&channel=%s&text=%s", slackApiToken, channel, msg);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData);
-
-        // Perform the HTTP POST request
-        CURLcode res = curl_easy_perform(curl);
-
-        // Check for errors
-        if (res != CURLE_OK) {
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        }
-
-        // Clean up
-        curl_easy_cleanup(curl);
-    }
-
-    return;
-}
-
-static void
-enforceNotify(void)
-{
     // TODO: add notify config and detail
     // process name is included in the CLI log
-    scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file", getpid());
-    sendNotify("Process is accessing a prohibited file");
+    scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file:%s", getpid(), path);
+    scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
+    notify(msg);
+
+    // Should we exit? Needs to be configurable
     exit(EXIT_FAILURE);
 }
 
@@ -2272,7 +2238,7 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
             }
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
-            if (fs->enforceRD) enforceNotify();
+            if (fs->enforceRD) enforceNotify(fs->path);
 
             // Don't count data from stdin
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
@@ -2308,7 +2274,7 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
             }
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
-            if (fs->enforceWR) enforceNotify();
+            if (fs->enforceWR) enforceNotify(fs->path);
             // Don't count data from stdout, stderr
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);

@@ -296,9 +296,5 @@ typedef struct
 #define DEFAULT_EXFIL_ENABLE TRUE
 #define DEFAULT_ENFORCE_FILE_WRITE "etc", "/lib"
 #define DEFAULT_ENFORCE_FILE_READ "/.ssh"
-#define SLACK_API_URL "https://slack.com/api/chat.postMessage"
-#define SLACK_API_TOKEN "xoxb-5651758066340-6094864733542-Ku0V0RU4GR7jPihwuK8TLbXz"
-#define SLACK_API_CHANNEL "#general"
 
 #endif // __SCOPETYPES_H__
-

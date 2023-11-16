@@ -1305,8 +1305,9 @@ enforceNotify(const char *path)
     scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
     notify(msg);
 
-    // Should we exit? Needs to be configurable
-    exit(EXIT_FAILURE);
+    // TPDO: Should we exit? Needs to be configurable
+    // TODO: notify only for now, config needed.
+    //exit(EXIT_FAILURE);
 }
 
 static void
@@ -1357,11 +1358,15 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
         }
     }
 
-    // TODO: append to a file? post to a CLI server?
+    // TODO: append to a file? post to a CLI server? For now, notify
+    // TODO: add reverse DNS to get the hostname
+    char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {
-        scopeLogError("The file %s has been exfiltrated to %s", fsrd->path, rip);
+        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        notify(msg);
     } else {
-        scopeLogError("The file %s has been exfiltrated", fsrd->path);
+        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated", fsrd->path);
+        notify(msg);
     }
 }
 

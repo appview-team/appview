@@ -15,7 +15,6 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <netinet/in.h>
-#include <curl/curl.h>
 
 #include "atomic.h"
 #include "com.h"

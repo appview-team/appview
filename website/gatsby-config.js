@@ -6,8 +6,8 @@ module.exports = {
     titleTemplate: "%s · Instrument, Collect, Observe",
     description:
       "AppScope is an open source instrumentation utility for any application, regardless of its runtime, with no code modification required. Collect only the data you need for full observability of your applications, systems and infrastructure.",
-    url: "https://appscope.dev",
-    siteUrl: "https://appscope.dev/",
+    url: "https://team-appscope.github.io/appscope",
+    siteUrl: "https://team-appscope.github.io/appscope",
     image: "/images/isoarchitecture.png",
     twitterUsername: "@cribl",
   },
@@ -28,15 +28,6 @@ module.exports = {
         includeInDevelopment: false,
         defaultDataLayer: { platform: "gatsby" },
         routeChangeEventName: "gatsby-route-change",
-      },
-    },
-
-    {
-      resolve: "gatsby-plugin-algolia",
-      options: {
-        appId: process.env.GATSBY_ALGOLIA_APP_ID,
-        apiKey: process.env.GATSBY_ALGOLIA_WRITE_KEY,
-        queries: require("./src/utils/algolia-queries"),
       },
     },
     {

@@ -2,7 +2,7 @@
 
 # AppScope
 
-AppScope is an open source, runtime-agnostic instrumentation utility for any Linux command or application. It helps users explore, understand, and gain visibility with **no code modification**.
+AppScope is an open source, runtime-agnostic instrumentation utility for any Linux command or application. It helps users to explore, understand, and gain visibility with **no code modification**.
 
 AppScope provides the fine-grained observability of a proxy/service mesh, without the latency of a sidecar. It emits APM-like metric and event data, in open formats, to existing log and metric tools.
 
@@ -31,13 +31,28 @@ graph LR
     style H fill:#fafafa,stroke:#a6a6a6
 ```
 
+## 💎 Features
+
+- Generate metrics on process and application performance.
+- Generate events, reporting on network, file, and http/s activity.
+- Capture (decrypted) payload data without the need for keys.
+- Generate a stack trace, and a core dump when an application crashes.
+- Generate network flow information.
+- Create a report on unique file and network activity.
+- Install AppScope in a Kubernetes cluster.
+
 ## 🛟 Support
 
-AppScope runs on most Linux distributions and is able to instrument most applications. However, AppScope **cannot**:
+AppScope runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppScope is even able to instrument static applications, and applications running in other containers. 
+
+However, AppScope **cannot**:
+
 - Instrument Go executables built with Go 1.10 or earlier.
 - Instrument static stripped Go executables built with Go 1.12 or earlier.
 - Instrument Java executables that use Open JVM 6 or earlier, or Oracle JVM 6 or earlier.
 - Obtain a core dump either (a) for a Go executable, or (b) in a musl libc environment.
+
+We have an extensive set of integration tests, validating support for common applications including `postgres`, `sshd`, `kafka`, `node`, `python`, `nginx` on both ARM and x86 architectures, even in musl-based distributions like alpine.
 
 ## 🚀 Try It Out
 
@@ -71,7 +86,7 @@ scope detach --all --rootdir /hostfs
 
 On the [AppScope Website](https://appscope.dev/) you can:
 
-- Learn about the CLI commands [in more depth](https://appscope.dev/docs/cli-using).
+- Learn about all of the CLI commands [in more depth](https://appscope.dev/docs/cli-using).
 - Get an [overview](https://appscope.dev/docs/how-works/) of AppScope beyond the CLI.
 - Discover what people are [doing](https://appscope.dev/docs/what-do-with-scope) with AppScope.
 - Review advanced [examples](https://appscope.dev/docs/examples-use-cases).
@@ -79,7 +94,6 @@ On the [AppScope Website](https://appscope.dev/) you can:
 - See what happens when you [connect AppScope to Cribl Stream or Cribl Edge](https://appscope.dev/docs/cribl-integration).
 
 _The content on that site is built from the [website/](website/) directory in this project._
-
 
 ## 🔧 Build From Source
 
@@ -89,29 +103,19 @@ AppScope is not built or distributed like most traditional Linux software.
 .
 - We don't build OS installation packages like DEBs or RPMs. This way, when you want to investigate a running system or build a custom container image, you can simply drop AppScope in and use it.
 
-Pull a copy of the code with:
+Build from source:
 
 ```text
 git clone https://github.com/appscope-team/appscope.git
 cd appscope
-```
-
-If you are on Ubuntu, install the build dependencies with:
-
-```text
-./install_build_tools.sh
-```
-
-Then, build and test the code with:
-
-```text
-make all test
+./install_build_tools.sh # Install dependencies (ubuntu)
+make all test # Build and test
 ```
 
 If you aren't on Ubuntu, or would prefer not to install the dependencies, ensure that [Docker], [BuildX], and `make` are installed, then build in a container with:
 
 ```text
-make build
+make build CMD="make all"
 ```
 
 Either way, the resulting binaries will be in `lib/linux/$(uname -m)/libscope.so` and `bin/linux/$(uname -m)/scope`.

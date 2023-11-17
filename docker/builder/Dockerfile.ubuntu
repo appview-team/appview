@@ -46,17 +46,13 @@ RUN apt-get update && \
         autoconf \
         automake \
         curl \
-        emacs \
-        gdb \
         git \
         lcov \
         libtool \
         lsof \
         make \
-        strace \
         sudo \
         tzdata \
-        vim \
         && \
     dpkg-reconfigure --frontend noninteractive tzdata && \
     apt-get clean

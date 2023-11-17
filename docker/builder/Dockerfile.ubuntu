@@ -51,8 +51,7 @@ RUN    apt-get install -y \
         lsof \
         make \
         sudo \
-        tzdata \
-        && \
+        tzdata
 RUN    dpkg-reconfigure --frontend noninteractive tzdata
 RUN    apt-get clean
 

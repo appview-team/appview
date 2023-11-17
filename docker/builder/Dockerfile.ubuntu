@@ -55,7 +55,7 @@ RUN apt-get update && \
         tzdata \
         && \
     dpkg-reconfigure --frontend noninteractive tzdata && \
-    apt-get clean
+
 
 ARG UPX_VERSION=4.0.1
 ARG CMAKE_VERSION=3.24.3

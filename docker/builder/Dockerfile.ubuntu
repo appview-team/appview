@@ -36,25 +36,51 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # dependencies (i.e. tzdata) are installed.
 #
 ENV key=52B59B1571A79DBC054901C0F6BC817356A3D45E
-RUN apt-get update
-RUN    apt-get install -y software-properties-common gpg apt-utils libelf-dev
-RUN    add-apt-repository -y ppa:longsleep/golang-backports
-#RUN    apt-get update && ( gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys "$key" || gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$key" )
-RUN    apt-get update
-RUN    apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y software-properties-common gpg apt-utils libelf-dev && \
+    add-apt-repository -y ppa:longsleep/golang-backports && \
+    apt-get update && \
+#    ( gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys "$key" || gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$key" ) && \
+    apt-get install -y \
         $GOLANG \
         autoconf \
         automake \
         curl \
+        emacs \
+        gdb \
         git \
         lcov \
         libtool \
         lsof \
         make \
+        strace \
         sudo \
-        tzdata
-RUN    dpkg-reconfigure --frontend noninteractive tzdata
-RUN    apt-get clean
+        tzdata \
+        vim \
+        && \
+    dpkg-reconfigure --frontend noninteractive tzdata && \
+    apt-get clean
+#
+#
+#RUN apt-get update
+#RUN    apt-get install -y software-properties-common gpg apt-utils libelf-dev
+#RUN    add-apt-repository -y ppa:longsleep/golang-backports
+#RUN    apt-get update && ( gpg --batch --keyserver hkps://keyserver.ubuntu.com --recv-keys "$key" || gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys "$key" )
+#RUN    apt-get update
+#RUN    apt-get install -y \
+#        $GOLANG \
+#        autoconf \
+#        automake \
+#        curl \
+#        git \
+#        lcov \
+#        libtool \
+#        lsof \
+#        make \
+#        sudo \
+#        tzdata
+#RUN    dpkg-reconfigure --frontend noninteractive tzdata
+#RUN    apt-get clean
 
 ARG UPX_VERSION=4.0.1
 ARG CMAKE_VERSION=3.24.3

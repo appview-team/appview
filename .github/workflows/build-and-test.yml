@@ -48,24 +48,6 @@ jobs:
         id: version
         uses: Simply007/get-version-action@v2.3.0
 
-      # This is our logic to decide how to tag the results and whether things
-      # get published or not.
-      - name: Get Tag
-        id: tag
-        run: |
-          if [ -z "${GITHUB_REF%%refs/tags/v*}" -a "true" = "${{ steps.version.outputs.is-semver }}" ]; then
-              echo "tag=${{ steps.version.outputs.version-without-v }}" >> $GITHUB_OUTPUT
-              echo "push=true" >> "${GITHUB_OUTPUT}"
-          else
-            echo "branch=${GITHUB_REF#*refs/heads/}"
-            if [ "refs/heads/main" = "${GITHUB_REF}" -o "refs/heads/master" = "${GITHUB_REF}" ]; then
-              echo "tag=next" >> "${GITHUB_OUTPUT}"
-              echo "push=true" >> "${GITHUB_OUTPUT}"
-            else
-              echo "tag=unreleased" >> "${GITHUB_OUTPUT}"
-            fi
-          fi
-
       # Display these for troubleshooting
       - name: Version/Tag Outputs
         run: |
@@ -79,31 +61,6 @@ jobs:
           echo "tag=\"${{ steps.tag.outputs.tag }}\""
           echo "push=\"${{ steps.tag.outputs.push }}\""
           echo "branch=\"${{ steps.tag.outputs.branch }}\""
-
-      # If we're building a release tag and a corresponding release hasn't been
-      # created in GitHub already, create it so we can attach artifacts to it
-      # later.
-      - name: Create Release
-        id: release
-        if: ${{ steps.tag.outputs.tag != 'unreleased' && steps.tag.outputs.tag != 'next' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            if gh release view ${{ steps.version.outputs.version }} >/dev/null 2>&1; then \
-              echo "info: ${{ steps.version.outputs.version }} release already exists"; \
-            else
-              if [ -n "${{ steps.version.outputs.prerelease }}" ]; then
-                gh release create ${{ steps.version.outputs.version }} -p \
-                  -n "Release description coming soon..." \
-                  -t "Pre-Release ${{ steps.version.outputs.version-without-v }}"
-                echo "info: created Pre-Release ${{ steps.version.outputs.version-without-v }}"; \
-              else
-                gh release create ${{ steps.version.outputs.version }} \
-                  -n "Release description coming soon..." \
-                  -t "Release ${{ steps.version.outputs.version-without-v }}"
-                echo "info: created Release ${{ steps.version.outputs.version-without-v }}"; \
-              fi \
-            fi
 
     # Make these available to later stages.
     outputs:
@@ -360,63 +317,4 @@ jobs:
 
       - name: Chmod Binaries
         run: chmod +x lib/linux/*/* bin/linux/*/*
-
-  # Build the container image
-  image:
-    name: Build Image
-    if: always()
-    needs: [info,build,test-amd64]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-
-      - name: Setup QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Setup Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-
-      # We skip this step if we're not going to push the resulting container image
-      - name: Login to Container Registry
-        # TODO only if needs.test-*.results == 'success'
-        if: ${{ needs.info.outputs.push == 'true' }}
-        uses: docker/login-action@v2
-        with:
-          username: iapaddler
-          password: ${{ secrets.SCOPE_TEAM_TOKEN }}
-
-      - name: Download Binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: binaries
-
-      - name: Chmod Binaries
-        run: chmod +x lib/linux/*/* bin/linux/*/*
-
-      # Build the multi-architecture container image. If we decided to push in
-      # the info stage, we'll push the results here. Otherwise, we just run the
-      # build to ensure the process works.
-      - name: Build Image
-        env:
-          VERSION: ${{ needs.info.outputs.tag }}
-          PUSH: ${{ needs.info.outputs.push }}
-        run: |
-          # TODO only if needs.test-*.results == 'success'
-          if [ "${PUSH}" ]; then
-            echo "::group::Build iapaddler/appscope:${VERSION} Image"
-            TYPE=registry
-          else
-            echo "::group::Build Test Image (no upload after)"
-            TYPE=local,dest=${RUNNER_TEMP}
-          fi
-          docker buildx build \
-                --builder ${{ steps.buildx.outputs.name }} \
-                --tag iapaddler/appscope:scope-${VERSION} \
-                --platform linux/amd64 \
-                --output type=${TYPE} \
-                --file docker/base/Dockerfile \
-                .
-          echo "::endgroup::"
 

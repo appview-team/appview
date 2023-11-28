@@ -1302,7 +1302,7 @@ enforceNotify(const char *path)
     // process name is included in the CLI log
     scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file:%s", getpid(), path);
     scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
-    notify(msg);
+    notify(NOTIFY_FILES, msg);
 
     // TPDO: Should we exit? Needs to be configurable
     // TODO: notify only for now, config needed.
@@ -1362,10 +1362,10 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
     char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {
         scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated to %s", fsrd->path, rip);
-        notify(msg);
+        notify(NOTIFY_FILES, msg);
     } else {
         scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated", fsrd->path);
-        notify(msg);
+        notify(NOTIFY_FILES, msg);
     }
 }
 

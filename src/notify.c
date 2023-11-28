@@ -28,6 +28,7 @@
 static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
+static notify_info_t g_notify_def = {0};
 
 static void
 initOpenSSL(void) {
@@ -36,10 +37,73 @@ initOpenSSL(void) {
     OpenSSL_add_all_algorithms();
 }
 
+static int
+setVar(const char *var)
+{
+    bool rv;
+    char *enval;
+
+    // Get env vars that enable notify behavior
+    // If the relevant env var is not defined, use the default
+    if ((enval = getenv(var)) == NULL) {
+        rv = -1;
+    } else {
+        if (scope_strstr(enval, "TRUE") || scope_strstr(enval, "true")) {
+            rv = (int)TRUE;
+        } else {
+            rv = (int)FALSE;
+        }
+    }
+
+    return rv;
+}
+
+static bool
+getNotifyVars(void)
+{
+    if ((g_notify_def.enable = setVar(NOTIFY_IQ_VAR)) == -1) {
+        g_notify_def.enable = DEFAULT_ENABLE;
+    }
+
+    if ((g_notify_def.exit = setVar(NOTIFY_IQ_EXIT)) == -1) {
+        g_notify_def.exit = DEFAULT_EXIT;
+    }
+
+    if ((g_notify_def.send = setVar(NOTIFY_IQ_SEND)) == -1) {
+        g_notify_def.send = DEFAULT_SEND;
+    }
+
+    if ((g_notify_def.libs = setVar(NOTIFY_IQ_LIBS)) == -1) {
+        g_notify_def.libs = DEFAULT_LIBS;
+    }
+
+    if ((g_notify_def.preload = setVar(NOTIFY_IQ_PRELOAD)) == -1) {
+        g_notify_def.preload = DEFAULT_PRELOAD;
+    }
+
+    if ((g_notify_def.files = setVar(NOTIFY_IQ_FILES)) == -1) {
+        g_notify_def.files = DEFAULT_FILES;
+    }
+
+    if ((g_notify_def.functions = setVar(NOTIFY_IQ_FUNCS)) == -1) {
+        g_notify_def.functions = DEFAULT_FUNCS;
+    }
+
+    if ((g_notify_def.network = setVar(NOTIFY_IQ_NET)) == -1) {
+        g_notify_def.network = DEFAULT_NET;
+    }
+
+    if ((g_notify_def.dns = setVar(NOTIFY_IQ_DNS)) == -1) {
+        g_notify_def.dns = DEFAULT_DNS;
+    }
+
+    return TRUE;
+}
+
 static bool
 getSlackVars(void)
 {
-    //Get the Slack token from an env var
+    // Get the Slack token from an env var
     g_slackApiToken = getenv(SLACK_TOKEN_VAR);
     if (g_slackApiToken == NULL) {
         scopeLog(CFG_LOG_ERROR, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
@@ -128,6 +192,7 @@ slackNotify(const char *msg) {
         g_inited = TRUE;
         initOpenSSL();
         if (getSlackVars() == FALSE) return FALSE;
+        if (getNotifyVars() == FALSE) return FALSE;
     }
 
     SSL *ssl;
@@ -200,7 +265,52 @@ slackNotify(const char *msg) {
  * To start, we support slack notification over HTTPS.
  */
 bool
-notify(const char *msg) {
-    // TODO: add config and determine which notification we are using
-    return slackNotify(msg);
+notify(notify_type_t dtype, const char *msg)
+{
+    bool doit, rv = FALSE;
+
+    if (g_notify_def.enable == FALSE) return FALSE;
+
+    if (g_notify_def.send == TRUE) {
+        switch (dtype) {
+        case NOTIFY_LIBS:
+            doit = g_notify_def.libs;
+            break;
+
+        case NOTIFY_PRELOAD:
+            doit = g_notify_def.preload;
+            break;
+
+        case NOTIFY_FILES:
+            doit = g_notify_def.files;
+            break;
+
+        case NOTIFY_FUNC:
+            doit = g_notify_def.functions;
+            break;
+
+        case NOTIFY_NET:
+            doit = g_notify_def.network;
+            break;
+
+        case NOTIFY_DNS:
+            doit = g_notify_def.dns;
+            break;
+
+        default:
+            doit = FALSE;
+            break;
+        }
+
+        if (doit == TRUE) {
+            // TODO: add config and determine which notification we are using
+            rv = slackNotify(msg);
+        }
+    }
+
+    if (g_notify_def.exit == TRUE) {
+        exit(-1);
+    }
+
+    return rv;
 }

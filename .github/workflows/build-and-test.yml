@@ -1,7 +1,7 @@
 #
 # AppScope - Build Workflow
 #
-# This is the GitHub Workflow to build, test, package, and publish AppScope.
+# This is the GitHub Workflow to build and test AppScope.
 #
 
 name: Build & Test

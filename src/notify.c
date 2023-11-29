@@ -77,10 +77,6 @@ getNotifyVars(void)
         g_notify_def.libs = DEFAULT_LIBS;
     }
 
-    if ((g_notify_def.preload = setVar(NOTIFY_IQ_PRELOAD)) == -1) {
-        g_notify_def.preload = DEFAULT_PRELOAD;
-    }
-
     if ((g_notify_def.files = setVar(NOTIFY_IQ_FILES)) == -1) {
         g_notify_def.files = DEFAULT_FILES;
     }
@@ -188,13 +184,6 @@ sendSlackMessage(SSL *ssl, const char *msg) {
  */
 static bool
 slackNotify(const char *msg) {
-    if (g_inited == FALSE) {
-        g_inited = TRUE;
-        initOpenSSL();
-        if (getSlackVars() == FALSE) return FALSE;
-        if (getNotifyVars() == FALSE) return FALSE;
-    }
-
     SSL *ssl;
     const SSL_METHOD *method = TLS_client_method();
 
@@ -260,13 +249,22 @@ slackNotify(const char *msg) {
 
 /*
  * notify entry point.
- * Should support multiple types of notification as definedin config.
+ * Should support multiple types of notification as defined in config.
  *
  * To start, we support slack notification over HTTPS.
  */
 bool
 notify(notify_type_t dtype, const char *msg)
 {
+    if (g_inited == FALSE) {
+        // TODO: add config and determine which notification we are using
+        initOpenSSL();
+        // Should we return here?
+        if (getSlackVars() == FALSE) return FALSE;
+        if (getNotifyVars() == FALSE) return FALSE;
+        g_inited = TRUE;
+    }
+
     bool doit, rv = FALSE;
 
     if (g_notify_def.enable == FALSE) return FALSE;
@@ -277,11 +275,7 @@ notify(notify_type_t dtype, const char *msg)
             doit = g_notify_def.libs;
             break;
 
-        case NOTIFY_PRELOAD:
-            doit = g_notify_def.preload;
-            break;
-
-        case NOTIFY_FILES:
+         case NOTIFY_FILES:
             doit = g_notify_def.files;
             break;
 

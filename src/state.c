@@ -1908,17 +1908,33 @@ getDNSName(int sd, void *pkt, int pktlen)
         // handle one label
 
         int label_len = (int)*dname++;
-        if (label_len > 63) return -1; // labels must be 63 chars or less
-        if (&dname[label_len] >= pkt_end) return -1; // honor packet end
+        if (label_len > 63) {
+            notify(NOTIFY_DNS, "DNS request with an illegal label length");
+            return -1; // labels must be 63 chars or less
+        }
+
+        if (&dname[label_len] >= pkt_end) {
+            notify(NOTIFY_DNS, "DNS request with a label length that exceeds the packet end");
+            return -1; // honor packet end
+        }
+
         // Ensure we don't overrun the size of dnsName
-        if ((dnsNameBytesUsed + label_len) >= sizeof(dnsName)) return -1;
+        if ((dnsNameBytesUsed + label_len) >= sizeof(dnsName)) {
+            notify(NOTIFY_DNS, "DNS request with a name that is greater than the size of a label");
+            return -1;
+        }
 
         for ( ; (label_len > 0); label_len--) {
-            if (!isLegalLabelChar(*dname)) return -1;
+            if (!isLegalLabelChar(*dname)) {
+                notify(NOTIFY_DNS, "DNS request with an illegal label character");
+                return -1;
+            }
+
             dnsName[dnsNameBytesUsed++] = *dname++;
         }
         dnsName[dnsNameBytesUsed++] = '.';
     }
+
 
     dnsName[dnsNameBytesUsed-1] = '\0'; // overwrite the last period
 
@@ -1957,6 +1973,7 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
 
             if (scope_ns_parserr(&handle, ns_s_an, i, &rr) == -1) {
                 scopeLogError("ERROR:parse rr");
+                notify(NOTIFY_DNS, "illegal DNS response can't be parsed");
                 return FALSE;
             }
 
@@ -1974,16 +1991,19 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
             // type A is IPv4, AAA is IPv6
             if (ns_rr_type(rr) == ns_t_a) {
                 if (!scope_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
-                               ipaddr, sizeof(ipaddr))) {
+                                     ipaddr, sizeof(ipaddr))) {
+                    notify(NOTIFY_DNS, "DNS response with an illegal IPv6 address");
                     continue;
                 }
             } else if (ns_rr_type(rr) == ns_t_aaaa) {
                 if (!scope_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
-                               ipaddr, sizeof(ipaddr))) {
+                                     ipaddr, sizeof(ipaddr))) {
+                    notify(NOTIFY_DNS, "DNS response with an illegal IPv4 address");
                     continue;
                 }
             } else {
                 DBG("DNS response received without an IP address");
+                notify(NOTIFY_DNS, "DNS response without an IP address");
                 continue;
             }
 

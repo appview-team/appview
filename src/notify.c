@@ -110,7 +110,7 @@ sendSlackMessage(SSL *ssl, const char *msg) {
         //printf("%s", response);
     }
 
-    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack", );
+    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack");
     scope_free(payload);
     if (success == FALSE) {
         scopeLog(CFG_LOG_INFO, "%s: failed response from a slack notify message", __FUNCTION__);

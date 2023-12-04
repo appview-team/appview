@@ -42,7 +42,7 @@ getSlackVars(void)
     //Get the Slack token from an env var
     g_slackApiToken = getenv(SLACK_TOKEN_VAR);
     if (g_slackApiToken == NULL) {
-        scopeLog(CFG_LOG_ERROR, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
+        scopeLog(CFG_LOG_INFO, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
         return FALSE;
     }
 
@@ -110,9 +110,10 @@ sendSlackMessage(SSL *ssl, const char *msg) {
         //printf("%s", response);
     }
 
+    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack", );
     scope_free(payload);
     if (success == FALSE) {
-        scopeLog(CFG_LOG_ERROR, "%s: failed response from a slack notify message", __FUNCTION__);
+        scopeLog(CFG_LOG_INFO, "%s: failed response from a slack notify message", __FUNCTION__);
     }
 }
 

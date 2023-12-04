@@ -1300,7 +1300,7 @@ enforceNotify(const char *path)
 
     // TODO: add notify config and detail
     // process name is included in the CLI log
-    scopeLog(CFG_LOG_ERROR, "Process %d is accessing a prohibited file:%s", getpid(), path);
+    scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
     scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
     notify(NOTIFY_FILES, msg);
 

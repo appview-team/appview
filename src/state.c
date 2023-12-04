@@ -1,3 +1,7 @@
+/*
+ * Copyright 2021 Cribl, Inc
+ * Copyright 2019-2023 Donn Rochette
+ */
 #define _GNU_SOURCE
 #include <arpa/inet.h>
 #include <errno.h>
@@ -10,6 +14,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <netinet/in.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -28,9 +33,27 @@
 #include "os.h"
 #include "utils.h"
 #include "scopestdlib.h"
+#include "notify.h"
 
 #define NUM_ATTEMPTS 100
 #define MAX_CONVERT (size_t)256
+
+// Enforce and privacy vars
+// TODO: remove the defaults when we add these to config
+static bool g_enforce_enable = DEFAULT_ENFORCE_ENABLE;
+static bool g_enforce_files = DEFAULT_ENFORCE_FILES_ENABLE;
+static bool g_exfil_enable = DEFAULT_EXFIL_ENABLE;
+
+// path sub-strings that should not be modified
+static const char *g_enforce_wr[] = {
+    DEFAULT_ENFORCE_FILE_WRITE
+};
+
+// Enforce and privacy lists
+// path sub-strings that should not be accessed
+static const char *g_enforce_rd[] = {
+    DEFAULT_ENFORCE_FILE_READ
+};
 
 extern rtconfig g_cfg;
 
@@ -1270,6 +1293,82 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
     }
 }
 
+static void
+enforceNotify(const char *path)
+{
+    char msg[PATH_MAX];
+
+    // TODO: add notify config and detail
+    // process name is included in the CLI log
+    scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
+    scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
+    notify(msg);
+
+    // TPDO: Should we exit? Needs to be configurable
+    // TODO: notify only for now, config needed.
+    //exit(EXIT_FAILURE);
+}
+
+static void
+doEnforceFile(const char *path, fs_info *fs)
+{
+    if ((g_enforce_enable == FALSE) || (g_enforce_files == FALSE) ||
+        !fs || !path) return;
+
+    int i, num_write, num_read;
+
+    // Should this path be enforced for write access?
+    num_write = sizeof(g_enforce_wr) / sizeof(g_enforce_wr[0]);
+    for (i = 0; i < num_write; i++) {
+        if (scope_strstr(path, g_enforce_wr[i])) {
+            fs->enforceWR = TRUE;
+            break;
+        }
+    }
+
+    // TODO: do we need to check both?
+    // Should this path be enforced for read access?
+    num_read = sizeof(g_enforce_rd) / sizeof(g_enforce_rd[0]);
+    for (i = 0; i < num_read; i++) {
+        if (scope_strstr(path, g_enforce_rd[i])) {
+            fs->enforceRD = TRUE;
+            break;
+        }
+    }
+}
+
+static void
+doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
+{
+    if ((g_exfil_enable == FALSE) || !fsrd || !fsrd->path[0]) return;
+
+    char rip[INET6_ADDRSTRLEN];
+    rip[0] = '\0';
+
+    if (nettx) {
+        if (nettx->remoteConn.ss_family == AF_INET) {
+            scope_inet_ntop(AF_INET,
+                            &((struct sockaddr_in *)&nettx->remoteConn)->sin_addr,
+                            rip, sizeof(rip));
+        } else if (nettx->remoteConn.ss_family == AF_INET6) {
+            scope_inet_ntop(AF_INET6,
+                            &((struct sockaddr_in6 *)&nettx->remoteConn)->sin6_addr,
+                            rip, sizeof(rip));
+        }
+    }
+
+    // TODO: append to a file? post to a CLI server? For now, notify
+    // TODO: add reverse DNS to get the hostname
+    char msg[PATH_MAX + 256];
+    if (rip[0] != '\0') {
+        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        notify(msg);
+    } else {
+        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated", fsrd->path);
+        notify(msg);
+    }
+}
+
 // Alternative to getNetEntry() that returns a net_info for the given channel
 // ID instead of for a socket descriptor. We fallback to using this when we
 // can't get the descriptor in TLS/SSL read/write operations.
@@ -2142,6 +2241,9 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
                 doRecv(fd, bytes, buf, bytes, src);
             }
         } else if (fs) {
+            // If we are told that reads are not permitted, then notify and follow that direction
+            if (fs->enforceRD) enforceNotify(fs->path);
+
             // Don't count data from stdin
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
@@ -2175,6 +2277,8 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
                 doSend(fd, bytes, buf, bytes, src);
             }
         } else if (fs) {
+            // If we are told that writes are not permitted, then notify and follow that direction
+            if (fs->enforceWR) enforceNotify(fs->path);
             // Don't count data from stdout, stderr
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
@@ -2439,6 +2543,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
+        doEnforceFile(path, &g_fsinfo[fd]);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }
@@ -2454,6 +2559,7 @@ doSendFile(int out_fd, int in_fd, uint64_t initialTime, int rc, const char *func
         if (nettx) {
             doSetAddrs(out_fd);
             doSend(out_fd, rc, NULL, 0, NONE);
+            doExfil(nettx, fsrd);
         }
 
         if (fsrd) {

@@ -46,6 +46,7 @@ graph LR
 AppScope runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppScope is even able to instrument static applications, and applications running in other containers. 
 
 However, AppScope **cannot**:
+
 - Instrument Go executables built with Go 1.10 or earlier.
 - Instrument static stripped Go executables built with Go 1.12 or earlier.
 - Instrument Java executables that use Open JVM 6 or earlier, or Oracle JVM 6 or earlier.

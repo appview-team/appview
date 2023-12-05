@@ -28,7 +28,7 @@
 static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
-static notify_info_t g_notify_def = {0};
+notify_info_t g_notify_def = {0};
 
 static void
 initOpenSSL(void) {
@@ -59,8 +59,28 @@ setVar(const char *var)
 }
 
 static bool
+setList(char *list, char *dest[], size_t max_entries){
+    int num_entries = 0;
+    char *token = NULL;
+
+    token = scope_strtok(list, ",");
+    while ((token != NULL) && (num_entries < max_entries)) {
+        if ((dest[num_entries] = scope_strdup(token)) == NULL) {
+            scopeLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
+            return FALSE;
+        }
+        num_entries++;
+        token = scope_strtok(NULL, ",");
+    }
+
+    return TRUE;
+}
+
+static bool
 getNotifyVars(void)
 {
+    char *enval;
+
     if ((g_notify_def.enable = setVar(NOTIFY_IQ_VAR)) == -1) {
         g_notify_def.enable = DEFAULT_ENABLE;
     }
@@ -89,9 +109,44 @@ getNotifyVars(void)
         g_notify_def.network = DEFAULT_NET;
     }
 
+    if ((g_notify_def.exfil = setVar(NOTIFY_IQ_EXFIL)) == -1) {
+        g_notify_def.exfil = DEFAULT_EXFIL;
+    }
+
     if ((g_notify_def.dns = setVar(NOTIFY_IQ_DNS)) == -1) {
         g_notify_def.dns = DEFAULT_DNS;
     }
+
+    // Get file read and write lists
+    // Tokenize the environment variable value, assumes ',' is the delimeter
+    if ((enval = getenv(NOTIFY_IQ_FILE_READ))) {
+    } else {
+        enval = DEFAULT_FILE_READ;
+    }
+
+    setList(enval, g_notify_def.file_read, MAX_FILE_ENTRIES);
+
+    if ((enval = getenv(NOTIFY_IQ_FILE_WRITE))) {
+    } else {
+        enval = DEFAULT_FILE_WRITE;
+    }
+
+    setList(enval, g_notify_def.file_write, MAX_FILE_ENTRIES);
+
+    // Same for IP white and black lists
+    if ((enval = getenv(NOTIFY_IQ_IP_WHITE))) {
+    } else {
+        enval = DEFAULT_IP_WHITE;
+    }
+
+    setList(enval, g_notify_def.ip_white, MAX_IP_ENTRIES);
+
+    if ((enval = getenv(NOTIFY_IQ_IP_BLACK))) {
+    } else {
+        enval = DEFAULT_IP_BLACK;
+    }
+
+    setList(enval, g_notify_def.ip_black, MAX_IP_ENTRIES);
 
     return TRUE;
 }
@@ -170,7 +225,7 @@ sendSlackMessage(SSL *ssl, const char *msg) {
         //printf("%s", response);
     }
 
-    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack", );
+    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack");
     scope_free(payload);
     if (success == FALSE) {
         scopeLog(CFG_LOG_INFO, "%s: failed response from a slack notify message", __FUNCTION__);
@@ -272,6 +327,9 @@ notify(notify_type_t dtype, const char *msg)
 
     if (g_notify_def.send == TRUE) {
         switch (dtype) {
+        case NOTIFY_INIT:
+            return TRUE;
+
         case NOTIFY_LIBS:
             doit = g_notify_def.libs;
             break;

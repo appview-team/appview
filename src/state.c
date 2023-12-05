@@ -38,23 +38,6 @@
 #define NUM_ATTEMPTS 100
 #define MAX_CONVERT (size_t)256
 
-// Enforce and privacy vars
-// TODO: remove the defaults when we add these to config
-static bool g_enforce_enable = DEFAULT_ENFORCE_ENABLE;
-static bool g_enforce_files = DEFAULT_ENFORCE_FILES_ENABLE;
-static bool g_exfil_enable = DEFAULT_EXFIL_ENABLE;
-
-// path sub-strings that should not be modified
-static const char *g_enforce_wr[] = {
-    DEFAULT_ENFORCE_FILE_WRITE
-};
-
-// Enforce and privacy lists
-// path sub-strings that should not be accessed
-static const char *g_enforce_rd[] = {
-    DEFAULT_ENFORCE_FILE_READ
-};
-
 extern rtconfig g_cfg;
 
 int g_numNinfo = NET_ENTRIES;
@@ -1298,29 +1281,22 @@ enforceNotify(const char *path)
 {
     char msg[PATH_MAX];
 
-    // TODO: add notify config and detail
-    // process name is included in the CLI log
     scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
     scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
     notify(NOTIFY_FILES, msg);
-
-    // TPDO: Should we exit? Needs to be configurable
-    // TODO: notify only for now, config needed.
-    //exit(EXIT_FAILURE);
 }
 
 static void
 doEnforceFile(const char *path, fs_info *fs)
 {
-    if ((g_enforce_enable == FALSE) || (g_enforce_files == FALSE) ||
+    if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
         !fs || !path) return;
 
-    int i, num_write, num_read;
+    int i;
 
     // Should this path be enforced for write access?
-    num_write = sizeof(g_enforce_wr) / sizeof(g_enforce_wr[0]);
-    for (i = 0; i < num_write; i++) {
-        if (scope_strstr(path, g_enforce_wr[i])) {
+    for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
+        if (scope_strstr(path, g_notify_def.file_write[i])) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1328,9 +1304,8 @@ doEnforceFile(const char *path, fs_info *fs)
 
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
-    num_read = sizeof(g_enforce_rd) / sizeof(g_enforce_rd[0]);
-    for (i = 0; i < num_read; i++) {
-        if (scope_strstr(path, g_enforce_rd[i])) {
+    for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
+        if (scope_strstr(path, g_notify_def.file_read[i])) {
             fs->enforceRD = TRUE;
             break;
         }
@@ -1340,7 +1315,7 @@ doEnforceFile(const char *path, fs_info *fs)
 static void
 doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
 {
-    if ((g_exfil_enable == FALSE) || !fsrd || !fsrd->path[0]) return;
+    if ((g_notify_def.exfil == FALSE) || !fsrd || !fsrd->path[0]) return;
 
     char rip[INET6_ADDRSTRLEN];
     rip[0] = '\0';
@@ -1357,7 +1332,6 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
         }
     }
 
-    // TODO: append to a file? post to a CLI server? For now, notify
     // TODO: add reverse DNS to get the hostname
     char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {

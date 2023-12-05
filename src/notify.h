@@ -13,13 +13,20 @@
 #define NOTIFY_IQ_FILES "SCOPE_NOTIFY_FILES"
 #define NOTIFY_IQ_FUNCS "SCOPE_NOTIFY_FUNCS"
 #define NOTIFY_IQ_NET "SCOPE_NOTIFY_NET"
+#define NOTIFY_IQ_EXFIL "SCOPE_NOTIFY_EXFIL"
 #define NOTIFY_IQ_DNS "SCOPE_NOTIFY_DNS"
+#define NOTIFY_IQ_FILE_READ "SCOPE_NOTIFY_FILE_READ"
+#define NOTIFY_IQ_FILE_WRITE "SCOPE_NOTIFY_FILE_WRITE"
+#define NOTIFY_IQ_IP_WHITE "SCOPE_NOTIFY_IP_WHITE"
+#define NOTIFY_IQ_IP_BLACK "SCOPE_NOTIFY_IP_BLACK"
 #define SLACK_CHANNEL "SCOPE_SLACKBOT_CHANNEL"
 
 // Constants
 #define SLACK_API_HOST "slack.com"
 #define SLACK_API_PATH "/api/chat.postMessage"
 #define HTTPS_PORT 443
+#define MAX_FILE_ENTRIES 32
+#define MAX_IP_ENTRIES 16
 
 // default behavior
 #define SLACK_CHANNEL_ID "#notifications"
@@ -31,8 +38,14 @@
 #define DEFAULT_FUNCS TRUE
 #define DEFAULT_LIBS TRUE
 #define DEFAULT_DNS TRUE
+#define DEFAULT_EXFIL TRUE
+#define DEFAULT_FILE_WRITE "etc", "/lib"
+#define DEFAULT_FILE_READ "/.ssh"
+#define DEFAULT_IP_WHITE NULL
+#define DEFAULT_IP_BLACK NULL
 
 typedef enum {
+    NOTIFY_INIT,
     NOTIFY_LIBS,
     NOTIFY_FILES,
     NOTIFY_FUNC,
@@ -49,10 +62,15 @@ typedef struct {
     bool files;
     bool functions;
     bool network;
+    bool exfil;
     bool dns;
+    char *file_read[MAX_FILE_ENTRIES];
+    char *file_write[MAX_FILE_ENTRIES];
+    char *ip_white[MAX_IP_ENTRIES];
+    char *ip_black[MAX_IP_ENTRIES];
 } notify_info_t;
 
-
+extern notify_info_t g_notify_def;
 extern bool notify(notify_type_t, const char *);
 
 #endif // __NOTIFY_H__

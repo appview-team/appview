@@ -2223,6 +2223,9 @@ init(void)
 
     osInitJavaAgent();
 
+    // Confure the detect and notify features
+    notify(NOTIFY_INIT, "");
+
     /*
      * Detect GOT mods.
      * Called from the constructor, this applies more to attach behavior than preload.

@@ -289,12 +289,4 @@ typedef struct
 #define DYN_CONFIG_CLI_DIR "/dev/shm"
 #define DYN_CONFIG_CLI_PREFIX "scope_dconf"
 
-// Enforce and privacy settings
-#define DEFAULT_ENFORCE_ENABLE TRUE
-#define DEFAULT_ENFORCE_FILES_ENABLE TRUE
-#define DEFAULT_ENFORCE_USER_ENABLE TRUE
-#define DEFAULT_EXFIL_ENABLE TRUE
-#define DEFAULT_ENFORCE_FILE_WRITE "etc", "/lib"
-#define DEFAULT_ENFORCE_FILE_READ "/.ssh"
-
 #endif // __SCOPETYPES_H__

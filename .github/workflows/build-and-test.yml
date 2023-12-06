@@ -71,7 +71,6 @@ jobs:
       matrix:
         on: [[ubuntu-latest]]
     steps:
-
       # Some diagnostic info on the build environment. This also outputs `arch`
       # which we use elsewhere for architecture-specific things.
       - name: Dump Environment

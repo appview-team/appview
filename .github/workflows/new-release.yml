@@ -374,8 +374,6 @@ jobs:
           mkdir ${TMPDIR}/lib
 
           cp conf/scope.yml ${TMPDIR}/scope
-# removing aarch64 for now
-# for ARCH in x86_64 aarch64; do
           for ARCH in x86_64; do
             cp bin/linux/${ARCH}/scope ${TMPDIR}/scope
             cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/scope
@@ -389,8 +387,6 @@ jobs:
           done
 
           cp conf/scope.yml ${TMPDIR}/lib
-# removing aarch64 for now
-# for ARCH in x86_64 aarch64; do
           for ARCH in x86_64; do
             cp bin/linux/${ARCH}/scope ${TMPDIR}/lib
             cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/lib
@@ -404,8 +400,6 @@ jobs:
 
           if [ "unreleased" != "${{ needs.info.outputs.tag }}" -a "next" != "${{ needs.info.outputs.tag }}" ]; then
             echo "::group::Attach Release Assets to https://github.com/appscope-team/appscope/releases/tag/${{ needs.info.outputs.version }}"
-# removing aarch64 for now
-# for ARCH in x86_64 aarch64; do
             for ARCH in x86_64; do
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}"
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.md5"

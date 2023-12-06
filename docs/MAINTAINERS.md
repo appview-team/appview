@@ -11,6 +11,7 @@
   - The `build-and-test` workflow which is responsible for building the product, running unit tests, and integration tests, and reporting status. This is run on every non-draft PR branch.
   - The `update-website` workflow which is responsible for building and publishing the website. This is manually triggered.
   - The `new-release` workflow which is responsible for creating a release on GitHub Releases, and Docker hub. This is automatically triggered when a new tag is created.
+  - The `integrations` workflow which is responsible for building the product, running unit tests, and integration tests, and reporting status. This is manually triggered.
 
 ## Release Updates
 

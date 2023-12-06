@@ -1,26 +1,14 @@
 #
-# AppScope - Build Workflow
+# AppScope - Integrations Workflow
 #
-# This is the GitHub Workflow to build and unit test AppScope.
+# This is the GitHub Workflow to build and run integration tests for AppScope.
 #
 
-name: Build & Test
+name: Integration Tests
 
 on: 
-  # Run on pushes to any branch
-  push:
-    branches:
-      - 'master'
-    # paths-ignore does not work as expected
-    # it means the workflow will run on any explicit branch
-    # and any other branch where a change to a file except 
-    # one in paths-ignore happens.
-    # paths-ignore:
-    #  - 'website/**'
   # Run on manually triggered workflow
   workflow_dispatch:
-  # Run on PRs targeting the default branch or a release branches
-  pull_request:
 
 jobs:
   # This is the first stage of the workflow where we do some initial setup.
@@ -286,4 +274,24 @@ jobs:
     outputs:
       tests-x86_64: ${{ steps.tests.outputs.tests-x86_64 }}
 
+  # Run the x86 Integration tests.
+  test-amd64:
+    name: Test x86_64/amd64
+    needs: build
+    strategy:
+      matrix:
+        test: ${{ fromJson(needs.build.outputs.tests-x86_64) }}
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Download Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: binaries
+
+      - name: Chmod Binaries
+        run: chmod +x lib/linux/*/* bin/linux/*/*
 

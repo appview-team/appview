@@ -144,20 +144,22 @@ additional steps are taken depending on the trigger.
 * We build [container images](#container-images) and push them to Docker Hub
   for release tags.
 
-* We run our [integration tests](../test/integration/) for pull requests to
-  the default and release branches. We build and push the container images
-  these tests use up to Docker Hub on pushes to the default branch.
-
 The [`website`](../.github/workflows/website.yml) workflow handles building and
 deploying the [`website/`](../website/) content to <https://staging.appscope.dev/>
 and <https://appscope.dev/>. The staging website is intended to always reflect
 the master branch. The production website is updated only when a "web" tag
 has been applied and pushed. See the build script in that folder for details.
 
-The [`update_latest`](../.github/workflows/update_latest.yml) workflow updates
+The [`new-release`](../.github/workflows/new-release.yml) workflow updates
 the value returned by `https://cdn.cribl.io/dl/scope/latest`, and updates
 the `latest` tag at `https://hub.docker.com/r/cribl/scope/tags`. This workflow
 is run manually, and does not have any automatic triggers.
+
+The [`integrations`](../.github/workflows/integrations.yml) workflow builds the code
+and runs the integration tests. This workflow runs manually, and does not have any 
+automatic triggers. It is intentionally seperate from the automated CI process to prevent
+integration test failures (often flaky or related to infrastructure) from blocking releases.
+It is recommended to run this often.
 
 ## Container Images
 

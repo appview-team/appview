@@ -295,3 +295,9 @@ jobs:
       - name: Chmod Binaries
         run: chmod +x lib/linux/*/* bin/linux/*/*
 
+      - name: Update Test Image
+        run: make -C test/integration ${{ matrix.test }}-build
+
+      - name: Run Test
+        run: make -C test/integration ${{ matrix.test }} NOBUILD=1
+

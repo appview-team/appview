@@ -1,16 +1,20 @@
 #
-# AppScope - Update Latest Release Workflow
+# AppScope - New Release Workflow
 #
-# Update what is returned by https://cdn.cribl.io/dl/scope/latest-release
+# Create a new release in GitHub
+# Create a new release in Docker hub
+# Update the "latest" tag on Docker hub
 #
 # based on:
 #   https://levelup.gitconnected.com/how-to-manually-trigger-a-github-actions-workflow-4712542f1960
 # instructions for use:
 #   https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
 #
-name: Update Latest Release
+name: New Release
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - '*'
 
 jobs:
   info:
@@ -56,33 +60,30 @@ jobs:
       prerelease: ${{ steps.version.outputs.prerelease }}
       tag: ${{ steps.tag.outputs.tag }}
 
-  update-cdn-latest-release:
-    name: Update CDN Latest Release
+
+  update-dockerhub-latest:
+    name: Update Latest Tag in Dockerhub
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    needs: info
+    needs: [info,update-cdn-latest]
     steps:
-      - name: configure AWS creds
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Login to Dockerhub
+        uses: docker/login-action@v2
         with:
-          role-to-assume: ${{ secrets.APPSCOPEDEPLOYROLE }}
-          role-session-name: appscope-deploy
-          aws-region: us-west-2
-      - name: Update dl/scope/latest-release
-        env:
-          CF_DISTRIBUTION_ID: ${{ secrets.CF_DISTRIBUTION_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          username: scopeci
+          password: ${{ secrets.SCOPECI_TOKEN }}
+
+      - name: Setup Crane
+        uses: imjasonh/setup-crane@v0.3
+
+      - name: Update the Latest Tag
         run: |
-          echo "::group::Updating https://cdn.cribl.io/dl/scope/latest-release to ${{ needs.info.outputs.tag }}"
-          S3_SCOPE=s3://io.cribl.cdn/dl/scope
-          TMPDIR=${RUNNER_TEMP}
+          crane tag cribl/scope:${{ needs.info.outputs.tag }} latest
 
-          if [ -n "${{ needs.info.outputs.tag }}" ]; then
-            echo "${{ needs.info.outputs.tag }}" > ${TMPDIR}/latest-release
-            aws s3 cp ${TMPDIR}/latest-release ${S3_SCOPE}/latest-release
-            aws cloudfront create-invalidation --distribution-id ${CF_DISTRIBUTION_ID} --paths '/dl/scope/latest-release'
-          fi
-          echo "::endgroup::"
-
+      - name: Print Digest/Manifest Information
+        run: |
+          echo "digest and manifest for cribl/scope:${{ needs.info.outputs.tag }}"
+          crane digest cribl/scope:${{ needs.info.outputs.tag }}
+          crane manifest cribl/scope:${{ needs.info.outputs.tag }} | jq .
+          echo "digest and manifest for cribl/scope:latest"
+          crane digest cribl/scope:latest
+          crane manifest cribl/scope:latest | jq .

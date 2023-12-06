@@ -134,30 +134,7 @@ We want to maintain our current licensing terms found in `LICENSE`.
 We use GitHub Workflows and Actions to automate CI/CD tasks for the project
 when changes are made in the repository.
 
-The [`build`](../.github/workflows/build.yml) workflow builds the code and runs
-the unit tests with every push, on every branch. When the tests pass, some
-additional steps are taken depending on the trigger.
-
-* The `scope` binary and other artifacts of the build are pushed to our
-  [CDN](#cdn) for release tags and pushes to any branch.
-
-* We build [container images](#container-images) and push them to Docker Hub
-  for release tags.
-
-* We run our [integration tests](../test/integration/) for pull requests to
-  the default and release branches. We build and push the container images
-  these tests use up to Docker Hub on pushes to the default branch.
-
-The [`website`](../.github/workflows/website.yml) workflow handles building and
-deploying the [`website/`](../website/) content to <https://staging.appscope.dev/>
-and <https://appscope.dev/>. The staging website is intended to always reflect
-the master branch. The production website is updated only when a "web" tag
-has been applied and pushed. See the build script in that folder for details.
-
-The [`update_latest`](../.github/workflows/update_latest.yml) workflow updates
-the value returned by `https://cdn.cribl.io/dl/scope/latest`, and updates
-the `latest` tag at `https://hub.docker.com/r/cribl/scope/tags`. This workflow
-is run manually, and does not have any automatic triggers.
+See [MAINTAINERS.md](MAINTAINERS.md) for more info.
 
 ## Container Images
 

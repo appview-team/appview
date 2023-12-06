@@ -1,4 +1,4 @@
-[![Build & Test](https://github.com/appscope-team/appscope/actions/workflows/build.yml/badge.svg)](https://github.com/appscope-team/appscope/actions/workflows/build.yml)
+[![Build & Test](https://github.com/appscope-team/appscope/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/appscope-team/appscope/actions/workflows/build-and-test.yml)
 
 # AppScope
 

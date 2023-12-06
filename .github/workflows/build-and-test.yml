@@ -244,16 +244,6 @@ jobs:
           BUILDER: ${{ steps.buildx.outputs.name }}
         run: make build NOBUILD=1 CMD="make FSAN=true test" CI=${CI}
 
-      # Get a list of the integration tests to be run. The output is JSON so it
-      # can be used as a matrix deimension in a later stage. Give it an ID so
-      # we can reference the output.
-      #
-      # The egrep removes non-LTS versions of java. (9, 10, 12, 13, 14, 15, 16)
-      # This is just being done to reduce the workflow time duration.
-      - name: List Integration Tests
-        id: tests
-        run: echo "tests-${{ steps.env.outputs.arch }}=$(make -s -C test/integration tests | egrep -v '.*java(9|1[023456])$' | sort -V | jq -ncR '[inputs]')" >> "${GITHUB_OUTPUT}"
-
       - name: Print size of Binaries
         run: |
           echo "::group::libscope.so"
@@ -263,17 +253,6 @@ jobs:
           stat -c %s bin/linux/${{ steps.env.outputs.arch }}/scope
           echo "::endgroup::"
 
-      # Upload the built binaries for use by later stages. We specify the same
-      # artifact name for this job as well as the other job for ARM. The result
-      # is a single artifact with binaries from both jobs.
-      - name: Upload Binaries
-        uses: actions/upload-artifact@v3
-        with:
-          name: binaries
-          path: |
-            lib/linux/${{ steps.env.outputs.arch }}/libscope.so
-            bin/linux/${{ steps.env.outputs.arch }}/scope
-
       # To prevent the cache from growing uncbounded, we used `--cache-to` a
       # different folder that the `--cache-from`. This moves the results of the
       # build to where the cache action expect to find the results.
@@ -281,9 +260,4 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-    # Make these available to the test stage.
-    outputs:
-      tests-x86_64: ${{ steps.tests.outputs.tests-x86_64 }}
-
 

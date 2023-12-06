@@ -5,11 +5,6 @@
 # Create a new release in Docker hub
 # Update the "latest" tag on Docker hub
 #
-# based on:
-#   https://levelup.gitconnected.com/how-to-manually-trigger-a-github-actions-workflow-4712542f1960
-# instructions for use:
-#   https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow
-#
 name: New Release
 on:
   push:
@@ -32,6 +27,7 @@ jobs:
               echo "tag=${{ steps.version.outputs.version-without-v }}" >> "${GITHUB_OUTPUT}"
           fi
 
+      # Display these for troubleshooting
       - name: Echo Outputs
         run: |
           echo "version=\"${{ steps.version.outputs.version }}\""
@@ -56,6 +52,7 @@ jobs:
               exit 1
           fi
 
+    # Make these available for later stages
     outputs:
       prerelease: ${{ steps.version.outputs.prerelease }}
       tag: ${{ steps.tag.outputs.tag }}

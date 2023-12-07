@@ -1282,12 +1282,12 @@ enforceNotify(const char *path)
     char msg[PATH_MAX];
 
     scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
-    scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
+    scope_snprintf(msg, sizeof(msg), "accessing a prohibited file: %s", path);
     notify(NOTIFY_FILES, msg);
 }
 
 static void
-doEnforceFile(const char *path, fs_info *fs)
+doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
     if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
         !fs || !path) return;
@@ -1310,6 +1310,81 @@ doEnforceFile(const char *path, fs_info *fs)
             break;
         }
     }
+
+    // check for spaces at the end of file names
+    if (path[strlen(path)] == ' ') {
+        char msg[PATH_MAX + 64];
+
+        scope_snprintf(msg, sizeof(msg), "spaces at the end of path name %s representing a potential issue",
+                       path);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    // check for a double file extension
+    int num_entries = 0;
+    char *dext = (char *)path;
+
+    while (scope_strstr(dext, ".") != NULL) {
+            num_entries++;
+            dext++;
+    }
+
+    if (num_entries >= 2) {
+        char msg[PATH_MAX + 64];
+
+        scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
+                       path);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    // check for several file permission settings that could represent potential issues
+    // check for files that have the setuid or setgid bits set
+    if (sbuf && ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
+        char msg[PATH_MAX + 64];
+
+        scope_snprintf(msg, sizeof(msg),
+                       "path name %s contains setuid or setgid bits set representing a potential issue",
+                       path);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    // check for modifications, writes at run time, to executable files
+    if (access(path, X_OK) == 0) {
+        // The next write operation to this file will result in a notification
+        // TODO: notify now? else, probably want to update the message?
+        fs->enforceWR = TRUE;
+    }
+
+#if 0
+    // bread crumbs
+    // files in system dirs that have g/a write perms
+    if ((sbuf.st_mode & S_IWGRP) || (sbuf.st_mode & S_IWOTH)) {
+
+    // file type
+    if (sbuf.st_mode) {
+        switch (sb.st_mode & S_IFMT) {
+           case S_IFBLK:  printf("block device\n");            break;
+           case S_IFCHR:  printf("character device\n");        break;
+           case S_IFDIR:  printf("directory\n");               break;
+           case S_IFIFO:  printf("FIFO/pipe\n");               break;
+           case S_IFLNK:  printf("symlink\n");                 break;
+           case S_IFREG:  printf("regular file\n");            break;
+           case S_IFSOCK: printf("socket\n");                  break;
+           default:       printf("unknown?\n");                break;
+           }
+    }
+
+    // user ID
+    // files that are owned by unknown users; uid and /etc/passwd??
+    if (sbuf.st_uid) {
+
+    }
+
+    // group ID
+    if (sbuf.st_gid) {
+
+    }
+#endif
 }
 
 static void
@@ -1335,10 +1410,10 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
     // TODO: add reverse DNS to get the hostname
     char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {
-        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
         notify(NOTIFY_FILES, msg);
     } else {
-        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated", fsrd->path);
+        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated", fsrd->path);
         notify(NOTIFY_FILES, msg);
     }
 }
@@ -2526,9 +2601,8 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         g_fsinfo[fd].uid = getTime();
         scope_strncpy(g_fsinfo[fd].path, path, sizeof(g_fsinfo[fd].path));
 
+        struct stat sbuf;
         if (ctlEvtSourceEnabled(g_ctl, CFG_SRC_FS) && ctlEnhanceFs(g_ctl)) {
-            struct stat sbuf;
-
             if (scope_stat(g_fsinfo[fd].path, &sbuf) == 0) {
                 g_fsinfo[fd].fuid = sbuf.st_uid;
                 g_fsinfo[fd].fgid = sbuf.st_gid;
@@ -2537,7 +2611,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
-        doEnforceFile(path, &g_fsinfo[fd]);
+        doDetectFile(path, &g_fsinfo[fd], &sbuf);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }

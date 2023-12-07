@@ -186,8 +186,8 @@ sendSlackMessage(SSL *ssl, const char *msg) {
     }
     
     scope_snprintf(payload, plen,
-                   "token=%s&channel=%s&text=Process %s (pid %d) encountered %s",
-                   g_slackApiToken, g_slackChannel, pname, getpid(), msg);
+                   "token=%s&channel=%s&text=Process %s (pid %d) on host %s encountered %s",
+                   g_slackApiToken, g_slackChannel, pname, getpid(), g_proc.hostname, msg);
 
     char request[plen];
     scope_snprintf(request, sizeof(request),

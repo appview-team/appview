@@ -133,6 +133,14 @@ getNotifyVars(void)
 
     setList(enval, g_notify_def.file_write, MAX_FILE_ENTRIES);
 
+    // Define a list of system dirs
+    if ((enval = getenv(NOTIFY_IQ_SYS_DIRS))) {
+    } else {
+        enval = DEFAULT_SYS_DIRS;
+    }
+
+    setList(enval, g_notify_def.sys_dirs, MAX_FILE_ENTRIES);
+
     // Same for IP white and black lists
     if ((enval = getenv(NOTIFY_IQ_IP_WHITE))) {
     } else {

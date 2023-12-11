@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <pwd.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -1312,19 +1313,21 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for spaces at the end of file names
-    if (path[strlen(path)] == ' ') {
-        char msg[PATH_MAX + 64];
+    for (i = 0; i < scope_strlen(path); i++) {
+        if (scope_isspace(path[i])) {
+            char msg[PATH_MAX + 64];
 
-        scope_snprintf(msg, sizeof(msg), "spaces at the end of path name %s representing a potential issue",
-                       path);
-        notify(NOTIFY_FILES, msg);
+            scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
+                           path);
+            notify(NOTIFY_FILES, msg);
+        }
     }
 
     // check for a double file extension
     int num_entries = 0;
     char *dext = (char *)path;
 
-    while (scope_strstr(dext, ".") != NULL) {
+    while ((dext = scope_strstr(dext, ".")) != NULL) {
             num_entries++;
             dext++;
     }
@@ -1339,7 +1342,11 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set
-    if (sbuf && ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
+    if (sbuf &&
+        (scope_strstr(path, "stdout") == NULL) &&
+        (scope_strstr(path, "stdin") == NULL) &&
+        (scope_strstr(path, "stderr") == NULL) &&
+        ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
         char msg[PATH_MAX + 64];
 
         scope_snprintf(msg, sizeof(msg),
@@ -1355,36 +1362,65 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         fs->enforceWR = TRUE;
     }
 
-#if 0
-    // bread crumbs
     // files in system dirs that have g/a write perms
-    if ((sbuf.st_mode & S_IWGRP) || (sbuf.st_mode & S_IWOTH)) {
+    if ((sbuf->st_mode & S_IWGRP) || (sbuf->st_mode & S_IWOTH)) {
+        // Is this path a system dir?
+        for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
+            if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
+                char msg[PATH_MAX + 64];
 
-    // file type
-    if (sbuf.st_mode) {
-        switch (sb.st_mode & S_IFMT) {
-           case S_IFBLK:  printf("block device\n");            break;
-           case S_IFCHR:  printf("character device\n");        break;
-           case S_IFDIR:  printf("directory\n");               break;
-           case S_IFIFO:  printf("FIFO/pipe\n");               break;
-           case S_IFLNK:  printf("symlink\n");                 break;
-           case S_IFREG:  printf("regular file\n");            break;
-           case S_IFSOCK: printf("socket\n");                  break;
-           default:       printf("unknown?\n");                break;
-           }
+                scope_snprintf(msg, sizeof(msg),
+                               "a system dir %s with a g/a write permission setting which represents a potential issue",
+                               path);
+                notify(NOTIFY_FILES, msg);
+                break;
+            }
+        }
     }
 
-    // user ID
-    // files that are owned by unknown users; uid and /etc/passwd??
-    if (sbuf.st_uid) {
+    // files that are owned by unknown users; uid/gid and the list of known users
+    if ((scope_strstr(path, "stdout") == NULL) &&
+        (scope_strstr(path, "stdin") == NULL) &&
+        (scope_strstr(path, "stderr") == NULL)) {
 
+        struct passwd *pw;
+        bool known_uid = FALSE, known_gid = FALSE;
+
+        // Open the password database
+        setpwent();
+
+        // Iterate through known users
+        while ((pw = getpwent()) != NULL) {
+            if (sbuf->st_uid == pw->pw_uid) {
+                known_uid = TRUE;
+            }
+
+            if (sbuf->st_gid == pw->pw_gid) {
+                known_gid = TRUE;
+            }
+        }
+
+        // Close the password database
+        endpwent();
+
+        if (known_uid == FALSE) {
+            char msg[PATH_MAX + 64];
+
+            scope_snprintf(msg, sizeof(msg),
+                           "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
+                           path, sbuf->st_uid);
+            notify(NOTIFY_FILES, msg);
+        }
+
+        if (known_gid == FALSE) {
+            char msg[PATH_MAX + 64];
+
+            scope_snprintf(msg, sizeof(msg),
+                           "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
+                           path, sbuf->st_gid);
+            notify(NOTIFY_FILES, msg);
+        }
     }
-
-    // group ID
-    if (sbuf.st_gid) {
-
-    }
-#endif
 }
 
 static void

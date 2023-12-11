@@ -17,6 +17,7 @@
 #define NOTIFY_IQ_DNS "SCOPE_NOTIFY_DNS"
 #define NOTIFY_IQ_FILE_READ "SCOPE_NOTIFY_FILE_READ"
 #define NOTIFY_IQ_FILE_WRITE "SCOPE_NOTIFY_FILE_WRITE"
+#define NOTIFY_IQ_SYS_DIRS "SCOPE_NOTIFY_SYS_DIRS"
 #define NOTIFY_IQ_IP_WHITE "SCOPE_NOTIFY_IP_WHITE"
 #define NOTIFY_IQ_IP_BLACK "SCOPE_NOTIFY_IP_BLACK"
 #define SLACK_CHANNEL "SCOPE_SLACKBOT_CHANNEL"
@@ -41,6 +42,7 @@
 #define DEFAULT_EXFIL TRUE
 #define DEFAULT_FILE_WRITE "etc", "/lib"
 #define DEFAULT_FILE_READ "/.ssh"
+#define DEFAULT_SYS_DIRS "/etc", "/lib", "/usr/lib", "/var/lib", "/lib/run", "/sbin", "/usr/bin", "/bin"
 #define DEFAULT_IP_WHITE NULL
 #define DEFAULT_IP_BLACK NULL
 
@@ -66,6 +68,7 @@ typedef struct {
     bool dns;
     char *file_read[MAX_FILE_ENTRIES];
     char *file_write[MAX_FILE_ENTRIES];
+    char *sys_dirs[MAX_FILE_ENTRIES];
     char *ip_white[MAX_IP_ENTRIES];
     char *ip_black[MAX_IP_ENTRIES];
 } notify_info_t;

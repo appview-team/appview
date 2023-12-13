@@ -40,7 +40,7 @@
 #define DEFAULT_LIBS TRUE
 #define DEFAULT_DNS TRUE
 #define DEFAULT_EXFIL TRUE
-#define DEFAULT_FILE_WRITE "etc", "/lib"
+#define DEFAULT_FILE_WRITE "etc", "/lib", "/etc/ssh/sshd"
 #define DEFAULT_FILE_READ "/.ssh"
 #define DEFAULT_SYS_DIRS "/etc", "/lib", "/usr/lib", "/var/lib", "/lib/run", "/sbin", "/usr/bin", "/bin"
 #define DEFAULT_IP_WHITE NULL

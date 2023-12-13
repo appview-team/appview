@@ -1278,16 +1278,6 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 }
 
 static void
-enforceNotify(const char *path)
-{
-    char msg[PATH_MAX];
-
-    scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
-    scope_snprintf(msg, sizeof(msg), "accessing a prohibited file: %s", path);
-    notify(NOTIFY_FILES, msg);
-}
-
-static void
 doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
     if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
@@ -1315,7 +1305,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // check for spaces at the end of file names
     for (i = 0; i < scope_strlen(path); i++) {
         if (scope_isspace(path[i])) {
-            char msg[PATH_MAX + 64];
+            char msg[PATH_MAX + 128];
 
             scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
                            path);
@@ -1333,7 +1323,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     if (num_entries >= 2) {
-        char msg[PATH_MAX + 64];
+        char msg[PATH_MAX + 128];
 
         scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
                        path);
@@ -1347,7 +1337,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         (scope_strstr(path, "stdin") == NULL) &&
         (scope_strstr(path, "stderr") == NULL) &&
         ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
-        char msg[PATH_MAX + 64];
+        char msg[PATH_MAX + 128];
 
         scope_snprintf(msg, sizeof(msg),
                        "path name %s contains setuid or setgid bits set representing a potential issue",
@@ -1367,7 +1357,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
             if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
-                char msg[PATH_MAX + 64];
+                char msg[PATH_MAX + 128];
 
                 scope_snprintf(msg, sizeof(msg),
                                "a system dir %s with a g/a write permission setting which represents a potential issue",
@@ -1404,7 +1394,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         endpwent();
 
         if (known_uid == FALSE) {
-            char msg[PATH_MAX + 64];
+            char msg[PATH_MAX + 128];
 
             scope_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
@@ -1413,7 +1403,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         }
 
         if (known_gid == FALSE) {
-            char msg[PATH_MAX + 64];
+            char msg[PATH_MAX + 128];
 
             scope_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
@@ -2347,7 +2337,12 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
             }
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
-            if (fs->enforceRD) enforceNotify(fs->path);
+            if (fs->enforceRD) {
+                char msg[PATH_MAX + 128];
+
+                scope_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                notify(NOTIFY_FILES, msg);
+            }
 
             // Don't count data from stdin
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
@@ -2383,7 +2378,13 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
             }
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
-            if (fs->enforceWR) enforceNotify(fs->path);
+            if (fs->enforceWR) {
+                char msg[PATH_MAX + 128];
+
+                scope_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                notify(NOTIFY_FILES, msg);
+
+            }
             // Don't count data from stdout, stderr
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);

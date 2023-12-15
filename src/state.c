@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <pwd.h>
 
 #include "atomic.h"
 #include "com.h"
@@ -37,23 +38,6 @@
 
 #define NUM_ATTEMPTS 100
 #define MAX_CONVERT (size_t)256
-
-// Enforce and privacy vars
-// TODO: remove the defaults when we add these to config
-static bool g_enforce_enable = DEFAULT_ENFORCE_ENABLE;
-static bool g_enforce_files = DEFAULT_ENFORCE_FILES_ENABLE;
-static bool g_exfil_enable = DEFAULT_EXFIL_ENABLE;
-
-// path sub-strings that should not be modified
-static const char *g_enforce_wr[] = {
-    DEFAULT_ENFORCE_FILE_WRITE
-};
-
-// Enforce and privacy lists
-// path sub-strings that should not be accessed
-static const char *g_enforce_rd[] = {
-    DEFAULT_ENFORCE_FILE_READ
-};
 
 extern rtconfig g_cfg;
 
@@ -1294,33 +1278,16 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 }
 
 static void
-enforceNotify(const char *path)
+doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
-    char msg[PATH_MAX];
-
-    // TODO: add notify config and detail
-    // process name is included in the CLI log
-    scopeLog(CFG_LOG_INFO, "Process %d is accessing a prohibited file:%s", getpid(), path);
-    scope_snprintf(msg, PATH_MAX, "accessing a prohibited file: %s", path);
-    notify(msg);
-
-    // TPDO: Should we exit? Needs to be configurable
-    // TODO: notify only for now, config needed.
-    //exit(EXIT_FAILURE);
-}
-
-static void
-doEnforceFile(const char *path, fs_info *fs)
-{
-    if ((g_enforce_enable == FALSE) || (g_enforce_files == FALSE) ||
+    if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
         !fs || !path) return;
 
-    int i, num_write, num_read;
+    int i;
 
     // Should this path be enforced for write access?
-    num_write = sizeof(g_enforce_wr) / sizeof(g_enforce_wr[0]);
-    for (i = 0; i < num_write; i++) {
-        if (scope_strstr(path, g_enforce_wr[i])) {
+    for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
+        if (scope_strstr(path, g_notify_def.file_write[i])) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1328,11 +1295,120 @@ doEnforceFile(const char *path, fs_info *fs)
 
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
-    num_read = sizeof(g_enforce_rd) / sizeof(g_enforce_rd[0]);
-    for (i = 0; i < num_read; i++) {
-        if (scope_strstr(path, g_enforce_rd[i])) {
+    for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
+        if (scope_strstr(path, g_notify_def.file_read[i])) {
             fs->enforceRD = TRUE;
             break;
+        }
+    }
+
+    // check for spaces at the end of file names
+    for (i = 0; i < scope_strlen(path); i++) {
+        if (scope_isspace(path[i])) {
+            char msg[PATH_MAX + 128];
+
+            scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
+                           path);
+            notify(NOTIFY_FILES, msg);
+        }
+    }
+
+    // check for a double file extension
+    int num_entries = 0;
+    char *dext = (char *)path;
+
+    while ((dext = scope_strstr(dext, ".")) != NULL) {
+            num_entries++;
+            dext++;
+    }
+
+    if (num_entries >= 2) {
+        char msg[PATH_MAX + 128];
+
+        scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
+                       path);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    // check for several file permission settings that could represent potential issues
+    // check for files that have the setuid or setgid bits set
+    if (sbuf &&
+        (scope_strstr(path, "stdout") == NULL) &&
+        (scope_strstr(path, "stdin") == NULL) &&
+        (scope_strstr(path, "stderr") == NULL) &&
+        ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
+        char msg[PATH_MAX + 128];
+
+        scope_snprintf(msg, sizeof(msg),
+                       "path name %s contains setuid or setgid bits set representing a potential issue",
+                       path);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    // check for modifications, writes at run time, to executable files
+    if (access(path, X_OK) == 0) {
+        // The next write operation to this file will result in a notification
+        // TODO: notify now? else, probably want to update the message?
+        fs->enforceWR = TRUE;
+    }
+
+    // files in system dirs that have g/a write perms
+    if ((sbuf->st_mode & S_IWGRP) || (sbuf->st_mode & S_IWOTH)) {
+        // Is this path a system dir?
+        for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
+            if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
+                char msg[PATH_MAX + 128];
+
+                scope_snprintf(msg, sizeof(msg),
+                               "a system dir %s with a g/a write permission setting which represents a potential issue",
+                               path);
+                notify(NOTIFY_FILES, msg);
+                break;
+            }
+        }
+    }
+
+    // files that are owned by unknown users; uid/gid and the list of known users
+    if ((scope_strstr(path, "stdout") == NULL) &&
+        (scope_strstr(path, "stdin") == NULL) &&
+        (scope_strstr(path, "stderr") == NULL)) {
+
+        struct passwd *pw;
+        bool known_uid = FALSE, known_gid = FALSE;
+
+        // Open the password database
+        setpwent();
+
+        // Iterate through known users
+        while ((pw = getpwent()) != NULL) {
+            if (sbuf->st_uid == pw->pw_uid) {
+                known_uid = TRUE;
+            }
+
+            if (sbuf->st_gid == pw->pw_gid) {
+                known_gid = TRUE;
+            }
+        }
+
+        // Close the password database
+        endpwent();
+
+        if (known_uid == FALSE) {
+            char msg[PATH_MAX + 128];
+
+            scope_snprintf(msg, sizeof(msg),
+                           "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
+                           path, sbuf->st_uid);
+            notify(NOTIFY_FILES, msg);
+        }
+
+        if (known_gid == FALSE) {
+            char msg[PATH_MAX + 128];
+
+            scope_snprintf(msg, sizeof(msg),
+                           "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
+                           path, sbuf->st_gid);
+            notify(NOTIFY_FILES, msg);
         }
     }
 }
@@ -1340,7 +1416,7 @@ doEnforceFile(const char *path, fs_info *fs)
 static void
 doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
 {
-    if ((g_exfil_enable == FALSE) || !fsrd || !fsrd->path[0]) return;
+    if ((g_notify_def.exfil == FALSE) || !fsrd || !fsrd->path[0]) return;
 
     char rip[INET6_ADDRSTRLEN];
     rip[0] = '\0';
@@ -1357,15 +1433,14 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
         }
     }
 
-    // TODO: append to a file? post to a CLI server? For now, notify
     // TODO: add reverse DNS to get the hostname
     char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {
-        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated to %s", fsrd->path, rip);
-        notify(msg);
+        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        notify(NOTIFY_FILES, msg);
     } else {
-        scope_snprintf(msg, PATH_MAX + 255, "The file %s has been exfiltrated", fsrd->path);
-        notify(msg);
+        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated", fsrd->path);
+        notify(NOTIFY_FILES, msg);
     }
 }
 
@@ -1908,17 +1983,33 @@ getDNSName(int sd, void *pkt, int pktlen)
         // handle one label
 
         int label_len = (int)*dname++;
-        if (label_len > 63) return -1; // labels must be 63 chars or less
-        if (&dname[label_len] >= pkt_end) return -1; // honor packet end
+        if (label_len > 63) {
+            notify(NOTIFY_DNS, "DNS request with an illegal label length");
+            return -1; // labels must be 63 chars or less
+        }
+
+        if (&dname[label_len] >= pkt_end) {
+            notify(NOTIFY_DNS, "DNS request with a label length that exceeds the packet end");
+            return -1; // honor packet end
+        }
+
         // Ensure we don't overrun the size of dnsName
-        if ((dnsNameBytesUsed + label_len) >= sizeof(dnsName)) return -1;
+        if ((dnsNameBytesUsed + label_len) >= sizeof(dnsName)) {
+            notify(NOTIFY_DNS, "DNS request with a name that is greater than the size of a label");
+            return -1;
+        }
 
         for ( ; (label_len > 0); label_len--) {
-            if (!isLegalLabelChar(*dname)) return -1;
+            if (!isLegalLabelChar(*dname)) {
+                notify(NOTIFY_DNS, "DNS request with an illegal label character");
+                return -1;
+            }
+
             dnsName[dnsNameBytesUsed++] = *dname++;
         }
         dnsName[dnsNameBytesUsed++] = '.';
     }
+
 
     dnsName[dnsNameBytesUsed-1] = '\0'; // overwrite the last period
 
@@ -1957,6 +2048,7 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
 
             if (scope_ns_parserr(&handle, ns_s_an, i, &rr) == -1) {
                 scopeLogError("ERROR:parse rr");
+                notify(NOTIFY_DNS, "illegal DNS response can't be parsed");
                 return FALSE;
             }
 
@@ -1974,16 +2066,19 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
             // type A is IPv4, AAA is IPv6
             if (ns_rr_type(rr) == ns_t_a) {
                 if (!scope_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
-                               ipaddr, sizeof(ipaddr))) {
+                                     ipaddr, sizeof(ipaddr))) {
+                    notify(NOTIFY_DNS, "DNS response with an illegal IPv6 address");
                     continue;
                 }
             } else if (ns_rr_type(rr) == ns_t_aaaa) {
                 if (!scope_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
-                               ipaddr, sizeof(ipaddr))) {
+                                     ipaddr, sizeof(ipaddr))) {
+                    notify(NOTIFY_DNS, "DNS response with an illegal IPv4 address");
                     continue;
                 }
             } else {
                 DBG("DNS response received without an IP address");
+                notify(NOTIFY_DNS, "DNS response without an IP address");
                 continue;
             }
 
@@ -2242,7 +2337,12 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
             }
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
-            if (fs->enforceRD) enforceNotify(fs->path);
+            if (fs->enforceRD) {
+                char msg[PATH_MAX + 128];
+
+                scope_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                notify(NOTIFY_FILES, msg);
+            }
 
             // Don't count data from stdin
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
@@ -2278,7 +2378,13 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
             }
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
-            if (fs->enforceWR) enforceNotify(fs->path);
+            if (fs->enforceWR) {
+                char msg[PATH_MAX + 128];
+
+                scope_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                notify(NOTIFY_FILES, msg);
+
+            }
             // Don't count data from stdout, stderr
             if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
@@ -2532,9 +2638,8 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         g_fsinfo[fd].uid = getTime();
         scope_strncpy(g_fsinfo[fd].path, path, sizeof(g_fsinfo[fd].path));
 
+        struct stat sbuf;
         if (ctlEvtSourceEnabled(g_ctl, CFG_SRC_FS) && ctlEnhanceFs(g_ctl)) {
-            struct stat sbuf;
-
             if (scope_stat(g_fsinfo[fd].path, &sbuf) == 0) {
                 g_fsinfo[fd].fuid = sbuf.st_uid;
                 g_fsinfo[fd].fgid = sbuf.st_gid;
@@ -2543,7 +2648,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
-        doEnforceFile(path, &g_fsinfo[fd]);
+        doDetectFile(path, &g_fsinfo[fd], &sbuf);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }

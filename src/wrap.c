@@ -41,6 +41,7 @@
 #include "snapshot.h"
 #include "scopestdlib.h"
 #include "../contrib/libmusl/musl.h"
+#include "notify.h"
 
 #define SSL_FUNC_READ "SSL_read"
 #define SSL_FUNC_WRITE "SSL_write"
@@ -67,6 +68,7 @@ static void doConfig(config_t *);
 static void threadNow(int, siginfo_t *, void *);
 static void uv__read_hook(void *);
 static got_list_t inject_hook_list[];
+static void inspectGotTables(void);
 
 #ifdef __linux__
 extern unsigned long scope_fs;
@@ -1084,6 +1086,9 @@ handleExit(void)
     if (g_exitdone == TRUE) return;
     g_exitdone = TRUE;
 
+    // detect GOT mods
+    inspectGotTables();
+
     if (!atomicCasU64(&reentrancy_guard, 0ULL, 1ULL)) {
 
         // Regardless of whether TLS is being used, we need an upper
@@ -1949,6 +1954,128 @@ getSettings(bool attachedFlag)
     return settings;
 }
 
+static char *
+fileNameFromAddr(uint64_t addr)
+{
+    FILE *fd = NULL;
+    char line[850];
+    uint64_t addr_begin, addr_end;
+    char str[256];
+    char *returnval = NULL;
+
+    if ((fd = scope_fopen("/proc/self/maps", "r")) == NULL) {
+        scopeLogDebug("fopen(/proc/self/maps) failed");
+        return NULL;
+    }
+
+    while(scope_fgets(line, sizeof(line), fd) != NULL) {
+// 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libscope.so
+        scope_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
+        if ((addr >= addr_begin) && (addr < addr_end)) {
+            break;
+        }
+        addr_begin = 0;
+        addr_end = 0;
+    }
+
+    // Found it!
+    if (addr_begin && addr_end) {
+        returnval = scope_strdup(str);
+    }
+
+    scope_fclose(fd);
+    return returnval;
+}
+
+static int
+inspectLib(struct dl_phdr_info *info, size_t size, void *data)
+{
+    void *handle = g_fn.dlopen(info->dlpi_name, RTLD_LAZY);
+    if (!handle) return 0;
+
+    struct link_map *lm;
+    if (dlinfo(handle, RTLD_DI_LINKMAP, &lm) == -1) return 0;
+
+    Elf64_Sym *sym = NULL;
+    Elf64_Rela *rel = NULL;
+    char *str = NULL;
+    int rsz = 0;
+    if (getElfEntries(lm, &rel, &sym, &str, &rsz) == -1) return 0;
+    rsz /= sizeof(Elf64_Rela);
+
+    for (int i = 0; i < rsz; i++) {
+        // get info that is derived from the link map
+        char *fname = sym[ELF64_R_SYM(rel[i].r_info)].st_name + str;
+        uint64_t got_addr = rel[i].r_offset + lm->l_addr;
+        uint64_t got_value = *((uint64_t *)got_addr);
+        if (!fname || !got_value) continue;
+
+        /*
+         * Ignore got values that are resolved within it's own library.
+         * These seem to be one of these two cases that aren't interesting:
+         *   undefined symbols that haven't been called yet (resolve to plt section)
+         *   locally defined external symbols (resolve to text section)
+         */
+        char *file_from_maps_file = fileNameFromAddr(got_value);
+        char *file_from_link_map = scope_realpath(info->dlpi_name, NULL);
+        int found_locally = file_from_link_map && !scope_strcmp(file_from_maps_file, file_from_link_map);
+        if (found_locally) goto next;
+
+        // get info that comes from libdl
+        Dl_info dl_info = {0};
+        Elf64_Sym *symbol;
+        int dladdr_successful = dladdr1((const void *)got_value, &dl_info, (void **)&symbol, RTLD_DL_SYMENT) != 0;
+        if (!dladdr_successful) goto next;
+
+        /*
+         * If the function name and address from the link map matches
+         * the function name and address from dladdr1 info, continue on.
+         */
+        if (dl_info.dli_sname && !scope_strcmp(fname, dl_info.dli_sname) &&
+            ((void*)got_value == dl_info.dli_saddr)) goto next;
+
+        /*
+         * Ignore stuff from libc.  Reasons include:
+         *   name missmatches that aren't meaningful free->cfree, calloc->__libc_calloc, etc.
+         *   libdl doesn't know about libc's vectorized functions (sse2, sse42, avx, avx2)
+         *   examples include: memcmp memmove strlen strncasecmp strncmp
+         *
+         * From vdso.
+         *   name missmatches that aren't meaningful gettimeofday->__vdso_gettimeofday
+         *   libc link map has blank fnames for __vdso_time, __vdso_gettimeofday
+         *
+         *
+         * From libpthread.
+         *   name missmatches that aren't meaningful __pthread_barrier_init->pthread_barrier_init
+         *
+         * From libscope.
+         *   It's us and we modifiy the GOT.
+         */
+        if (scope_strstr(file_from_maps_file, "/libc-") ||
+            scope_strstr(file_from_maps_file, "/libc.") ||
+            scope_strstr(file_from_maps_file, "libscope") ||
+            scope_strstr(file_from_maps_file, "/libpthread") ||
+            !scope_strcmp(file_from_maps_file, "[vdso]")) goto next;
+
+        char msg[128];
+        scope_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
+        notify(NOTIFY_LIBS, msg);
+
+next:
+        scope_free(file_from_maps_file);
+        scope_free(file_from_link_map);
+    }
+
+    dlclose(handle);
+    return 0;
+}
+
+static void
+inspectGotTables(void)
+{
+    dl_iterate_phdr(inspectLib, NULL);
+}
+
 /*
 * This is a helper function designed to facilitate the debugging process
 * of the constructor. To utilize this function, place a call to dbgConstructorFn()
@@ -2095,6 +2222,16 @@ init(void)
     }
 
     osInitJavaAgent();
+
+    // Confure the detect and notify features
+    notify(NOTIFY_INIT, "");
+
+    /*
+     * Detect GOT mods.
+     * Called from the constructor, this applies more to attach behavior than preload.
+     * Probably.
+     */
+    inspectGotTables();
 
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
     if (full_path) scope_free(full_path);
@@ -3144,6 +3281,10 @@ prctl(int option, ...)
     LOAD_FUNC_ARGS_VALIST(fArgs, option);
 
     if (option == PR_SET_SECCOMP) {
+        char msg[128];
+        scope_snprintf(msg, sizeof(msg), "modifying security policy using SECCOMP");
+        notify(NOTIFY_FUNC, msg);
+
         scopeLog(CFG_LOG_DEBUG, "prctl: PR_SET_SECCOMP - opt out from prctl.");
         return 0;
     }
@@ -4307,19 +4448,24 @@ setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
 {
     WRAP_CHECK(setrlimit, -1);
 
+    char msg[128];
+    scope_snprintf(msg, sizeof(msg), "setting resource limit %d to %d cur and %d max",
+                   resource, rlim->rlim_cur, rlim->rlim_max);
+    notify(NOTIFY_FUNC, msg);
+
     if ((rlim->rlim_cur == 0) || (rlim->rlim_max == 0)) {
         if (resource == RLIMIT_FSIZE) {
             /*
-            * Setting value to 0 prevents file creation, we want to prevent
-            * it regarding the fact that destination path can point to file.
-            */
+             * Setting value to 0 prevents file creation, we want to prevent
+             * it regarding the fact that destination path can point to file.
+             */
             scopeLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_FSIZE with limit=0 prevents file creation - opt out from setrlimit.");
             return 0;
         } else if (resource == RLIMIT_NPROC) {
             /*
-            * Setting value to 0 prevents process/thread creation for specific user.
-            * We want to prevent it regarding the fact that we want to create out periodic thread.
-            */
+             * Setting value to 0 prevents process/thread creation for specific user.
+             * We want to prevent it regarding the fact that we want to create out periodic thread.
+             */
             scopeLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_NPROC with limit=0 prevents process/thread creation - opt out from setrlimit.");
             return 0;
         }

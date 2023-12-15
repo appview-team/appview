@@ -28,6 +28,7 @@
 static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
+notify_info_t g_notify_def = {0};
 
 static void
 initOpenSSL(void) {
@@ -36,10 +37,132 @@ initOpenSSL(void) {
     OpenSSL_add_all_algorithms();
 }
 
+static int
+setVar(const char *var)
+{
+    bool rv;
+    char *enval;
+
+    // Get env vars that enable notify behavior
+    // If the relevant env var is not defined, use the default
+    if ((enval = getenv(var)) == NULL) {
+        rv = -1;
+    } else {
+        if (scope_strstr(enval, "TRUE") || scope_strstr(enval, "true")) {
+            rv = (int)TRUE;
+        } else {
+            rv = (int)FALSE;
+        }
+    }
+
+    return rv;
+}
+
+static bool
+setList(char *list, char *dest[], size_t max_entries){
+    int num_entries = 0;
+    char *token = NULL;
+
+    token = scope_strtok(list, ",");
+    while ((token != NULL) && (num_entries < max_entries)) {
+        if ((dest[num_entries] = scope_strdup(token)) == NULL) {
+            scopeLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
+            return FALSE;
+        }
+        num_entries++;
+        token = scope_strtok(NULL, ",");
+    }
+
+    return TRUE;
+}
+
+static bool
+getNotifyVars(void)
+{
+    char *enval;
+
+    if ((g_notify_def.enable = setVar(NOTIFY_IQ_VAR)) == -1) {
+        g_notify_def.enable = DEFAULT_ENABLE;
+    }
+
+    if ((g_notify_def.exit = setVar(NOTIFY_IQ_EXIT)) == -1) {
+        g_notify_def.exit = DEFAULT_EXIT;
+    }
+
+    if ((g_notify_def.send = setVar(NOTIFY_IQ_SEND)) == -1) {
+        g_notify_def.send = DEFAULT_SEND;
+    }
+
+    if ((g_notify_def.libs = setVar(NOTIFY_IQ_LIBS)) == -1) {
+        g_notify_def.libs = DEFAULT_LIBS;
+    }
+
+    if ((g_notify_def.files = setVar(NOTIFY_IQ_FILES)) == -1) {
+        g_notify_def.files = DEFAULT_FILES;
+    }
+
+    if ((g_notify_def.functions = setVar(NOTIFY_IQ_FUNCS)) == -1) {
+        g_notify_def.functions = DEFAULT_FUNCS;
+    }
+
+    if ((g_notify_def.network = setVar(NOTIFY_IQ_NET)) == -1) {
+        g_notify_def.network = DEFAULT_NET;
+    }
+
+    if ((g_notify_def.exfil = setVar(NOTIFY_IQ_EXFIL)) == -1) {
+        g_notify_def.exfil = DEFAULT_EXFIL;
+    }
+
+    if ((g_notify_def.dns = setVar(NOTIFY_IQ_DNS)) == -1) {
+        g_notify_def.dns = DEFAULT_DNS;
+    }
+
+    // Get file read and write lists
+    // Tokenize the environment variable value, assumes ',' is the delimeter
+    if ((enval = getenv(NOTIFY_IQ_FILE_READ))) {
+    } else {
+        enval = DEFAULT_FILE_READ;
+    }
+
+    setList(enval, g_notify_def.file_read, MAX_FILE_ENTRIES);
+
+    if ((enval = getenv(NOTIFY_IQ_FILE_WRITE))) {
+    } else {
+        enval = DEFAULT_FILE_WRITE;
+    }
+
+    setList(enval, g_notify_def.file_write, MAX_FILE_ENTRIES);
+
+    // Define a list of system dirs
+    if ((enval = getenv(NOTIFY_IQ_SYS_DIRS))) {
+    } else {
+        enval = DEFAULT_SYS_DIRS;
+    }
+
+    setList(enval, g_notify_def.sys_dirs, MAX_FILE_ENTRIES);
+
+    // Same for IP white and black lists
+    if ((enval = getenv(NOTIFY_IQ_IP_WHITE))) {
+    } else {
+        enval = DEFAULT_IP_WHITE;
+    }
+
+    setList(enval, g_notify_def.ip_white, MAX_IP_ENTRIES);
+
+    if ((enval = getenv(NOTIFY_IQ_IP_BLACK))) {
+    } else {
+        enval = DEFAULT_IP_BLACK;
+    }
+
+    setList(enval, g_notify_def.ip_black, MAX_IP_ENTRIES);
+
+    return TRUE;
+}
+
 static bool
 getSlackVars(void)
 {
-    //Get the Slack token from an env var
+    // Get the Slack token from an env var
     g_slackApiToken = getenv(SLACK_TOKEN_VAR);
     if (g_slackApiToken == NULL) {
         scopeLog(CFG_LOG_INFO, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
@@ -71,8 +194,8 @@ sendSlackMessage(SSL *ssl, const char *msg) {
     }
     
     scope_snprintf(payload, plen,
-                   "token=%s&channel=%s&text=Process %s (pid %d) encountered %s",
-                   g_slackApiToken, g_slackChannel, pname, getpid(), msg);
+                   "token=%s&channel=%s&text=Process %s (pid %d) on host %s encountered %s",
+                   g_slackApiToken, g_slackChannel, pname, getpid(), g_proc.hostname, msg);
 
     char request[plen];
     scope_snprintf(request, sizeof(request),
@@ -125,12 +248,6 @@ sendSlackMessage(SSL *ssl, const char *msg) {
  */
 static bool
 slackNotify(const char *msg) {
-    if (g_inited == FALSE) {
-        g_inited = TRUE;
-        initOpenSSL();
-        if (getSlackVars() == FALSE) return FALSE;
-    }
-
     SSL *ssl;
     const SSL_METHOD *method = TLS_client_method();
 
@@ -196,12 +313,65 @@ slackNotify(const char *msg) {
 
 /*
  * notify entry point.
- * Should support multiple types of notification as definedin config.
+ * Should support multiple types of notification as defined in config.
  *
  * To start, we support slack notification over HTTPS.
  */
 bool
-notify(const char *msg) {
-    // TODO: add config and determine which notification we are using
-    return slackNotify(msg);
+notify(notify_type_t dtype, const char *msg)
+{
+    if (g_inited == FALSE) {
+        // TODO: add config and determine which notification we are using
+        initOpenSSL();
+        // Should we return here?
+        if (getSlackVars() == FALSE) return FALSE;
+        if (getNotifyVars() == FALSE) return FALSE;
+        g_inited = TRUE;
+    }
+
+    bool doit, rv = FALSE;
+
+    if (g_notify_def.enable == FALSE) return FALSE;
+
+    if (g_notify_def.send == TRUE) {
+        switch (dtype) {
+        case NOTIFY_INIT:
+            return TRUE;
+
+        case NOTIFY_LIBS:
+            doit = g_notify_def.libs;
+            break;
+
+         case NOTIFY_FILES:
+            doit = g_notify_def.files;
+            break;
+
+        case NOTIFY_FUNC:
+            doit = g_notify_def.functions;
+            break;
+
+        case NOTIFY_NET:
+            doit = g_notify_def.network;
+            break;
+
+        case NOTIFY_DNS:
+            doit = g_notify_def.dns;
+            break;
+
+        default:
+            doit = FALSE;
+            break;
+        }
+
+        if (doit == TRUE) {
+            // TODO: add config and determine which notification we are using
+            rv = slackNotify(msg);
+        }
+    }
+
+    if (g_notify_def.exit == TRUE) {
+        exit(-1);
+    }
+
+    return rv;
 }

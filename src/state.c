@@ -1745,11 +1745,27 @@ doBlockConnection(int fd, const struct sockaddr *addr)
     }
 
     if (rip[0] != '\0') {
-        // Should this connection be allowed based on the white list?
+        /*
+         * Two types of responses to a white list entry:
+         * 1) on a match the connection is allowed always
+         * 2) if blocking and there is not a match then don't allow the connection
+         */
         for (int i = 0; g_notify_def.ip_white[i] != NULL; i++) {
-            if (scope_strcmp(rip, g_notify_def.ip_white[i]) == 0) {
-                return 0;
-            }
+            // always return all good if there is a white match
+            if (scope_strcmp(rip, g_notify_def.ip_white[i]) == 0) return 0;
+        }
+
+        /*
+         * We get here if there was no match in the white list
+         * If blocking when there is not a match in the white list, then return no go
+         */
+        if (g_notify_def.white_block == TRUE) {
+            char msg[INET6_ADDRSTRLEN + 256];
+
+            scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
+            scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
+            notify(NOTIFY_NET, msg);
+            return 1;
         }
 
         // Should this connection be blocked based on the black list?
@@ -1758,7 +1774,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
                 char msg[INET6_ADDRSTRLEN + 256];
 
                 scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
-                scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s", rip);
+                scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
                 notify(NOTIFY_NET, msg);
                 return 1;
             }

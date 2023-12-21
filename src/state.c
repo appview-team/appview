@@ -1283,11 +1283,20 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
         !fs || !path) return;
 
+    if (scope_strstr(path, "stdin") ||
+        scope_strstr(path, "stdout") ||
+        scope_strstr(path, "stderr")) return;
+
     int i;
+    char *this;
 
     // Should this path be enforced for write access?
     for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
-        if (scope_strstr(path, g_notify_def.file_write[i])) {
+        // ignore a leading space
+        this = g_notify_def.file_write[i];
+        if (*this == ' ') this++;
+
+        if (scope_strstr(path, this)) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1296,7 +1305,11 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
     for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
-        if (scope_strstr(path, g_notify_def.file_read[i])) {
+        // ignore a leading space
+        this = g_notify_def.file_read[i];
+        if (*this == ' ') this++;
+
+        if (scope_strstr(path, this)) {
             fs->enforceRD = TRUE;
             break;
         }

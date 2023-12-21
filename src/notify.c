@@ -62,17 +62,26 @@ static bool
 setList(char *list, char *dest[], size_t max_entries){
     int num_entries = 0;
     char *token = NULL;
+    char *save = NULL;
+    char *copy;
 
-    token = scope_strtok(list, ",");
+    if (list == NULL) return FALSE;
+
+    if ((copy = scope_calloc(1, strlen(list) + 1)) == NULL) return FALSE;
+    scope_strcpy(copy, list);
+
+    token = scope_strtok_r(copy, ",", &save);
     while ((token != NULL) && (num_entries < max_entries)) {
         if ((dest[num_entries] = scope_strdup(token)) == NULL) {
             scopeLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
+            scope_free(copy);
             return FALSE;
         }
         num_entries++;
-        token = scope_strtok(NULL, ",");
+        token = scope_strtok_r(NULL, ",", &save);
     }
 
+    scope_free(copy);
     return TRUE;
 }
 

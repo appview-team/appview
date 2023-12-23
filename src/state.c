@@ -1278,12 +1278,12 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 }
 
 static void
-doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
+doDetectFile(const char *path, fs_info *fs)
 {
-    if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
-        !fs || !path) return;
-
-    if (scope_strstr(path, "stdin") ||
+    if ((g_notify_def.enable == FALSE) ||
+        (g_notify_def.files == FALSE) ||
+        !fs || !path ||
+        scope_strstr(path, "stdin") ||
         scope_strstr(path, "stdout") ||
         scope_strstr(path, "stderr")) return;
 
@@ -1316,15 +1316,18 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for spaces at the end of file names
-    for (i = 0; i < scope_strlen(path); i++) {
+    i = scope_strlen(path);
+    do {
         if (scope_isspace(path[i])) {
             char msg[PATH_MAX + 128];
 
-            scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
+            scope_snprintf(msg, sizeof(msg),
+                           "spaces at the end of the path name %s representing a potential issue",
                            path);
             notify(NOTIFY_FILES, msg);
         }
-    }
+        i--;
+    } while (isalnum(path[i]) == 0);
 
     // check for a double file extension
     int num_entries = 0;
@@ -1345,11 +1348,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set
-    if (sbuf &&
-        (scope_strstr(path, "stdout") == NULL) &&
-        (scope_strstr(path, "stdin") == NULL) &&
-        (scope_strstr(path, "stderr") == NULL) &&
-        ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
+    if ((fs->mode & S_ISUID) || (fs->mode & S_ISGID)) {
         char msg[PATH_MAX + 128];
 
         scope_snprintf(msg, sizeof(msg),
@@ -1366,7 +1365,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files in system dirs that have g/a write perms
-    if ((sbuf->st_mode & S_IWGRP) || (sbuf->st_mode & S_IWOTH)) {
+    if ((fs->mode & S_IWGRP) || (fs->mode & S_IWOTH)) {
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
             if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
@@ -1382,47 +1381,42 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    if ((scope_strstr(path, "stdout") == NULL) &&
-        (scope_strstr(path, "stdin") == NULL) &&
-        (scope_strstr(path, "stderr") == NULL)) {
+    struct passwd *pw;
+    bool known_uid = FALSE, known_gid = FALSE;
 
-        struct passwd *pw;
-        bool known_uid = FALSE, known_gid = FALSE;
+    // Open the password database
+    setpwent();
 
-        // Open the password database
-        setpwent();
-
-        // Iterate through known users
-        while ((pw = getpwent()) != NULL) {
-            if (sbuf->st_uid == pw->pw_uid) {
-                known_uid = TRUE;
-            }
-
-            if (sbuf->st_gid == pw->pw_gid) {
-                known_gid = TRUE;
-            }
+    // Iterate through known users
+    while ((pw = getpwent()) != NULL) {
+        if (fs->fuid == pw->pw_uid) {
+            known_uid = TRUE;
         }
 
-        // Close the password database
-        endpwent();
-
-        if (known_uid == FALSE) {
-            char msg[PATH_MAX + 128];
-
-            scope_snprintf(msg, sizeof(msg),
-                           "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
-                           path, sbuf->st_uid);
-            notify(NOTIFY_FILES, msg);
+        if (fs->fgid == pw->pw_gid) {
+            known_gid = TRUE;
         }
+    }
 
-        if (known_gid == FALSE) {
-            char msg[PATH_MAX + 128];
+    // Close the password database
+    endpwent();
 
-            scope_snprintf(msg, sizeof(msg),
-                           "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
-                           path, sbuf->st_gid);
-            notify(NOTIFY_FILES, msg);
-        }
+    if (known_uid == FALSE) {
+        char msg[PATH_MAX + 128];
+
+        scope_snprintf(msg, sizeof(msg),
+                       "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
+                       path, fs->fuid);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    if (known_gid == FALSE) {
+        char msg[PATH_MAX + 128];
+
+        scope_snprintf(msg, sizeof(msg),
+                       "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
+                       path, fs->fgid);
+        notify(NOTIFY_FILES, msg);
     }
 }
 
@@ -2707,7 +2701,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         }
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
-        doDetectFile(path, &g_fsinfo[fd], &sbuf);
+        doDetectFile(path, &g_fsinfo[fd]);
         scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }

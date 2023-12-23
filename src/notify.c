@@ -29,6 +29,7 @@ static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
 notify_info_t g_notify_def = {0};
+bool g_notified = FALSE;
 
 static void
 initOpenSSL(void) {
@@ -261,6 +262,8 @@ sendSlackMessage(SSL *ssl, const char *msg) {
  */
 static bool
 slackNotify(const char *msg) {
+    if (g_notify_def.send == FALSE) return FALSE;
+
     SSL *ssl;
     const SSL_METHOD *method = TLS_client_method();
 
@@ -342,44 +345,45 @@ notify(notify_type_t dtype, const char *msg)
         g_inited = TRUE;
     }
 
-    bool doit, rv = FALSE;
+    bool doit = FALSE, rv = FALSE;
 
     if (g_notify_def.enable == FALSE) return FALSE;
 
-    if (g_notify_def.send == TRUE) {
-        switch (dtype) {
-        case NOTIFY_INIT:
-            return TRUE;
+    switch (dtype) {
+    case NOTIFY_INIT:
+        return TRUE;
 
-        case NOTIFY_LIBS:
-            doit = g_notify_def.libs;
-            break;
+    case NOTIFY_LIBS:
+        doit = g_notify_def.libs;
+        break;
 
-         case NOTIFY_FILES:
-            doit = g_notify_def.files;
-            break;
+    case NOTIFY_FILES:
+        doit = g_notify_def.files;
+        break;
 
-        case NOTIFY_FUNC:
-            doit = g_notify_def.functions;
-            break;
+    case NOTIFY_FUNC:
+        doit = g_notify_def.functions;
+        break;
 
-        case NOTIFY_NET:
-            doit = g_notify_def.network;
-            break;
+    case NOTIFY_NET:
+        doit = g_notify_def.network;
+        break;
 
-        case NOTIFY_DNS:
-            doit = g_notify_def.dns;
-            break;
+    case NOTIFY_DNS:
+        doit = g_notify_def.dns;
+        break;
 
-        default:
-            doit = FALSE;
-            break;
-        }
+    default:
+        doit = FALSE;
+        break;
+    }
 
-        if (doit == TRUE) {
-            // TODO: add config and determine which notification we are using
-            rv = slackNotify(msg);
-        }
+    if (doit == TRUE) {
+        // TODO: add config and determine which notification we are using
+        rv = slackNotify(msg);
+
+        // ony for unit test
+        g_notified = TRUE;
     }
 
     if (g_notify_def.exit == TRUE) {

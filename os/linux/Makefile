@@ -147,6 +147,7 @@ endif
 	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/selfinterposetest selfinterposetest.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/javabcitest javabcitest.o javabci.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/strsearchtest strsearchtest.o strsearch.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/detecttest detect.o com.o ctl.o log.o transport.o backoff.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o scopestdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Important note:

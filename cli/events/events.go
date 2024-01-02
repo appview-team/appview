@@ -47,12 +47,12 @@ var (
 	}
 
 	sourcetypeColors = colorOpts{
-		"console":  nc(color.FgHiGreen),
-		"http":     nc(color.FgHiBlue),
-		"fs":       nc(color.FgHiCyan),
-		"net":      nc(color.FgHiRed),
-		"security": nc(color.FgHiRed),
-		"default":  nc(color.FgYellow),
+		"console": nc(color.FgHiGreen),
+		"http":    nc(color.FgHiBlue),
+		"fs":      nc(color.FgHiCyan),
+		"net":     nc(color.FgHiRed),
+		"sec":     nc(color.FgHiRed),
+		"default": nc(color.FgYellow),
 	}
 )
 

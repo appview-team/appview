@@ -58,7 +58,7 @@ static enum_map_t watchTypeMap[] = {
     {"net",          CFG_SRC_NET},
     {"fs",           CFG_SRC_FS},
     {"dns",          CFG_SRC_DNS},
-    {"security",     CFG_SRC_SEC},
+    {"sec",          CFG_SRC_SEC},
     {NULL,                    -1}
 };
 

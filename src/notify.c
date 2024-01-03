@@ -25,11 +25,11 @@
 #undef SSL_read
 #undef SSL_write
 
-static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
 notify_info_t g_notify_def = {0};
 bool g_notified = FALSE;
+bool g_inited = FALSE;
 
 static void
 initOpenSSL(void) {
@@ -382,7 +382,7 @@ notify(notify_type_t dtype, const char *msg)
         // TODO: add config and determine which notification we are using
         rv = slackNotify(msg);
 
-        // ony for unit test
+        // only for unit test
         g_notified = TRUE;
     }
 

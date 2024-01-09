@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "test.h"
 #include "scopestdlib.h"
@@ -27,6 +28,9 @@
 #define SYSGROUP "/tmp/sysgrp"
 #define SYSOTHER "/tmp/sysoth"
 #define PIGNORE "/var"
+#define LADDR "192.168.1.1"
+#define LADDR2 "192.168.1.2"
+#define TEST_PORT 2000
 
 extern bool g_notified;
 extern bool g_inited;
@@ -204,7 +208,7 @@ sysGrp(void **state)
     rv = setenv(NOTIFY_IQ_SYS_DIRS, "/tmp", 1);
     assert_int_not_equal(-1, rv);
 
-    // Update the path arrays
+    // Update config
     g_inited = FALSE;
     notify(NOTIFY_INIT, "");
 
@@ -223,7 +227,7 @@ sysOth(void **state)
     rv = setenv(NOTIFY_IQ_SYS_DIRS, "/tmp", 1);
     assert_int_not_equal(-1, rv);
 
-    // Update the path arrays
+    // Update config
     g_inited = FALSE;
     notify(NOTIFY_INIT, "");
 
@@ -236,6 +240,73 @@ sysOth(void **state)
     doOpen(7, SYSOTHER, FD, "openFunc");
     assert_int_equal(g_notified, TRUE);
     doClose(7, "closeFunc");
+}
+
+static void
+whiteList(void **state)
+{
+    int rv;
+    struct sockaddr_in sa;
+    const char *ipStr = LADDR;
+
+    memset((char *)&sa, 0, sizeof(sa));
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons((unsigned short)TEST_PORT);
+    rv = inet_pton(AF_INET, ipStr, &(sa.sin_addr));
+    assert_int_equal(1, rv);
+
+    rv = setenv(NOTIFY_IQ_IP_WHITE, LADDR, 1);
+    assert_int_not_equal(-1, rv);
+
+    // Update config
+    g_inited = FALSE;
+    notify(NOTIFY_INIT, "");
+
+    // should not notify
+    rv = doBlockConnection(7, (const struct sockaddr *)&sa);
+    assert_int_equal(0, rv);
+
+    rv = setenv(NOTIFY_IQ_IP_WHITE, LADDR2, 1);
+    assert_int_not_equal(-1, rv);
+
+    rv = setenv(NOTIFY_WHITE_BLOCK, "TRUE", 1);
+    assert_int_not_equal(-1, rv);
+
+    // Update config
+    g_inited = FALSE;
+    notify(NOTIFY_INIT, "");
+
+    // should notify
+    rv = doBlockConnection(7, (const struct sockaddr *)&sa);
+    assert_int_equal(1, rv);
+}
+
+static void
+blackList(void **state)
+{
+    int rv;
+    struct sockaddr_in sa;
+    const char *ipStr = LADDR;
+
+    memset((char *)&sa, 0, sizeof(sa));
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons((unsigned short)TEST_PORT);
+    rv = inet_pton(AF_INET, ipStr, &(sa.sin_addr));
+    assert_int_equal(1, rv);
+
+    rv = setenv(NOTIFY_IQ_IP_BLACK, LADDR, 1);
+    assert_int_not_equal(-1, rv);
+
+    rv = setenv(NOTIFY_IQ_IP_WHITE, LADDR2, 1);
+    assert_int_not_equal(-1, rv);
+
+    // Update config
+    g_inited = FALSE;
+    notify(NOTIFY_INIT, "");
+
+    // should notify
+    rv = doBlockConnection(7, (const struct sockaddr *)&sa);
+    assert_int_equal(1, rv);
 }
 
 int
@@ -257,6 +328,8 @@ main(int argc, char* argv[])
         cmocka_unit_test(modExec),
         cmocka_unit_test(sysGrp),
         cmocka_unit_test(sysOth),
+        cmocka_unit_test(whiteList),
+        cmocka_unit_test(blackList),
     };
 
     rv = cmocka_run_group_tests(tests, groupSetup, groupTeardown);

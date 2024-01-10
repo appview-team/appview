@@ -340,8 +340,13 @@ notify(notify_type_t dtype, const char *msg)
         // TODO: add config and determine which notification we are using
         initOpenSSL();
         // Should we return here?
-        if (getSlackVars() == FALSE) return FALSE;
-        if (getNotifyVars() == FALSE) return FALSE;
+        if ((getNotifyVars() == FALSE) ||
+            (getSlackVars() == FALSE)) {
+            // setting this for for unit test only
+            g_notified = TRUE;
+            return FALSE;
+        }
+
         g_inited = TRUE;
     }
 

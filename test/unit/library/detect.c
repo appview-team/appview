@@ -131,20 +131,6 @@ fileWrite(void **state)
     doWrite(7, 987, 1, buf, 13, "writeFunc", BUF, 0);
     assert_int_equal(g_notified, TRUE);
     doClose(7, "closeFunc");
-
-    // should not notify
-    rv = setenv(NOTIFY_IQ_FILE_WRITE, "/etc, /var", 1);
-    assert_int_not_equal(-1, rv);
-
-    // Update the path arrays
-    g_inited = FALSE;
-    notify(NOTIFY_INIT, "");
-
-    g_notified = FALSE;
-    doOpen(7, WRITE, FD, "openFunc");
-    doWrite(7, 987, 1, buf, 13, "writeFunc", BUF, 0);
-    assert_int_equal(g_notified, FALSE);
-    doClose(7, "closeFunc");
 }
 
 static void

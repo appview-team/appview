@@ -1304,7 +1304,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // check for spaces at the end of file names
     for (i = 0; i < scope_strlen(path); i++) {
         if (scope_isspace(path[i])) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
                            path);
@@ -1323,7 +1323,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     if (num_entries >= 2) {
-        char msg[PATH_MAX + 128];
+        char msg[REASON_MAX];
 
         scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
                        path);
@@ -1338,7 +1338,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         (scope_strstr(path, "stdin") == NULL) &&
         (scope_strstr(path, "stderr") == NULL) &&
         ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
-        char msg[PATH_MAX + 128];
+        char msg[REASON_MAX];
 
         scope_snprintf(msg, sizeof(msg),
                        "path name %s contains setuid or setgid bits set representing a potential issue",
@@ -1359,7 +1359,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
             if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 scope_snprintf(msg, sizeof(msg),
                                "a system dir %s with a g/a write permission setting which represents a potential issue",
@@ -1397,7 +1397,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         endpwent();
 
         if (known_uid == FALSE) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             scope_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
@@ -1407,7 +1407,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         }
 
         if (known_gid == FALSE) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             scope_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
@@ -1439,7 +1439,7 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
     }
 
     // TODO: add reverse DNS to get the hostname
-    char msg[PATH_MAX + 256];
+    char msg[REASON_MAX];
     if (rip[0] != '\0') {
         scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
         fileSecurity(fsrd->path, msg, FALSE, 0);
@@ -1767,7 +1767,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
          * If blocking when there is not a match in the white list, then return no go
          */
         if (g_notify_def.white_block == TRUE) {
-            char msg[INET6_ADDRSTRLEN + 256];
+            char msg[REASON_MAX];
 
             scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
             scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
@@ -1779,7 +1779,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
         // Should this connection be blocked based on the black list?
         for (int i = 0; g_notify_def.ip_black[i] != NULL; i++) {
             if (scope_strcmp(rip, g_notify_def.ip_black[i]) == 0) {
-                char msg[INET6_ADDRSTRLEN + 256];
+                char msg[REASON_MAX];
 
                 scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
                 scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
@@ -2402,7 +2402,7 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
             if (fs->enforceRD) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 scope_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
                 fileSecurity(fs->path, msg, FALSE, 0);
@@ -2444,7 +2444,7 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
             if (fs->enforceWR) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 scope_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
                 fileSecurity(fs->path, msg, FALSE, bytes);

@@ -3291,7 +3291,7 @@ doSecurityMetric(security_info_t *sec)
         // file
         event_field_t fields[] = {
             STRFIELD("file", sec->path, 4, TRUE),
-            STRFIELD("reason", sec->reason, 128, TRUE), // TODO is 128 enough here and below?
+            STRFIELD("reason", sec->reason, REASON_MAX, TRUE),
             NUMFIELD("write_bytes", sec->write_bytes, 4, TRUE),
             PROC_FIELD(g_proc.procname),
             PID_FIELD(g_proc.pid),
@@ -3306,7 +3306,7 @@ doSecurityMetric(security_info_t *sec)
         // dns
         event_field_t fields[] = {
             STRFIELD("dns_name", sec->dnsName, 4, TRUE),
-            STRFIELD("reason", sec->reason, 128, TRUE),
+            STRFIELD("reason", sec->reason, REASON_MAX, TRUE),
             PROC_FIELD(g_proc.procname),
             PID_FIELD(g_proc.pid),
             HOST_FIELD(g_proc.hostname),
@@ -3320,7 +3320,7 @@ doSecurityMetric(security_info_t *sec)
         // got hook
         event_field_t fields[] = {
             STRFIELD("function", sec->func, 4, TRUE),
-            STRFIELD("reason", sec->reason, 128, TRUE),
+            STRFIELD("reason", sec->reason, REASON_MAX, TRUE),
             STRFIELD("redirected_from", sec->dlpi_name, 4, TRUE),
             STRFIELD("redirected_to", sec->path, 4, TRUE),
             PROC_FIELD(g_proc.procname),
@@ -3337,7 +3337,7 @@ doSecurityMetric(security_info_t *sec)
         event_field_t fields[] = {
             STRFIELD("address", sec->host, 4, TRUE),
             NUMFIELD("port", sec->port, 4, TRUE),
-            STRFIELD("reason", sec->reason, 128, TRUE),
+            STRFIELD("reason", sec->reason, REASON_MAX, TRUE),
             PROC_FIELD(g_proc.procname),
             PID_FIELD(g_proc.pid),
             HOST_FIELD(g_proc.hostname),

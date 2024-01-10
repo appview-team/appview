@@ -82,6 +82,6 @@ bool isProtocolSet(int);
 void fileSecurity(const char*, const char*, bool, uint64_t);
 void gotSecurity(const char*, const char*, const char*, const char*);
 void dnsSecurity(const char*, const char*);
-void netSecurity(const char*, const char*);
+void netSecurity(const char*, uint, const char*);
 
 #endif // __STATE_H__

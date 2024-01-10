@@ -256,6 +256,7 @@ typedef struct {
     char dnsName[MAX_HOSTNAME];
     uint write_bytes;
     char host[INET6_ADDRSTRLEN];
+    uint port;
     char func[FUNC_MAX];
     char dlpi_name[DLPI_MAX];
 } security_info_t;

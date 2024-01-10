@@ -1771,6 +1771,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
 
             scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
             scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
+            netSecurity(rip, port, msg);
             notify(NOTIFY_NET, msg);
             return 1;
         }
@@ -1782,6 +1783,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
 
                 scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
                 scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
+                netSecurity(rip, port, msg);
                 notify(NOTIFY_NET, msg);
                 return 1;
             }
@@ -1797,6 +1799,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
         scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
         scope_snprintf(msg, sizeof(msg), "a blocked network connection due to user config of a port block on %s:%d",
                        rip, port);
+        netSecurity(rip, port, msg);
         notify(NOTIFY_NET, msg);
         return 1;
     }
@@ -2893,9 +2896,9 @@ dnsSecurity(const char* dnsName, const char* reason)
     cmdPostEvent(g_ctl, (char *)secp);
 }
 
-// Create a security event when a connection is made to a user-blocked IP
+// Create a security event when a connection is made to a user-blocked IP or port
 void
-netSecurity(const char* raddr, const char* reason)
+netSecurity(const char* raddr, uint port, const char* reason)
 {
     size_t len = sizeof(security_info_t);
     security_info_t *secp = scope_calloc(1, len);
@@ -2903,6 +2906,7 @@ netSecurity(const char* raddr, const char* reason)
 
     secp->evtype = EVT_SEC;
     scope_strncpy(secp->host, raddr, scope_strnlen(raddr, sizeof(secp->host)));
+    secp->port = port;
     scope_strncpy(secp->reason, reason, scope_strnlen(reason, sizeof(secp->reason)));
 
     cmdPostEvent(g_ctl, (char *)secp);

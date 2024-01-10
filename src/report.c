@@ -3336,6 +3336,7 @@ doSecurityMetric(security_info_t *sec)
         // net
         event_field_t fields[] = {
             STRFIELD("address", sec->host, 4, TRUE),
+            NUMFIELD("port", sec->port, 4, TRUE),
             STRFIELD("reason", sec->reason, 128, TRUE),
             PROC_FIELD(g_proc.procname),
             PID_FIELD(g_proc.pid),

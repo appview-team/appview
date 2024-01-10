@@ -148,7 +148,7 @@ evtFree(evt_type *event)
         }
         case EVT_SEC:
         {
-            // Alloc'd in fileSecurity, dnsSecurity, gotSecurity
+            // Alloc'd in fileSecurity, dnsSecurity, gotSecurity, netSecurity
             // security_info_t *sec = (security_info_t *)event;
             scope_free(event);
             break;

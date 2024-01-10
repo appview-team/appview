@@ -3332,6 +3332,20 @@ doSecurityMetric(security_info_t *sec)
         event_t event = INT_EVENT("sec.got", 1, CURRENT, fields);
         event.src = CFG_SRC_SEC;
         sendEvent(g_mtc, &event);
+    } else if (scope_strlen(sec->host) > 0) {
+        // net
+        event_field_t fields[] = {
+            STRFIELD("address", sec->host, 4, TRUE),
+            STRFIELD("reason", sec->reason, 128, TRUE),
+            PROC_FIELD(g_proc.procname),
+            PID_FIELD(g_proc.pid),
+            HOST_FIELD(g_proc.hostname),
+            UNIT_FIELD("process"),
+            FIELDEND
+        };
+        event_t event = INT_EVENT("sec.conn", 1, CURRENT, fields);
+        event.src = CFG_SRC_SEC;
+        sendEvent(g_mtc, &event);
     }
 }
 

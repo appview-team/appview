@@ -2846,3 +2846,18 @@ dnsSecurity(const char* dnsName, const char* reason)
 
     cmdPostEvent(g_ctl, (char *)secp);
 }
+
+// Create a security event when a connection is made to a user-blocked IP
+void
+netSecurity(const char* raddr, const char* reason)
+{
+    size_t len = sizeof(security_info_t);
+    security_info_t *secp = scope_calloc(1, len);
+    if (!secp) return;
+
+    secp->evtype = EVT_SEC;
+    scope_strncpy(secp->host, raddr, scope_strnlen(raddr, sizeof(secp->host)));
+    scope_strncpy(secp->reason, reason, scope_strnlen(reason, sizeof(secp->reason)));
+
+    cmdPostEvent(g_ctl, (char *)secp);
+}

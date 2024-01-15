@@ -62,16 +62,14 @@ appview events
 
 AppView runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppView is even able to instrument static applications, and applications running in other containers. 
 
-We regularly test against applications like nginx, redis, ssh, curl, bash, git, python.
+We regularly test against applications like `nginx`, `redis`, `ssh`, `curl`, `bash`, `git`, `python`, `kafka`, and `node`. We have an extensive set of [integration tests](./test/integration), validating support for these applications on both ARM and x86 architectures, even in musl-based distributions like alpine.
 
-However, AppView **cannot**:
+However, AppView *cannot*:
 
 - Instrument Go executables built with Go 1.10 or earlier.
 - Instrument static stripped Go executables built with Go 1.12 or earlier.
 - Instrument Java executables that use Open JVM 6 or earlier, or Oracle JVM 6 or earlier.
 - Obtain a core dump either (a) for a Go executable, or (b) in a musl libc environment.
-
-We have an extensive set of integration tests, validating support for common applications including `postgres`, `sshd`, `kafka`, `node`, `python`, `nginx` on both ARM and x86 architectures, even in musl-based distributions like alpine.
 
 ## 🚀 Try It Out
 

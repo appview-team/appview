@@ -55,7 +55,7 @@ appview events
 [uQ] Jan 15 15:53:19 nginx worker process fs fs.open file:/var/www/html/index.nginx-debian.html
 [1Z] Jan 15 15:53:19 nginx worker process http http.resp http_host:localhost http_method:GET http_scheme:http http_target:/ http_response_content_length:612
 [C91] Jan 15 15:53:19 nginx worker process fs fs.close file:/var/www/html/index.nginx-debian.html file_read_bytes:0 file_read_ops:0 file_write_bytes:612 file_write_ops:1
-[Gj1] Jan 15 15:53:19 nging worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
+[Gj1] Jan 15 15:53:19 nginx worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
 ```
 
 ## 🛟 Support

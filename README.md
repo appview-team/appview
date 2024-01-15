@@ -58,6 +58,8 @@ appview events
 [Gj1] Jan 15 15:53:19 nginx worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
 ```
 
+See [here](./examples) for more examples.
+
 ## 🛟 Support
 
 AppView runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppView is even able to instrument static applications, and applications running in other containers. 

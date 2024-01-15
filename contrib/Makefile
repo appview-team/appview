@@ -128,7 +128,7 @@ build/libunwind/src/.libs/libunwind.a:
 	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure CFLAGS=-fPIC --disable-shared && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/coredumper/.libs/libcoredumper.a
 	if [ "aarch64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym getcontext=unw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
+		objcopy --redefine-sym getcontext=unw_appview_getcontext build/coredumper/.libs/libcoredumper.a; \
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
@@ -139,7 +139,7 @@ build/musl/lib/libc.a:
 # To enable debug please add below --enable-debug --enable-optimize=no
 	cd build/musl && ../../musl/configure --disable-shared --disable-wrapper CFLAGS=$(DISABLE_X28) && $(MAKE)
 	cp build/musl/lib/libc.a build/musl/lib/libc_orig.a
-	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+	objcopy --prefix-symbols=appviewlibc_ build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
 # -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html

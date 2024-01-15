@@ -1,4 +1,4 @@
-// gcc -g test/manual/consoletest.c -o consoletest && LD_PRELOAD=lib/linux/libscope.so SCOPE_EVENT_CONSOLE=true ./consoletest
+// gcc -g test/manual/consoletest.c -o consoletest && LD_PRELOAD=lib/linux/libappview.so APPVIEW_EVENT_CONSOLE=true ./consoletest
 
 #include <stdio.h>
 #include <stdlib.h>

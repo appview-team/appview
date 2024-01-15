@@ -1,6 +1,6 @@
 #include "os.h"
 #include "../../src/fn.h"
-#include "../../src/scopetypes.h"
+#include "../../src/appviewtypes.h"
 
 int
 osGetProcname(char *pname, size_t len)

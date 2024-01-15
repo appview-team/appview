@@ -15,12 +15,12 @@
 
 #include "loader.h"
 #include "loaderutils.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 int g_log_level = CFG_LOG_WARN;
 
 /*********************************************************************
- * Consider updating src/scopeelf.c if you make changes to this file *
+ * Consider updating src/appviewelf.c if you make changes to this file *
  *********************************************************************/
 
 void
@@ -289,9 +289,9 @@ setPidEnv(int pid)
         return;
     }
 
-    if ((setenv(SCOPE_PID_ENV, val, 1) == -1) &&
+    if ((setenv(APPVIEW_PID_ENV, val, 1) == -1) &&
         (g_log_level <= CFG_LOG_DEBUG)) {
-        fprintf(stderr, "setPidEnv: %s:%s", SCOPE_PID_ENV, val);
+        fprintf(stderr, "setPidEnv: %s:%s", APPVIEW_PID_ENV, val);
     }
 }
 
@@ -389,7 +389,7 @@ findLibrary(const char *library, pid_t pid, bool matchLibraryExactly, char *path
 
     snprintf(filename, sizeof(filename), "/proc/%d/maps", pid);
     if ((fd = fopen(filename, "r")) == NULL) {
-        // return no proc found as opposed to no libscope found
+        // return no proc found as opposed to no libappview found
         return -1;
     }
 

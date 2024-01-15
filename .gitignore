@@ -4,7 +4,7 @@
 *.pyc
 
 # Logs
-scope.log
+appview.log
 
 # Editor Temps
 *.swp

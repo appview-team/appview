@@ -33,7 +33,7 @@
 #include "fn.h"
 #include "os.h"
 #include "utils.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "notify.h"
 
 #define NUM_ATTEMPTS 100
@@ -101,7 +101,7 @@ destroyNetInfo(void *data)
 
     resetHttp(net->http);
 
-    scope_free(net);
+    appview_free(net);
 }
 
 int
@@ -126,7 +126,7 @@ get_port(int fd, int type, control_type_t which) {
         port = (in_port_t)0;
         break;
     }
-    return scope_ntohs(port);
+    return appview_ntohs(port);
 }
 
 int
@@ -151,7 +151,7 @@ get_port_net(net_info *net, int type, control_type_t which) {
         port = (in_port_t)0;
         break;
     }
-    return scope_ntohs(port);
+    return appview_ntohs(port);
 }
 
 bool
@@ -166,15 +166,15 @@ delProtocol(request_t *req)
 
     for (ptype = 0; ptype <= g_prot_sequence; ptype++) {
         if ((protolist = lstFind(g_protlist, ptype)) != NULL) {
-            if (scope_strncmp(protoreq->protname, protolist->protname, scope_strlen(protolist->protname)) == 0) {
+            if (appview_strncmp(protoreq->protname, protolist->protname, appview_strlen(protolist->protname)) == 0) {
                 // decrement g_prot_sequence?: values are assigned to an entry, used as a key
                 lstDelete(g_protlist, ptype);
             }
         }
     }
 
-    if (protoreq && protoreq->protname) scope_free(protoreq->protname);
-    if (protoreq) scope_free(protoreq);
+    if (protoreq && protoreq->protname) appview_free(protoreq->protname);
+    if (protoreq) appview_free(protoreq);
     return TRUE;
 }
 
@@ -217,7 +217,7 @@ initPayloadDetect(void)
     // Setup the TLS protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_tls_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_tls_protocol_def = appview_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_tls_protocol_def->protname = "TLS";
     g_tls_protocol_def->binary = TRUE;
     g_tls_protocol_def->len = PAYLOAD_BYTESRC;
@@ -236,7 +236,7 @@ initPayloadDetect(void)
     // Setup the HTTP protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_http_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_http_protocol_def = appview_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_http_protocol_def->protname = "HTTP";
     g_http_protocol_def->regex = "(?:HTTP\\/1\\.[0-2]|PRI \\* HTTP\\/2\\.0\r\n\r\nSM\r\n\r\n)";
     g_http_protocol_def->detect = TRUE;
@@ -254,7 +254,7 @@ initPayloadDetect(void)
     // Setup the StatsD protocol-detect regex
     errornumber = 0;
     erroroffset = 0;
-    if ((g_statsd_protocol_def = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
+    if ((g_statsd_protocol_def = appview_calloc(1, sizeof(protocol_def_t))) == NULL) goto error;
     g_statsd_protocol_def->protname = "STATSD";
     g_statsd_protocol_def->regex = "^([^:]+):([\\d.]+)\\|(c|g|ms|s|h)";
     g_statsd_protocol_def->detect = TRUE;
@@ -287,17 +287,17 @@ destroyPayloadDetect(void) {
     if (g_statsd_protocol_def) {
         pcre2_code_free(g_statsd_protocol_def->re);
         pcre2_match_data_free(g_statsd_protocol_def->match_data);
-        scope_free(g_statsd_protocol_def);
+        appview_free(g_statsd_protocol_def);
     }
     if (g_http_protocol_def) {
         pcre2_code_free(g_http_protocol_def->re);
         pcre2_match_data_free(g_http_protocol_def->match_data);
-        scope_free(g_http_protocol_def);
+        appview_free(g_http_protocol_def);
     }
     if (g_tls_protocol_def) {
         pcre2_code_free(g_tls_protocol_def->re);
         pcre2_match_data_free(g_tls_protocol_def->match_data);
-        scope_free(g_tls_protocol_def);
+        appview_free(g_tls_protocol_def);
     }
 }
 
@@ -305,13 +305,13 @@ void
 initState(void)
 {
     // Per a Read Update & Change (RUC) model; now that the object is ready assign the global
-    if ((g_netinfo = (net_info *)scope_calloc(1, sizeof(struct net_info_t) * NET_ENTRIES)) == NULL) {
-        scopeLogError("ERROR: Constructor:scope_calloc");
+    if ((g_netinfo = (net_info *)appview_calloc(1, sizeof(struct net_info_t) * NET_ENTRIES)) == NULL) {
+        appviewLogError("ERROR: Constructor:appview_calloc");
     }
 
     // Per RUC...
-    if ((g_fsinfo = (fs_info *)scope_calloc(1, sizeof(struct fs_info_t) * FS_ENTRIES)) == NULL) {
-        scopeLogError("ERROR: Constructor:scope_calloc");
+    if ((g_fsinfo = (fs_info *)appview_calloc(1, sizeof(struct fs_info_t) * FS_ENTRIES)) == NULL) {
+        appviewLogError("ERROR: Constructor:appview_calloc");
     }
 
     initHttpState();
@@ -319,17 +319,17 @@ initState(void)
 
     // Some environment variables we don't want to continuously check
     // TODO: verify if `g_force_payloads_to_disk` can be moved in cfgutils.c
-    g_force_payloads_to_disk = checkEnv(SCOPE_PAYLOAD_TO_DISK_ENV, "true");
+    g_force_payloads_to_disk = checkEnv(APPVIEW_PAYLOAD_TO_DISK_ENV, "true");
 
 
     // the http guard array is static while the net fs array is dynamically allocated
     // will need to change if we want to re-size at runtime
-    scope_memset(g_http_guard, 0, sizeof(g_http_guard));
+    appview_memset(g_http_guard, 0, sizeof(g_http_guard));
     {
         // g_http_guard_enable is always false unless
-        // SCOPE_HTTP_SERIALIZE_ENABLE is defined and is "true"
-        char *spin_env = fullGetEnv("SCOPE_HTTP_SERIALIZE_ENABLE");
-        g_http_guard_enabled = (spin_env && !scope_strcmp(spin_env, "true"));
+        // APPVIEW_HTTP_SERIALIZE_ENABLE is defined and is "true"
+        char *spin_env = fullGetEnv("APPVIEW_HTTP_SERIALIZE_ENABLE");
+        g_http_guard_enabled = (spin_env && !appview_strcmp(spin_env, "true"));
     }
 
     g_protlist = lstCreate(destroyProtEntry);
@@ -343,7 +343,7 @@ initState(void)
 void
 resetState(void)
 {
-    scope_memset(&g_ctrs, 0, sizeof(struct metric_counters_t));
+    appview_memset(&g_ctrs, 0, sizeof(struct metric_counters_t));
 }
 
 void
@@ -354,8 +354,8 @@ destroyState(void) {
     lstDestroy(&g_protlist);
     destroyMetricCapture();
     destroyHttpState();
-    scope_free(g_fsinfo);
-    scope_free(g_netinfo);
+    appview_free(g_fsinfo);
+    appview_free(g_netinfo);
 }
 
 // DEBUG
@@ -366,20 +366,20 @@ dumpAddrs(int sd)
     in_port_t port;
     char ip[INET6_ADDRSTRLEN];
 
-    scope_inet_ntop(AF_INET,
+    appview_inet_ntop(AF_INET,
               &((struct sockaddr_in *)&g_netinfo[sd].localConn)->sin_addr,
               ip, sizeof(ip));
     port = get_port(sd, g_netinfo[sd].localConn.ss_family, LOCAL);
-    scopeLog(CFG_LOG_DEBUG, "fd:%d %s:%d LOCAL: %s:%d", sd, __FUNCTION__, __LINE__, ip, port);
+    appviewLog(CFG_LOG_DEBUG, "fd:%d %s:%d LOCAL: %s:%d", sd, __FUNCTION__, __LINE__, ip, port);
 
-    scope_inet_ntop(AF_INET,
+    appview_inet_ntop(AF_INET,
               &((struct sockaddr_in *)&g_netinfo[sd].remoteConn)->sin_addr,
               ip, sizeof(ip));
     port = get_port(sd, g_netinfo[sd].remoteConn.ss_family, REMOTE);
-    scopeLog(CFG_LOG_DEBUG, "fd:%d %s:%d REMOTE:%s:%d", sd, __FUNCTION__, __LINE__, ip, port);
+    appviewLog(CFG_LOG_DEBUG, "fd:%d %s:%d REMOTE:%s:%d", sd, __FUNCTION__, __LINE__, ip, port);
 
     if (get_port(sd, g_netinfo[sd].localConn.ss_family, REMOTE) == DNS_PORT) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d DNS", sd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d DNS", sd);
     }
 }
 #endif
@@ -392,7 +392,7 @@ doUnixEndpoint(int sd, net_info *net)
 
     if (!net) return;
 
-    if ((scope_fstat(sd, &sbuf) == -1) ||
+    if ((appview_fstat(sd, &sbuf) == -1) ||
         ((sbuf.st_mode & S_IFMT) != S_IFSOCK)) {
         net->lnode = 0;
         net->rnode = 0;
@@ -413,7 +413,7 @@ static int
 postStatErrState(metric_t stat_err, metric_t type, const char *funcop, const char *pathname)
 {
     // something passed in a param that is not a viable address; ltp does this
-    if ((scopeGetGoAppStateStatic() == FALSE) && (stat_err == EVT_ERR) && (errno == EFAULT)) return FALSE;
+    if ((appviewGetGoAppStateStatic() == FALSE) && (stat_err == EVT_ERR) && (errno == EFAULT)) return FALSE;
 
     int *summarize = NULL;
     switch (type) {
@@ -445,21 +445,21 @@ postStatErrState(metric_t stat_err, metric_t type, const char *funcop, const cha
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct stat_err_info_t);
-    stat_err_info *sep = scope_calloc(1, len);
+    stat_err_info *sep = appview_calloc(1, len);
     if (!sep) return FALSE;
 
     sep->evtype = stat_err;
     sep->data_type = type;
 
     if (pathname) {
-        scope_strncpy(sep->name, pathname, scope_strnlen(pathname, sizeof(sep->name)));
+        appview_strncpy(sep->name, pathname, appview_strnlen(pathname, sizeof(sep->name)));
     }
 
     if (funcop) {
-        scope_strncpy(sep->funcop, funcop, scope_strnlen(funcop, sizeof(sep->funcop)));
+        appview_strncpy(sep->funcop, funcop, appview_strnlen(funcop, sizeof(sep->funcop)));
     }
 
-    scope_memmove(&sep->counters, &g_ctrs, sizeof(g_ctrs));
+    appview_memmove(&sep->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)sep);
 
@@ -497,20 +497,20 @@ postFSState(int fd, metric_t type, fs_info *fs, const char *funcop, const char *
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct fs_info_t);
-    fs_info *fsp = scope_calloc(1, len);
+    fs_info *fsp = appview_calloc(1, len);
     if (!fsp) return FALSE;
 
-    if (fs) scope_memmove(fsp, fs, len);
+    if (fs) appview_memmove(fsp, fs, len);
     fsp->fd = fd;
     fsp->evtype = EVT_FS;
     fsp->data_type = type;
 
     if (pathname && (!fs || fs->path[0] == '\0')) {
-        scope_strncpy(fsp->path, pathname, scope_strnlen(pathname, sizeof(fsp->path)));
+        appview_strncpy(fsp->path, pathname, appview_strnlen(pathname, sizeof(fsp->path)));
     }
 
     if (funcop && (!fs || fs->funcop[0] == '\0')) {
-        scope_strncpy(fsp->funcop, funcop, scope_strnlen(funcop, sizeof(fsp->funcop)));
+        appview_strncpy(fsp->funcop, funcop, appview_strnlen(funcop, sizeof(fsp->funcop)));
     }
 
     cmdPostEvent(g_ctl, (char *)fsp);
@@ -530,10 +530,10 @@ postDNSState(int fd, metric_t type, net_info *net, uint64_t duration, const char
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct net_info_t);
-    net_info *netp = scope_calloc(1, len);
+    net_info *netp = appview_calloc(1, len);
     if (!netp) return FALSE;
 
-    if (net) scope_memmove(netp, net, len);
+    if (net) appview_memmove(netp, net, len);
     netp->fd = fd;
     netp->evtype = EVT_DNS;
     netp->data_type = type;
@@ -543,10 +543,10 @@ postDNSState(int fd, metric_t type, net_info *net, uint64_t duration, const char
     }
 
     if (domain) {
-        scope_strncpy(netp->dnsName, domain, scope_strnlen(domain, sizeof(netp->dnsName)));
+        appview_strncpy(netp->dnsName, domain, appview_strnlen(domain, sizeof(netp->dnsName)));
     }
 
-    scope_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
+    appview_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)netp);
 
@@ -587,14 +587,14 @@ postNetState(int fd, metric_t type, net_info *net)
     if (!need_to_post) return FALSE;
 
     size_t len = sizeof(struct net_info_t);
-    net_info *netp = scope_calloc(1, len);
+    net_info *netp = appview_calloc(1, len);
     if (!netp) return FALSE;
 
-    scope_memmove(netp, net, len);
+    appview_memmove(netp, net, len);
     netp->fd = fd;
     netp->evtype = EVT_NET;
     netp->data_type = type;
-    scope_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
+    appview_memmove(&netp->counters, &g_ctrs, sizeof(g_ctrs));
 
     cmdPostEvent(g_ctl, (char *)netp);
     return mtc_needs_reporting;
@@ -997,13 +997,13 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
         int i;
         size_t alen = (cvlen * 2) + 1;
 
-        if ((cpdata = scope_calloc(1, alen)) == NULL) {
+        if ((cpdata = appview_calloc(1, alen)) == NULL) {
             if (net) net->protoDetect = DETECT_FALSE;
             return FALSE;
         }
 
         for (i = 0; i < cvlen; i++) {
-            scope_snprintf(&cpdata[i<<1], 3, "%02x", (unsigned char)buf[i]);
+            appview_snprintf(&cpdata[i<<1], 3, "%02x", (unsigned char)buf[i]);
         }
 
         data = cpdata;
@@ -1013,7 +1013,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
     match_data = pcre2_match_data_create_from_pattern(protoDef->re, NULL);
     if (pcre2_match_wrapper(protoDef->re, (PCRE2_SPTR)data, (PCRE2_SIZE)cvlen, 0, 0,
                             match_data, NULL) > 0) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d detected %s", sockfd, protoDef->protname);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d detected %s", sockfd, protoDef->protname);
 
         if (net) {
             net->protoDetect = DETECT_TRUE;
@@ -1024,7 +1024,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
             if ((proto = evtProtoAllocDetect(protoDef->protname)) == NULL)
             {
                 if (cpdata)
-                    scope_free(cpdata);
+                    appview_free(cpdata);
                 if (match_data)
                     pcre2_match_data_free(match_data);
                 return FALSE;
@@ -1042,7 +1042,7 @@ setProtocol(int sockfd, protocol_def_t *protoDef, net_info *net, char *buf, size
     }
 
     if (match_data) pcre2_match_data_free(match_data);
-    if (cpdata) scope_free(cpdata);
+    if (cpdata) appview_free(cpdata);
 
     return ret;
 }
@@ -1093,18 +1093,18 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         return -1;
     }
 
-    payload_info *pinfo = scope_calloc(1, sizeof(struct payload_info_t));
+    payload_info *pinfo = appview_calloc(1, sizeof(struct payload_info_t));
     if (!pinfo) {
         return -1;
     }
 
     if (dtype == BUF) {
-        pinfo->data = scope_calloc(1, len);
+        pinfo->data = appview_calloc(1, len);
         if (!pinfo->data) {
-            scope_free(pinfo);
+            appview_free(pinfo);
             return -1;
         }
-        scope_memmove(pinfo->data, buf, len);
+        appview_memmove(pinfo->data, buf, len);
     } else if (dtype == MSG) {
         int i;
         size_t blen = 0;
@@ -1113,15 +1113,15 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         for (i = 0; i < msg->msg_iovlen; i++) {
             iov = &msg->msg_iov[i];
             if (iov && iov->iov_base && (iov->iov_len > 0)) {
-                char *temp = scope_realloc(pinfo->data, blen + iov->iov_len);
+                char *temp = appview_realloc(pinfo->data, blen + iov->iov_len);
                 if (!temp) {
-                    if (pinfo->data) scope_free(pinfo->data);
-                    scope_free(pinfo);
+                    if (pinfo->data) appview_free(pinfo->data);
+                    appview_free(pinfo);
                     return -1;
                 }
 
                 pinfo->data = temp;
-                scope_memmove(&pinfo->data[blen], iov->iov_base, iov->iov_len);
+                appview_memmove(&pinfo->data[blen], iov->iov_base, iov->iov_len);
                 blen += iov->iov_len;
             }
         }
@@ -1132,27 +1132,27 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
         struct iovec *iov = (struct iovec *)buf;
         for (i = 0; i < len; i++) {
             if (iov[i].iov_base && (iov[i].iov_len > 0)) {
-                char *temp = scope_realloc(pinfo->data, blen + iov[i].iov_len);
+                char *temp = appview_realloc(pinfo->data, blen + iov[i].iov_len);
                 if (!temp) {
-                    if (pinfo->data) scope_free(pinfo->data);
-                    scope_free(pinfo);
+                    if (pinfo->data) appview_free(pinfo->data);
+                    appview_free(pinfo);
                     return -1;
                 }
 
                 pinfo->data = temp;
-                scope_memmove(&pinfo->data[blen], iov[i].iov_base, iov[i].iov_len);
+                appview_memmove(&pinfo->data[blen], iov[i].iov_base, iov[i].iov_len);
                 blen += iov[i].iov_len;
             }
         }
         len = blen;
     } else {
         // no data, no need to continue
-        scope_free(pinfo);
+        appview_free(pinfo);
         return -1;
     }
 
     if (net) {
-        scope_memmove(&pinfo->net, net, sizeof(net_info));
+        appview_memmove(&pinfo->net, net, sizeof(net_info));
     } else {
         pinfo->net.active = 0;
     }
@@ -1163,16 +1163,16 @@ extractPayload(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
     pinfo->len = len;
 
     if (net && net->tlsDetect) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d posting TLS payload", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d posting TLS payload", sockfd);
     } else if (net && net->protoProtoDef) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d posting %s payload", sockfd, net->protoProtoDef->protname);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d posting %s payload", sockfd, net->protoProtoDef->protname);
     } else {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d posting payload", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d posting payload", sockfd);
     }
 
     if (cmdPostPayload(g_ctl, (char *)pinfo) == -1) {
-        if (pinfo->data) scope_free(pinfo->data);
-        if (pinfo) scope_free(pinfo);
+        if (pinfo->data) appview_free(pinfo->data);
+        if (pinfo) appview_free(pinfo);
         return -1;
     }
 
@@ -1197,7 +1197,7 @@ detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_da
     {
         protocol_def_t *tmp_proto_def;
         if ((tmp_proto_def = lstFind(g_protlist, ptype))
-            && (scope_strcmp(tmp_proto_def->protname, "TLS") == 0)) {
+            && (appview_strcmp(tmp_proto_def->protname, "TLS") == 0)) {
             // Use the user-provided one instead of ours
             tls_proto_def = tmp_proto_def;
             break;
@@ -1208,10 +1208,10 @@ detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_da
     int i;
     size_t alen = (tls_proto_def->len * 2) + 1;
     char cpdata[alen];
-    scope_memset(cpdata, 0, alen);
+    appview_memset(cpdata, 0, alen);
     for (i = 0; i < tls_proto_def->len; i++)
     {
-        scope_snprintf(&cpdata[i << 1], 3, "%02x", data[i]);
+        appview_snprintf(&cpdata[i << 1], 3, "%02x", data[i]);
     }
 
     // Apply the regex to the hex-string payload
@@ -1223,7 +1223,7 @@ detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_da
         // matched, set the detect-state to TRUE
         net->tlsDetect = DETECT_TRUE;
         net->tlsProtoDef = tls_proto_def;
-        scopeLog(CFG_LOG_DEBUG, "fd:%d detected TLS", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d detected TLS", sockfd);
         if (tls_proto_def->detect) {
             // TODO send TLS protocol-detect event
         }
@@ -1235,7 +1235,7 @@ detectTLS(int sockfd, net_info *net, void *buf, size_t len, metric_t src, src_da
         if (rc != PCRE2_ERROR_NOMATCH)
         {
             DBG(NULL);
-            scopeLog(CFG_LOG_DEBUG, "%s: fd:%d TLS regex failed", __FUNCTION__, sockfd);
+            appviewLog(CFG_LOG_DEBUG, "%s: fd:%d TLS regex failed", __FUNCTION__, sockfd);
         }
     }
     pcre2_match_data_free(match_data);
@@ -1259,8 +1259,8 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
     for (ptype = 0; ptype <= g_prot_sequence; ptype++) {
         if ((protoDef = lstFind(g_protlist, ptype)) != NULL) {
             // Remember if we see a protocol definition we have a default for.
-            sawHTTP   |= !scope_strcasecmp(protoDef->protname, "HTTP");
-            sawSTATSD |= !scope_strcasecmp(protoDef->protname, "STATSD");
+            sawHTTP   |= !appview_strcasecmp(protoDef->protname, "HTTP");
+            sawSTATSD |= !appview_strcasecmp(protoDef->protname, "STATSD");
             if (setProtocolByType(sockfd, protoDef, net, buf, len, dtype)) {
                 // We're done since it matched.
                 return;
@@ -1287,7 +1287,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     // Should this path be enforced for write access?
     for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
-        if (scope_strstr(path, g_notify_def.file_write[i])) {
+        if (appview_strstr(path, g_notify_def.file_write[i])) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1296,18 +1296,18 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
     for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
-        if (scope_strstr(path, g_notify_def.file_read[i])) {
+        if (appview_strstr(path, g_notify_def.file_read[i])) {
             fs->enforceRD = TRUE;
             break;
         }
     }
 
     // check for spaces at the end of file names
-    for (i = 0; i < scope_strlen(path); i++) {
-        if (scope_isspace(path[i])) {
+    for (i = 0; i < appview_strlen(path); i++) {
+        if (appview_isspace(path[i])) {
             char msg[PATH_MAX + 128];
 
-            scope_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
+            appview_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
                            path);
             notify(NOTIFY_FILES, msg);
         }
@@ -1317,7 +1317,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     int num_entries = 0;
     char *dext = (char *)path;
 
-    while ((dext = scope_strstr(dext, ".")) != NULL) {
+    while ((dext = appview_strstr(dext, ".")) != NULL) {
             num_entries++;
             dext++;
     }
@@ -1325,7 +1325,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     if (num_entries >= 2) {
         char msg[PATH_MAX + 128];
 
-        scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
+        appview_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
                        path);
         notify(NOTIFY_FILES, msg);
     }
@@ -1333,13 +1333,13 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set
     if (sbuf &&
-        (scope_strstr(path, "stdout") == NULL) &&
-        (scope_strstr(path, "stdin") == NULL) &&
-        (scope_strstr(path, "stderr") == NULL) &&
+        (appview_strstr(path, "stdout") == NULL) &&
+        (appview_strstr(path, "stdin") == NULL) &&
+        (appview_strstr(path, "stderr") == NULL) &&
         ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
         char msg[PATH_MAX + 128];
 
-        scope_snprintf(msg, sizeof(msg),
+        appview_snprintf(msg, sizeof(msg),
                        "path name %s contains setuid or setgid bits set representing a potential issue",
                        path);
         notify(NOTIFY_FILES, msg);
@@ -1356,10 +1356,10 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     if ((sbuf->st_mode & S_IWGRP) || (sbuf->st_mode & S_IWOTH)) {
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
-            if (scope_strstr(path, g_notify_def.sys_dirs[i])) {
+            if (appview_strstr(path, g_notify_def.sys_dirs[i])) {
                 char msg[PATH_MAX + 128];
 
-                scope_snprintf(msg, sizeof(msg),
+                appview_snprintf(msg, sizeof(msg),
                                "a system dir %s with a g/a write permission setting which represents a potential issue",
                                path);
                 notify(NOTIFY_FILES, msg);
@@ -1369,9 +1369,9 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    if ((scope_strstr(path, "stdout") == NULL) &&
-        (scope_strstr(path, "stdin") == NULL) &&
-        (scope_strstr(path, "stderr") == NULL)) {
+    if ((appview_strstr(path, "stdout") == NULL) &&
+        (appview_strstr(path, "stdin") == NULL) &&
+        (appview_strstr(path, "stderr") == NULL)) {
 
         struct passwd *pw;
         bool known_uid = FALSE, known_gid = FALSE;
@@ -1396,7 +1396,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         if (known_uid == FALSE) {
             char msg[PATH_MAX + 128];
 
-            scope_snprintf(msg, sizeof(msg),
+            appview_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
                            path, sbuf->st_uid);
             notify(NOTIFY_FILES, msg);
@@ -1405,7 +1405,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         if (known_gid == FALSE) {
             char msg[PATH_MAX + 128];
 
-            scope_snprintf(msg, sizeof(msg),
+            appview_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
                            path, sbuf->st_gid);
             notify(NOTIFY_FILES, msg);
@@ -1423,11 +1423,11 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
 
     if (nettx) {
         if (nettx->remoteConn.ss_family == AF_INET) {
-            scope_inet_ntop(AF_INET,
+            appview_inet_ntop(AF_INET,
                             &((struct sockaddr_in *)&nettx->remoteConn)->sin_addr,
                             rip, sizeof(rip));
         } else if (nettx->remoteConn.ss_family == AF_INET6) {
-            scope_inet_ntop(AF_INET6,
+            appview_inet_ntop(AF_INET6,
                             &((struct sockaddr_in6 *)&nettx->remoteConn)->sin6_addr,
                             rip, sizeof(rip));
         }
@@ -1436,10 +1436,10 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
     // TODO: add reverse DNS to get the hostname
     char msg[PATH_MAX + 256];
     if (rip[0] != '\0') {
-        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        appview_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
         notify(NOTIFY_FILES, msg);
     } else {
-        scope_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated", fsrd->path);
+        appview_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated", fsrd->path);
         notify(NOTIFY_FILES, msg);
     }
 }
@@ -1452,15 +1452,15 @@ getChannelNetEntry(uint64_t id)
 {
     net_info *net = lstFind(g_extra_net_info_list, id);
     if (!net) {
-        net = scope_calloc(1, sizeof(net_info));
+        net = appview_calloc(1, sizeof(net_info));
         if (!net) {
-            scopeLogError("ERROR: failed to allocate channel's net_info");
+            appviewLogError("ERROR: failed to allocate channel's net_info");
             DBG(NULL);
         } else {
             if (lstInsert(g_extra_net_info_list, id, net) != TRUE) {
-                scope_free(net);
+                appview_free(net);
                 net = NULL;
-                scopeLogError("ERROR: failed to save channel's net_info");
+                appviewLogError("ERROR: failed to save channel's net_info");
                 DBG(NULL);
             } else {
                 // populate the new net_info
@@ -1482,7 +1482,7 @@ doProtocol(uint64_t id, int sockfd, void *buf, size_t len, metric_t src, src_dat
     if (!net) net = getChannelNetEntry(id); // fallback to using channel ID
     if (!net) return FALSE;
 
-    scopeLogHexDebug(buf, len > 64 ? 64 : len, // limit hexdump to 64
+    appviewLogHexDebug(buf, len > 64 ? 64 : len, // limit hexdump to 64
             "DEBUG: doProtocol(id=%ld, fd=%d, len=%ld, src=%s, dtyp=%s) TLS=%s PROTO=%s",
             id, sockfd, len,
             src == NETRX ? "NETRX" :
@@ -1505,7 +1505,7 @@ doProtocol(uint64_t id, int sockfd, void *buf, size_t len, metric_t src, src_dat
 
     // Ignore empty payloads that should have been blocked by our interpositions
     if (!len) {
-        scopeLogDebug("DEBUG: fd:%d ignoring empty payload", sockfd);
+        appviewLogDebug("DEBUG: fd:%d ignoring empty payload", sockfd);
         return FALSE;
     }
 
@@ -1530,14 +1530,14 @@ doProtocol(uint64_t id, int sockfd, void *buf, size_t len, metric_t src, src_dat
 
         if (net && net->protoProtoDef) {
             // Process HTTP if detected and http or metrics are enabled
-            if ((!scope_strcasecmp(net->protoProtoDef->protname, "HTTP")) &&
+            if ((!appview_strcasecmp(net->protoProtoDef->protname, "HTTP")) &&
                 ((cfgEvtEnable(g_cfg.staticfg) && cfgEvtFormatSourceEnabled(g_cfg.staticfg, CFG_SRC_HTTP)) ||
                  (cfgMtcEnable(g_cfg.staticfg) && (cfgMtcWatchEnable(g_cfg.staticfg, CFG_MTC_HTTP))))) {
                 doHttp(sockfd, net, buf, len, src, dtype);
             }
 
             if (cfgMtcEnable(g_cfg.staticfg) && cfgMtcWatchEnable(g_cfg.staticfg, CFG_MTC_STATSD) &&
-                !scope_strcasecmp(net->protoProtoDef->protname, "STATSD")) {
+                !appview_strcasecmp(net->protoProtoDef->protname, "STATSD")) {
 
                 doMetricCapture(sockfd, net, buf, len, src, dtype);
             }
@@ -1675,10 +1675,10 @@ addSock(int fd, int type, int family)
 
         }
 /*
- * We need to do this scope_realloc.
+ * We need to do this appview_realloc.
  * However, it needs to be done in such a way as to not
- * scope_free the previous object that may be in use by a thread.
- * Possibly not use scope_realloc. Leaving the code in place and this
+ * appview_free the previous object that may be in use by a thread.
+ * Possibly not use appview_realloc. Leaving the code in place and this
  * comment as a reminder.
         if ((fd > g_numNinfo) && (fd < MAX_FDS))  {
             int increase;
@@ -1690,19 +1690,19 @@ addSock(int fd, int type, int family)
                 increase = MAX_FDS;
             }
 
-            // Need to scope_realloc
-            if ((temp = scope_realloc(g_netinfo, sizeof(struct net_info_t) * increase)) == NULL) {
-                scopeLogError("fd:%d ERROR: addSock:scope_realloc", fd);
+            // Need to appview_realloc
+            if ((temp = appview_realloc(g_netinfo, sizeof(struct net_info_t) * increase)) == NULL) {
+                appviewLogError("fd:%d ERROR: addSock:appview_realloc", fd);
                 DBG("re-alloc on Net table failed");
             } else {
-                scope_memset(&temp[g_numNinfo], 0, sizeof(struct net_info_t) * (increase - g_numNinfo));
+                appview_memset(&temp[g_numNinfo], 0, sizeof(struct net_info_t) * (increase - g_numNinfo));
                 g_numNinfo = increase;
                 g_netinfo = temp;
             }
         }
 */
 
-        scope_memset(&g_netinfo[fd], 0, sizeof(struct net_info_t));
+        appview_memset(&g_netinfo[fd], 0, sizeof(struct net_info_t));
         g_netinfo[fd].active = TRUE;
         g_netinfo[fd].type = type;
         g_netinfo[fd].localConn.ss_family = family;
@@ -1734,12 +1734,12 @@ doBlockConnection(int fd, const struct sockaddr *addr)
 
     if (addr->sa_family == AF_INET) {
         port = ((struct sockaddr_in *)addr)->sin_port;
-        scope_inet_ntop(AF_INET,
+        appview_inet_ntop(AF_INET,
                         &((struct sockaddr_in *)addr)->sin_addr,
                         rip, sizeof(rip));
     } else if (addr->sa_family == AF_INET6) {
         port = ((struct sockaddr_in6 *)addr)->sin6_port;
-        scope_inet_ntop(AF_INET6,
+        appview_inet_ntop(AF_INET6,
                         &((struct sockaddr_in6 *)addr)->sin6_addr,
                         rip, sizeof(rip));
     }
@@ -1752,7 +1752,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
          */
         for (int i = 0; g_notify_def.ip_white[i] != NULL; i++) {
             // always return all good if there is a white match
-            if (scope_strcmp(rip, g_notify_def.ip_white[i]) == 0) return 0;
+            if (appview_strcmp(rip, g_notify_def.ip_white[i]) == 0) return 0;
         }
 
         /*
@@ -1762,19 +1762,19 @@ doBlockConnection(int fd, const struct sockaddr *addr)
         if (g_notify_def.white_block == TRUE) {
             char msg[INET6_ADDRSTRLEN + 256];
 
-            scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
-            scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
+            appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
+            appview_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
             notify(NOTIFY_NET, msg);
             return 1;
         }
 
         // Should this connection be blocked based on the black list?
         for (int i = 0; g_notify_def.ip_black[i] != NULL; i++) {
-            if (scope_strcmp(rip, g_notify_def.ip_black[i]) == 0) {
+            if (appview_strcmp(rip, g_notify_def.ip_black[i]) == 0) {
                 char msg[INET6_ADDRSTRLEN + 256];
 
-                scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
-                scope_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
+                appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
+                appview_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
                 notify(NOTIFY_NET, msg);
                 return 1;
             }
@@ -1784,11 +1784,11 @@ doBlockConnection(int fd, const struct sockaddr *addr)
     // Is an explicit port being blocked per user config?
     if (g_cfg.blockconn == DEFAULT_PORTBLOCK) return 0;
 
-    if (g_cfg.blockconn == scope_ntohs(port)) {
+    if (g_cfg.blockconn == appview_ntohs(port)) {
         char msg[INET6_ADDRSTRLEN + 256];
 
-        scopeLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
-        scope_snprintf(msg, sizeof(msg), "a blocked network connection due to user config of a port block on %s:%d",
+        appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
+        appview_snprintf(msg, sizeof(msg), "a blocked network connection due to user config of a port block on %s:%d",
                        rip, port);
         notify(NOTIFY_NET, msg);
         return 1;
@@ -1810,11 +1810,11 @@ doSetConnection(int sd, const struct sockaddr *addr, socklen_t len, control_type
     if (((net = getNetEntry(sd)) != NULL) && addr && (len > 0)) {
         if (endp == LOCAL) {
             if ((net->type == SOCK_STREAM) && (net->addrSetLocal == TRUE)) return;
-            scope_memmove(&g_netinfo[sd].localConn, addr, len);
+            appview_memmove(&g_netinfo[sd].localConn, addr, len);
             if (net->type == SOCK_STREAM) net->addrSetLocal = TRUE;
         } else {
             if ((net->type == SOCK_STREAM) && (net->addrSetRemote == TRUE)) return;
-            scope_memmove(&g_netinfo[sd].remoteConn, addr, len);
+            appview_memmove(&g_netinfo[sd].remoteConn, addr, len);
             if (net->type == SOCK_STREAM) net->addrSetRemote = TRUE;
         }
 
@@ -1859,7 +1859,7 @@ doSetAddrs(int sockfd)
 
     if ((net->type == SOCK_STREAM) || (net->type == SOCK_DGRAM)) {
         if ((net->type == SOCK_STREAM) && (net->addrSetLocal == FALSE)) {
-            if (scope_getsockname(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
+            if (appview_getsockname(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
                 doSetConnection(sockfd, (struct sockaddr *)&addr, addrlen, LOCAL);
             }
         }
@@ -1885,16 +1885,16 @@ doAddNewSock(int sockfd)
     struct sockaddr_storage addr;
     socklen_t addrlen = sizeof(addr);
 
-    if (scope_getsockname(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
+    if (appview_getsockname(sockfd, (struct sockaddr *)&addr, &addrlen) != -1) {
         if (addrIsNetDomain(&addr) || addrIsUnixDomain(&addr)) {
             int type;
             socklen_t len = sizeof(type);
 
-            if (scope_getsockopt(sockfd, SOL_SOCKET, SO_TYPE, &type, &len) == 0) {
+            if (appview_getsockopt(sockfd, SOL_SOCKET, SO_TYPE, &type, &len) == 0) {
                 addSock(sockfd, type, addr.ss_family);
             } else {
                 // Really can't add the socket at this point
-                scopeLogError("fd:%d ERROR: doAddNewSock:getsockopt", sockfd);
+                appviewLogError("fd:%d ERROR: doAddNewSock:getsockopt", sockfd);
             }
         } else {
             // is RAW a viable default?
@@ -2059,11 +2059,11 @@ getDNSName(int sd, void *pkt, int pktlen)
 
     dnsName[dnsNameBytesUsed-1] = '\0'; // overwrite the last period
 
-    if (scope_strncmp(dnsName, g_netinfo[sd].dnsName, dnsNameBytesUsed) == 0) {
+    if (appview_strncmp(dnsName, g_netinfo[sd].dnsName, dnsNameBytesUsed) == 0) {
         // Already sent this from an interposed function
         g_netinfo[sd].dnsSend = TRUE;
     } else {
-        scope_strncpy(g_netinfo[sd].dnsName, dnsName, dnsNameBytesUsed);
+        appview_strncpy(g_netinfo[sd].dnsName, dnsName, dnsNameBytesUsed);
         g_netinfo[sd].dnsSend = FALSE;
     }
 
@@ -2080,8 +2080,8 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
     ns_msg handle;
 
     // init ns lib
-    if (scope_ns_initparse((const unsigned char *)buf, len, &handle) == -1) {
-        scopeLogError("ERROR:init parse");
+    if (appview_ns_initparse((const unsigned char *)buf, len, &handle) == -1) {
+        appviewLogError("ERROR:init parse");
         return FALSE;
     }
 
@@ -2092,8 +2092,8 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
             char ipaddr[128];
             //char dispbuf[4096];
 
-            if (scope_ns_parserr(&handle, ns_s_an, i, &rr) == -1) {
-                scopeLogError("ERROR:parse rr");
+            if (appview_ns_parserr(&handle, ns_s_an, i, &rr) == -1) {
+                appviewLogError("ERROR:parse rr");
                 notify(NOTIFY_DNS, "illegal DNS response can't be parsed");
                 return FALSE;
             }
@@ -2107,17 +2107,17 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
             }
 
             //ns_sprintrr(&handle, &rr, NULL, NULL, dispbuf, sizeof (dispbuf));
-            //scopeLog(CFG_LOG_DEBUG, "%s", dispbuf);
+            //appviewLog(CFG_LOG_DEBUG, "%s", dispbuf);
 
             // type A is IPv4, AAA is IPv6
             if (ns_rr_type(rr) == ns_t_a) {
-                if (!scope_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
+                if (!appview_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
                                      ipaddr, sizeof(ipaddr))) {
                     notify(NOTIFY_DNS, "DNS response with an illegal IPv6 address");
                     continue;
                 }
             } else if (ns_rr_type(rr) == ns_t_aaaa) {
-                if (!scope_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
+                if (!appview_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
                                      ipaddr, sizeof(ipaddr))) {
                     notify(NOTIFY_DNS, "DNS response with an illegal IPv4 address");
                     continue;
@@ -2128,8 +2128,8 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
                 continue;
             }
 
-            //scope_snprintf(dispbuf, sizeof(dispbuf), "resolved addr is %s\n", ipaddr);
-            //scopeLog(CFG_LOG_DEBUG, "%s", dispbuf);
+            //appview_snprintf(dispbuf, sizeof(dispbuf), "resolved addr is %s\n", ipaddr);
+            //appviewLog(CFG_LOG_DEBUG, "%s", dispbuf);
 
             if (!cJSON_AddStringToObjLN(addrs, "addr", ipaddr)) {
                 continue;
@@ -2298,7 +2298,7 @@ doSend(int sockfd, ssize_t rc, const void *buf, size_t len, src_data_t src)
 void
 doAccept(int oldsd, int newsd, struct sockaddr *addr, socklen_t *addrlen, char *func)
 {
-    scopeLog(CFG_LOG_DEBUG, "fd:%d %s", newsd, func);
+    appviewLog(CFG_LOG_DEBUG, "fd:%d %s", newsd, func);
 
     // on attach, we may not know that the oldsd was a socket.
     // now we know it is, so mark it as a socket and get whatever
@@ -2372,7 +2372,7 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
     struct net_info_t *net = getNetEntry(fd);
 
     if (success) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
+        appviewLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
         if (net) {
             // This is a network descriptor
             doSetAddrs(fd);
@@ -2386,12 +2386,12 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
             if (fs->enforceRD) {
                 char msg[PATH_MAX + 128];
 
-                scope_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
                 notify(NOTIFY_FILES, msg);
             }
 
             // Don't count data from stdin
-            if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
+            if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
                 doUpdateState(FS_DURATION, fd, duration, func, NULL);
                 doUpdateState(FS_READ, fd, bytes, func, NULL);
@@ -2427,12 +2427,12 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
             if (fs->enforceWR) {
                 char msg[PATH_MAX + 128];
 
-                scope_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
                 notify(NOTIFY_FILES, msg);
 
             }
             // Don't count data from stdout, stderr
-            if ((fd > 2) || scope_strncmp(fs->path, "std", 3)) {
+            if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
                 doUpdateState(FS_DURATION, fd, duration, func, NULL);
                 doUpdateState(FS_WRITE, fd, bytes, func, NULL);
@@ -2467,7 +2467,7 @@ doSeek(int fd, int success, const char *func)
 {
     struct fs_info_t *fs = getFSEntry(fd);
     if (success) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
         if (fs) {
             doUpdateState(FS_SEEK, fd, 0, func, NULL);
         }
@@ -2483,7 +2483,7 @@ void
 doStatPath(const char *path, int rc, const char *func)
 {
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "%s", func);
+        appviewLog(CFG_LOG_TRACE, "%s", func);
         doUpdateState(FS_STAT, -1, 0, func, path);
     } else {
         doUpdateState(FS_ERR_STAT, -1, (size_t)0, func, path);
@@ -2496,7 +2496,7 @@ doStatFd(int fd, int rc, const char* func)
     struct fs_info_t *fs = getFSEntry(fd);
 
     if (rc != -1) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d %s", fd, func);
         if (fs) {
             doUpdateState(FS_STAT, fd, 0, func, fs->path);
         }
@@ -2526,7 +2526,7 @@ doDupSock(int oldfd, int newfd)
         return -1;
     }
 
-    scope_memmove(&g_netinfo[newfd], &g_netinfo[oldfd], sizeof(struct net_info_t));
+    appview_memmove(&g_netinfo[newfd], &g_netinfo[oldfd], sizeof(struct net_info_t));
     g_netinfo[newfd].active = TRUE;
     g_netinfo[newfd].uid = getTime();
     g_netinfo[newfd].numTX = (counters_element_t){.mtc=0, .evt=0};
@@ -2552,7 +2552,7 @@ doDup(int fd, int rc, const char *func, int copyNet)
     if (rc != -1) {
         if (net) {
             // This is a network descriptor
-            scopeLog(CFG_LOG_DEBUG, "fd:%d %s", rc, func);
+            appviewLog(CFG_LOG_DEBUG, "fd:%d %s", rc, func);
             if (copyNet) {
                 doDupSock(fd, rc);
             } else {
@@ -2577,7 +2577,7 @@ doDup2(int oldfd, int newfd, int rc, const char *func)
     struct net_info_t *net = getNetEntry(oldfd);
 
     if ((rc != -1) && (oldfd != newfd)) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d %s", rc, func);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d %s", rc, func);
         if (net) {
             if (getNetEntry(newfd)) {
                 doClose(newfd, func);
@@ -2633,7 +2633,7 @@ doClose(int fd, const char *func)
     reportFD(fd, EVENT_BASED);
 
     if (ninfo) ninfo->active = FALSE;
-    if (fsinfo) scope_memset(fsinfo, 0, sizeof(struct fs_info_t));
+    if (fsinfo) appview_memset(fsinfo, 0, sizeof(struct fs_info_t));
 
     if (guard_enabled) while (!atomicCasU64(&g_http_guard[fd], 1ULL, 0ULL));
 }
@@ -2646,15 +2646,15 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
         return;
     } else if (checkFSEntry(fd) == TRUE) {
         if (g_fsinfo[fd].active) {
-            scopeLog(CFG_LOG_DEBUG, "fd:%d doOpen: duplicate", fd);
+            appviewLog(CFG_LOG_DEBUG, "fd:%d doOpen: duplicate", fd);
             DBG(NULL);
             doClose(fd, func);
         }
 /*
- * We need to do this scope_realloc.
+ * We need to do this appview_realloc.
  * However, it needs to be done in such a way as to not
- * scope_free the previous object that may be in use by a thread.
- * Possibly not use scope_realloc. Leaving the code in place and this
+ * appview_free the previous object that may be in use by a thread.
+ * Possibly not use appview_realloc. Leaving the code in place and this
  * comment as a reminder.
 
         if ((fd > g_numFSinfo) && (fd < MAX_FDS))  {
@@ -2667,26 +2667,26 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
                 increase = MAX_FDS;
             }
 
-            // Need to scope_realloc
-            if ((temp = scope_realloc(g_fsinfo, sizeof(struct fs_info_t) * increase)) == NULL) {
-                scopeLogError("fd:%d ERROR: doOpen:scope_realloc", fd);
+            // Need to appview_realloc
+            if ((temp = appview_realloc(g_fsinfo, sizeof(struct fs_info_t) * increase)) == NULL) {
+                appviewLogError("fd:%d ERROR: doOpen:appview_realloc", fd);
                 DBG("re-alloc on FS table failed");
             } else {
-                scope_memset(&temp[g_numFSinfo], 0, sizeof(struct fs_info_t) * (increase - g_numFSinfo));
+                appview_memset(&temp[g_numFSinfo], 0, sizeof(struct fs_info_t) * (increase - g_numFSinfo));
                 g_fsinfo = temp;
                 g_numFSinfo = increase;
             }
         }
 */
-        scope_memset(&g_fsinfo[fd], 0, sizeof(struct fs_info_t));
+        appview_memset(&g_fsinfo[fd], 0, sizeof(struct fs_info_t));
         g_fsinfo[fd].active = TRUE;
         g_fsinfo[fd].type = type;
         g_fsinfo[fd].uid = getTime();
-        scope_strncpy(g_fsinfo[fd].path, path, sizeof(g_fsinfo[fd].path));
+        appview_strncpy(g_fsinfo[fd].path, path, sizeof(g_fsinfo[fd].path));
 
         struct stat sbuf;
         if (ctlEvtSourceEnabled(g_ctl, CFG_SRC_FS) && ctlEnhanceFs(g_ctl)) {
-            if (scope_stat(g_fsinfo[fd].path, &sbuf) == 0) {
+            if (appview_stat(g_fsinfo[fd].path, &sbuf) == 0) {
                 g_fsinfo[fd].fuid = sbuf.st_uid;
                 g_fsinfo[fd].fgid = sbuf.st_gid;
                 g_fsinfo[fd].mode = sbuf.st_mode;
@@ -2695,7 +2695,7 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
         doDetectFile(path, &g_fsinfo[fd], &sbuf);
-        scopeLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
+        appviewLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }
 
@@ -2706,7 +2706,7 @@ doSendFile(int out_fd, int in_fd, uint64_t initialTime, int rc, const char *func
     struct net_info_t *nettx = getNetEntry(out_fd);
 
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d %s", in_fd, func);
+        appviewLog(CFG_LOG_TRACE, "fd:%d %s", in_fd, func);
         if (nettx) {
             doSetAddrs(out_fd);
             doSend(out_fd, rc, NULL, 0, NONE);

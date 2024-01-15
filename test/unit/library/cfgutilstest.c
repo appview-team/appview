@@ -11,7 +11,7 @@
 #include "fn.h"
 #include "com.h"
 #include "cfgutils.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "test.h"
 #include "dbg.h"
 
@@ -24,32 +24,32 @@ static int
 testDirPath(char *path, const char *argv0) {
     char buf[PATH_MAX];
     if (argv0[0] == '/') {
-        scope_strcpy(buf, argv0);
+        appview_strcpy(buf, argv0);
     } else {
-        if (scope_getcwd(buf, PATH_MAX) == NULL) {
-            scope_perror("getcwd error");
+        if (appview_getcwd(buf, PATH_MAX) == NULL) {
+            appview_perror("getcwd error");
             return -1;
         }
-        scope_strcat(buf, "/");
-        scope_strcat(buf, argv0);
+        appview_strcat(buf, "/");
+        appview_strcat(buf, argv0);
     }
 
-    if (scope_realpath(buf, path) == NULL) {
-        scope_perror("scope_realpath error");
+    if (appview_realpath(buf, path) == NULL) {
+        appview_perror("appview_realpath error");
         return -1;
     }
 
     /*
     * Retrieve the test directory path.
     * From:
-    * /<dir>/appscope/test/linux/cfgutilsrulestest
+    * /<dir>/appview/test/linux/cfgutilsrulestest
     * To:
-    * /<dir>/appscope/test/
+    * /<dir>/appview/test/
     */
     for (int i= 0; i < 2; ++i) {
-        path = scope_dirname(path);
+        path = appview_dirname(path);
         if (path == NULL) {
-            scope_perror("scope_dirname error");
+            appview_perror("appview_dirname error");
             return -1;
         }
     }
@@ -59,15 +59,15 @@ testDirPath(char *path, const char *argv0) {
 // mimics behavior of retrieving the default rules path
 static const char *
 testAccessRulesPath(const char *rulesPath) {
-    return (scope_access(rulesPath, R_OK) == 0) ? rulesPath : NULL;
+    return (appview_access(rulesPath, R_OK) == 0) ? rulesPath : NULL;
 }
 
 static void
 openFileAndExecuteCfgProcessCommands(const char *path, config_t *cfg)
 {
-    FILE *f = scope_fopen(path, "r");
+    FILE *f = appview_fopen(path, "r");
     cfgProcessCommands(cfg, f);
-    scope_fclose(f);
+    appview_fclose(f);
 }
 
 static void
@@ -77,41 +77,41 @@ cfgPathHonorsEnvVar(void **state)
 
     // grab the current working directory
     char origdir[MAX_PATH];
-    assert_non_null(scope_getcwd(origdir, sizeof(origdir)));
+    assert_non_null(appview_getcwd(origdir, sizeof(origdir)));
     // create newdir, and switch to it
     char newdir[MAX_PATH + 12];
 
-    scope_snprintf(newdir, sizeof(newdir), "%s/%s", origdir, "newdir");
-    if (scope_access(newdir, R_OK)) {
-        assert_int_equal(scope_mkdir(newdir, 0777), 0);
+    appview_snprintf(newdir, sizeof(newdir), "%s/%s", origdir, "newdir");
+    if (appview_access(newdir, R_OK)) {
+        assert_int_equal(appview_mkdir(newdir, 0777), 0);
     }
 
-    assert_int_equal(scope_chdir(newdir), 0);
+    assert_int_equal(appview_chdir(newdir), 0);
 
 
     // Verify that if there is no env variable, cfgPath is null
     assert_null(cfgPath());
 
     // Verify that if there is an env variable, but no file, cfgPath is null
-    assert_int_equal(setenv("SCOPE_CONF_PATH", file_path, 1), 0);
+    assert_int_equal(setenv("APPVIEW_CONF_PATH", file_path, 1), 0);
     assert_null(cfgPath());
 
     // Verify that if there is an env variable, and a file, cfgPath is defined
-    int fd = scope_open(file_path, O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
-    assert_return_code(fd, scope_errno);
+    int fd = appview_open(file_path, O_RDWR | O_CREAT, S_IRUSR | S_IRGRP | S_IROTH);
+    assert_return_code(fd, appview_errno);
     char *path = cfgPath();
     assert_non_null(path);
     assert_string_equal(path, file_path);
 
     // cleanup
-    scope_free(path);
-    scope_unlink(file_path);
-    assert_int_equal(unsetenv("SCOPE_CONF_PATH"), 0);
+    appview_free(path);
+    appview_unlink(file_path);
+    assert_int_equal(unsetenv("APPVIEW_CONF_PATH"), 0);
 
     // change back to origdir
-    assert_int_equal(scope_chdir(origdir), 0);
+    assert_int_equal(appview_chdir(origdir), 0);
     // Delete the directory we created
-    assert_int_equal(scope_rmdir(newdir), 0);
+    assert_int_equal(appview_rmdir(newdir), 0);
 }
 
 /*
@@ -144,32 +144,32 @@ cfgPathHonorsPriorityOrder(void **state)
         }
     }
 
-    // get the basedir, set cwd and scopeHome from it
+    // get the basedir, set cwd and appviewHome from it
     char basedir[MAX_PATH];
     char cwd[MAX_PATH * 2];
-    char scopeHome[MAX_PATH * 3];
+    char appviewHome[MAX_PATH * 3];
     assert_non_null(getcwd(basedir, sizeof(basedir)));
     snprintf(cwd, sizeof(cwd), "%s/%s", basedir, newdir[0]);
-    snprintf(scopeHome, sizeof(scopeHome), "%s/%s", basedir, newdir[1]);
+    snprintf(appviewHome, sizeof(appviewHome), "%s/%s", basedir, newdir[1]);
 
     // Change to cwd
     assert_int_equal(chdir(cwd), 0);
 
-    // Set SCOPE_HOME to the other
-    assert_int_equal(setenv("SCOPE_HOME", scopeHome, 1), 0);
+    // Set APPVIEW_HOME to the other
+    assert_int_equal(setenv("APPVIEW_HOME", appviewHome, 1), 0);
 
     // Create the paths we want to test
-    const char file[] = CFG_FILE_NAME; // scope.yml
+    const char file[] = CFG_FILE_NAME; // appview.yml
     char path[6][MAX_PATH * 4];
     // Lowest priority first
     snprintf(path[0], sizeof(path[0]), "%s/%s", cwd, file);
     snprintf(path[1], sizeof(path[1]), "%s/conf/%s", cwd, file);
     snprintf(path[2], sizeof(path[2]), "%s/%s", home, file);
     snprintf(path[3], sizeof(path[3]), "%s/conf/%s", home, file);
-    // Skip for now...  we may not have permissions to write to /etc/scope
-    //snprintf(path[4], sizeof(path[4]), "/etc/scope/%s", file);
-    snprintf(path[4], sizeof(path[4]), "%s/%s", scopeHome, file);
-    snprintf(path[5], sizeof(path[5]), "%s/conf/%s", scopeHome, file);
+    // Skip for now...  we may not have permissions to write to /etc/appview
+    //snprintf(path[4], sizeof(path[4]), "/etc/appview/%s", file);
+    snprintf(path[4], sizeof(path[4]), "%s/%s", appviewHome, file);
+    snprintf(path[5], sizeof(path[5]), "%s/conf/%s", appviewHome, file);
 
     // Test that none of them exist before we start
     const int count = sizeof(path)/sizeof(path[0]);
@@ -216,21 +216,21 @@ cfgProcessEnvironmentMtcEnable(void **state)
     assert_int_equal(cfgMtcEnable(cfg), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_METRIC_ENABLE", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_ENABLE", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcEnable(cfg), TRUE);
 
-    assert_int_equal(setenv("SCOPE_METRIC_ENABLE", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_ENABLE", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcEnable(cfg), FALSE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_METRIC_ENABLE"), 0);
+    assert_int_equal(unsetenv("APPVIEW_METRIC_ENABLE"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcEnable(cfg), FALSE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_METRIC_ENABLE", "blah", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_ENABLE", "blah", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcEnable(cfg), FALSE);
 
@@ -247,21 +247,21 @@ cfgProcessEnvironmentMtcFormat(void **state)
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_NDJSON);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_METRIC_FORMAT", "statsd", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_FORMAT", "statsd", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_STATSD);
 
-    assert_int_equal(setenv("SCOPE_METRIC_FORMAT", "ndjson", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_FORMAT", "ndjson", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_NDJSON);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_METRIC_FORMAT"), 0);
+    assert_int_equal(unsetenv("APPVIEW_METRIC_FORMAT"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_NDJSON);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_METRIC_FORMAT", "bson", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_FORMAT", "bson", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_NDJSON);
 
@@ -278,21 +278,21 @@ cfgProcessEnvironmentStatsDPrefix(void **state)
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "something.");
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_STATSD_PREFIX", "blah", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_PREFIX", "blah", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "blah.");
 
-    assert_int_equal(setenv("SCOPE_STATSD_PREFIX", "hey", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_PREFIX", "hey", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "hey.");
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_STATSD_PREFIX"), 0);
+    assert_int_equal(unsetenv("APPVIEW_STATSD_PREFIX"), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "hey.");
 
     // empty string
-    assert_int_equal(setenv("SCOPE_STATSD_PREFIX", "", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_PREFIX", "", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "");
 
@@ -309,21 +309,21 @@ cfgProcessEnvironmentStatsDMaxLen(void **state)
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 0);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_STATSD_MAXLEN", "3", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_MAXLEN", "3", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 3);
 
-    assert_int_equal(setenv("SCOPE_STATSD_MAXLEN", "12", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_MAXLEN", "12", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 12);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_STATSD_MAXLEN"), 0);
+    assert_int_equal(unsetenv("APPVIEW_STATSD_MAXLEN"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 12);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_STATSD_MAXLEN", "notEvenANum", 1), 0);
+    assert_int_equal(setenv("APPVIEW_STATSD_MAXLEN", "notEvenANum", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 12);
 
@@ -340,22 +340,22 @@ cfgProcessEnvironmentWatchStatsdEnable(void **state)
     assert_int_equal(cfgMtcWatchEnable(cfg, CFG_MTC_STATSD), TRUE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_METRIC_STATSD", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_STATSD", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcWatchEnable(cfg, CFG_MTC_STATSD), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_METRIC_STATSD", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_STATSD", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcWatchEnable(cfg, CFG_MTC_STATSD), TRUE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_METRIC_STATSD"), 0);
+    assert_int_equal(unsetenv("APPVIEW_METRIC_STATSD"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcWatchEnable(cfg, CFG_MTC_STATSD), TRUE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_METRIC_STATSD", "sure thing", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_STATSD", "sure thing", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcWatchEnable(cfg, CFG_MTC_STATSD), TRUE);
 
@@ -373,21 +373,21 @@ cfgProcessEnvironmentMtcPeriod(void **state)
     assert_int_equal(cfgMtcPeriod(cfg), 0);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_SUMMARY_PERIOD", "3", 1), 0);
+    assert_int_equal(setenv("APPVIEW_SUMMARY_PERIOD", "3", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcPeriod(cfg), 3);
 
-    assert_int_equal(setenv("SCOPE_SUMMARY_PERIOD", "12", 1), 0);
+    assert_int_equal(setenv("APPVIEW_SUMMARY_PERIOD", "12", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcPeriod(cfg), 12);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_SUMMARY_PERIOD"), 0);
+    assert_int_equal(unsetenv("APPVIEW_SUMMARY_PERIOD"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcPeriod(cfg), 12);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_SUMMARY_PERIOD", "notEvenANum", 1), 0);
+    assert_int_equal(setenv("APPVIEW_SUMMARY_PERIOD", "notEvenANum", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcPeriod(cfg), 12);
 
@@ -404,21 +404,21 @@ cfgProcessEnvironmentCommandDir(void **state)
     assert_string_equal(cfgCmdDir(cfg), "/my/favorite/directory");
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_CMD_DIR", "/my/other/dir", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CMD_DIR", "/my/other/dir", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCmdDir(cfg), "/my/other/dir");
 
-    assert_int_equal(setenv("SCOPE_CMD_DIR", "/my/dir", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CMD_DIR", "/my/dir", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCmdDir(cfg), "/my/dir");
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_CMD_DIR"), 0);
+    assert_int_equal(unsetenv("APPVIEW_CMD_DIR"), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCmdDir(cfg), "/my/dir");
 
     // empty string
-    assert_int_equal(setenv("SCOPE_CMD_DIR", "", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CMD_DIR", "", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCmdDir(cfg), DEFAULT_COMMAND_DIR);
 
@@ -435,22 +435,22 @@ cfgProcessEnvironmentConfigEvent(void **state)
     assert_int_equal(cfgSendProcessStartMsg(cfg), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_CONFIG_EVENT", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CONFIG_EVENT", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgSendProcessStartMsg(cfg), TRUE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_CONFIG_EVENT", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CONFIG_EVENT", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgSendProcessStartMsg(cfg), FALSE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_CONFIG_EVENT"), 0);
+    assert_int_equal(unsetenv("APPVIEW_CONFIG_EVENT"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgSendProcessStartMsg(cfg), FALSE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_CONFIG_EVENT", "hi!", 1), 0);
+    assert_int_equal(setenv("APPVIEW_CONFIG_EVENT", "hi!", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgSendProcessStartMsg(cfg), FALSE);
 
@@ -467,21 +467,21 @@ cfgProcessEnvironmentEvtEnable(void **state)
     assert_int_equal(cfgEvtEnable(cfg), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_EVENT_ENABLE", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_ENABLE", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtEnable(cfg), TRUE);
 
-    assert_int_equal(setenv("SCOPE_EVENT_ENABLE", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_ENABLE", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtEnable(cfg), FALSE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_EVENT_ENABLE"), 0);
+    assert_int_equal(unsetenv("APPVIEW_EVENT_ENABLE"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtEnable(cfg), FALSE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_EVENT_ENABLE", "blah", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_ENABLE", "blah", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtEnable(cfg), FALSE);
 
@@ -498,21 +498,21 @@ cfgProcessEnvironmentEventFormat(void **state)
     assert_int_equal(cfgEventFormat(cfg), CFG_FMT_NDJSON);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_EVENT_FORMAT", "ndjson", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_FORMAT", "ndjson", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEventFormat(cfg), CFG_FMT_NDJSON);
 
-    assert_int_equal(setenv("SCOPE_EVENT_FORMAT", "statsd", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_FORMAT", "statsd", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEventFormat(cfg), CFG_FMT_NDJSON);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_EVENT_FORMAT"), 0);
+    assert_int_equal(unsetenv("APPVIEW_EVENT_FORMAT"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEventFormat(cfg), CFG_FMT_NDJSON);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_EVENT_FORMAT", "bson", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_FORMAT", "bson", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEventFormat(cfg), CFG_FMT_NDJSON);
 
@@ -529,21 +529,21 @@ cfgProcessEnvironmentMaxEps(void **state)
     assert_int_equal(cfgEvtRateLimit(cfg), 0);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_EVENT_MAXEPS", "13", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_MAXEPS", "13", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtRateLimit(cfg), 13);
 
-    assert_int_equal(setenv("SCOPE_EVENT_MAXEPS", "31", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_MAXEPS", "31", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtRateLimit(cfg), 31);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_EVENT_MAXEPS"), 0);
+    assert_int_equal(unsetenv("APPVIEW_EVENT_MAXEPS"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtRateLimit(cfg), 31);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_EVENT_MAXEPS", "cribl_rulz", 1), 0);
+    assert_int_equal(setenv("APPVIEW_EVENT_MAXEPS", "cribl_rulz", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEvtRateLimit(cfg), 31);
 
@@ -560,21 +560,21 @@ cfgProcessEnvironmentEnhanceFs(void **state)
     assert_int_equal(cfgEnhanceFs(cfg), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_ENHANCE_FS", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_ENHANCE_FS", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEnhanceFs(cfg), TRUE);
 
-    assert_int_equal(setenv("SCOPE_ENHANCE_FS", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_ENHANCE_FS", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEnhanceFs(cfg), FALSE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_ENHANCE_FS"), 0);
+    assert_int_equal(unsetenv("APPVIEW_ENHANCE_FS"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEnhanceFs(cfg), FALSE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_ENHANCE_FS", "cribl_rulz", 1), 0);
+    assert_int_equal(setenv("APPVIEW_ENHANCE_FS", "cribl_rulz", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgEnhanceFs(cfg), FALSE);
 
@@ -634,21 +634,21 @@ cfgProcessEnvironmentMtcVerbosity(void **state)
     assert_int_equal(cfgMtcVerbosity(cfg), 0);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_METRIC_VERBOSITY", "3", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_VERBOSITY", "3", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcVerbosity(cfg), 3);
 
-    assert_int_equal(setenv("SCOPE_METRIC_VERBOSITY", "9", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_VERBOSITY", "9", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcVerbosity(cfg), 9);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_METRIC_VERBOSITY"), 0);
+    assert_int_equal(unsetenv("APPVIEW_METRIC_VERBOSITY"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcVerbosity(cfg), 9);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_METRIC_VERBOSITY", "notEvenANum", 1), 0);
+    assert_int_equal(setenv("APPVIEW_METRIC_VERBOSITY", "notEvenANum", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgMtcVerbosity(cfg), 9);
 
@@ -665,21 +665,21 @@ cfgProcessEnvironmentLogLevel(void **state)
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_DEBUG);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_LOG_LEVEL", "trace", 1), 0);
+    assert_int_equal(setenv("APPVIEW_LOG_LEVEL", "trace", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_TRACE);
 
-    assert_int_equal(setenv("SCOPE_LOG_LEVEL", "debug", 1), 0);
+    assert_int_equal(setenv("APPVIEW_LOG_LEVEL", "debug", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_DEBUG);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_LOG_LEVEL"), 0);
+    assert_int_equal(unsetenv("APPVIEW_LOG_LEVEL"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_DEBUG);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_LOG_LEVEL", "everythingandmore", 1), 0);
+    assert_int_equal(setenv("APPVIEW_LOG_LEVEL", "everythingandmore", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_DEBUG);
 
@@ -757,7 +757,7 @@ cfgProcessEnvironmentStatsdTags(void **state)
     assert_null(cfgCustomTags(cfg)[1]);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_TAG_NAME1", "newvalue", 1), 0);
+    assert_int_equal(setenv("APPVIEW_TAG_NAME1", "newvalue", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCustomTagValue(cfg, "NAME1"), "newvalue");
     assert_string_equal(cfgCustomTags(cfg)[0]->name, "NAME1");
@@ -765,7 +765,7 @@ cfgProcessEnvironmentStatsdTags(void **state)
     assert_null(cfgCustomTags(cfg)[1]);
 
     // should extend current cfg
-    assert_int_equal(setenv("SCOPE_TAG_NAME2", "val2", 1), 0);
+    assert_int_equal(setenv("APPVIEW_TAG_NAME2", "val2", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCustomTagValue(cfg, "NAME2"), "val2");
     assert_string_equal(cfgCustomTags(cfg)[1]->name, "NAME2");
@@ -773,8 +773,8 @@ cfgProcessEnvironmentStatsdTags(void **state)
     assert_null(cfgCustomTags(cfg)[2]);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_TAG_NAME1"), 0);
-    assert_int_equal(unsetenv("SCOPE_TAG_NAME2"), 0);
+    assert_int_equal(unsetenv("APPVIEW_TAG_NAME1"), 0);
+    assert_int_equal(unsetenv("APPVIEW_TAG_NAME2"), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgCustomTagValue(cfg, "NAME1"), "newvalue");
     assert_string_equal(cfgCustomTagValue(cfg, "NAME2"), "val2");
@@ -792,21 +792,21 @@ cfgProcessEnvironmentPayEnable(void **state)
     assert_int_equal(cfgPayEnable(cfg), FALSE);
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_PAYLOAD_ENABLE", "true", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_ENABLE", "true", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgPayEnable(cfg), TRUE);
 
-    assert_int_equal(setenv("SCOPE_PAYLOAD_ENABLE", "false", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_ENABLE", "false", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgPayEnable(cfg), FALSE);
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_PAYLOAD_ENABLE"), 0);
+    assert_int_equal(unsetenv("APPVIEW_PAYLOAD_ENABLE"), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgPayEnable(cfg), FALSE);
 
     // unrecognised value should not affect cfg
-    assert_int_equal(setenv("SCOPE_PAYLOAD_ENABLE", "blah", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_ENABLE", "blah", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_int_equal(cfgPayEnable(cfg), FALSE);
 
@@ -823,21 +823,21 @@ cfgProcessEnvironmentPayDir(void **state)
     assert_string_equal(cfgPayDir(cfg), "/my/favorite/directory");
 
     // should override current cfg
-    assert_int_equal(setenv("SCOPE_PAYLOAD_DIR", "/my/other/dir", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_DIR", "/my/other/dir", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgPayDir(cfg), "/my/other/dir");
 
-    assert_int_equal(setenv("SCOPE_PAYLOAD_DIR", "/my/dir", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_DIR", "/my/dir", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgPayDir(cfg), "/my/dir");
 
     // if env is not defined, cfg should not be affected
-    assert_int_equal(unsetenv("SCOPE_PAYLOAD_DIR"), 0);
+    assert_int_equal(unsetenv("APPVIEW_PAYLOAD_DIR"), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgPayDir(cfg), "/my/dir");
 
     // empty string
-    assert_int_equal(setenv("SCOPE_PAYLOAD_DIR", "", 1), 0);
+    assert_int_equal(setenv("APPVIEW_PAYLOAD_DIR", "", 1), 0);
     cfgProcessEnvironment(cfg);
     assert_string_equal(cfgPayDir(cfg), DEFAULT_PAYLOAD_DIR);
 
@@ -850,7 +850,7 @@ static void
 cfgProcessEnvironmentCmdDebugIsIgnored(void **state)
 {
     const char *path = "/tmp/dbgoutfile.txt";
-    assert_int_equal(setenv("SCOPE_CMD_DBG_PATH", path, 1), 0);
+    assert_int_equal(setenv("APPVIEW_CMD_DBG_PATH", path, 1), 0);
 
     long file_pos_before = fileEndPosition(path);
 
@@ -863,7 +863,7 @@ cfgProcessEnvironmentCmdDebugIsIgnored(void **state)
     // since it's not processed, the file position better not have changed.
     assert_int_equal(file_pos_before, file_pos_after);
 
-    unsetenv("SCOPE_CMD_DBG_PATH");
+    unsetenv("APPVIEW_CMD_DBG_PATH");
     if (file_pos_after != -1) unlink(path);
 }
 
@@ -876,7 +876,7 @@ cfgProcessCommandsCmdDebugIsProcessed(void **state)
     long file_pos_before = fileEndPosition(outpath);
 
     config_t *cfg = cfgCreateDefault();
-    writeFile(inpath, "SCOPE_CMD_DBG_PATH=/tmp/dbgoutfile.txt");
+    writeFile(inpath, "APPVIEW_CMD_DBG_PATH=/tmp/dbgoutfile.txt");
     openFileAndExecuteCfgProcessCommands(inpath, cfg);
     cfgDestroy(&cfg);
 
@@ -885,8 +885,8 @@ cfgProcessCommandsCmdDebugIsProcessed(void **state)
     // since it's not processed, the file position should be updated
     assert_int_not_equal(file_pos_before, file_pos_after);
 
-    scope_unlink(inpath);
-    if (file_pos_after != -1) scope_unlink(outpath);
+    appview_unlink(inpath);
+    if (file_pos_after != -1) appview_unlink(outpath);
 }
 
 static void
@@ -903,80 +903,80 @@ cfgProcessCommandsFromFile(void **state)
 
 
     // test the basics
-    writeFile(path, "SCOPE_METRIC_FORMAT=ndjson");
+    writeFile(path, "APPVIEW_METRIC_FORMAT=ndjson");
     openFileAndExecuteCfgProcessCommands(path, cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_NDJSON);
 
-    writeFile(path, "\nSCOPE_METRIC_FORMAT=statsd\r\nblah");
+    writeFile(path, "\nAPPVIEW_METRIC_FORMAT=statsd\r\nblah");
     openFileAndExecuteCfgProcessCommands(path, cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_STATSD);
 
     // just demonstrating that the "last one wins"
-    writeFile(path, "SCOPE_METRIC_FORMAT=ndjson\n"
-                    "SCOPE_METRIC_FORMAT=statsd");
+    writeFile(path, "APPVIEW_METRIC_FORMAT=ndjson\n"
+                    "APPVIEW_METRIC_FORMAT=statsd");
     openFileAndExecuteCfgProcessCommands(path, cfg);
     assert_int_equal(cfgMtcFormat(cfg), CFG_FMT_STATSD);
 
 
     // test everything else once
     writeFile(path,
-        "SCOPE_METRIC_ENABLE=false\n"
-        "SCOPE_STATSD_PREFIX=prefix\n"
-        "SCOPE_STATSD_MAXLEN=1024\n"
-        "SCOPE_METRIC_STATSD=false\n"
-        "SCOPE_SUMMARY_PERIOD=11\n"
-        "SCOPE_CMD_DIR=/the/path/\n"
-        "SCOPE_CONFIG_EVENT=false\n"
-        "SCOPE_METRIC_VERBOSITY=1\n"
-        "SCOPE_METRIC_VERBOSITY:prefix\n"     // ignored (no '=')
-        "SCOPE_METRIC_VERBOSITY=blah\n"       // processed, but 'blah' isn't int)
+        "APPVIEW_METRIC_ENABLE=false\n"
+        "APPVIEW_STATSD_PREFIX=prefix\n"
+        "APPVIEW_STATSD_MAXLEN=1024\n"
+        "APPVIEW_METRIC_STATSD=false\n"
+        "APPVIEW_SUMMARY_PERIOD=11\n"
+        "APPVIEW_CMD_DIR=/the/path/\n"
+        "APPVIEW_CONFIG_EVENT=false\n"
+        "APPVIEW_METRIC_VERBOSITY=1\n"
+        "APPVIEW_METRIC_VERBOSITY:prefix\n"     // ignored (no '=')
+        "APPVIEW_METRIC_VERBOSITY=blah\n"       // processed, but 'blah' isn't int)
         "\n"                               // ignored (no '=')
         "ignored =  too.\n"                // ignored (not one of our env vars)
         "SEE_THAT_THIS_IS_HARMLESS=True\n" // ignored (not one of our env vars)
-        "SCOPE_LOG_LEVEL=trace\n"
-        "SCOPE_METRIC_DEST=file:///tmp/file.tmp\n"
-        "SCOPE_LOG_DEST=file:///tmp/file.tmp2\n"
-        "SCOPE_TAG_CUSTOM1=val1\n"
-        "SCOPE_TAG_CUSTOM2=val2\n"
-        "SCOPE_EVENT_DEST=udp://host:1234\n"
-        "SCOPE_EVENT_ENABLE=false\n"
-        "SCOPE_EVENT_FORMAT=ndjson\n"
-        "SCOPE_EVENT_LOGFILE=true\n"
-        "SCOPE_EVENT_CONSOLE=false\n"
-        "SCOPE_EVENT_SYSLOG=true\n"
-        "SCOPE_EVENT_METRIC=false\n"
-        "SCOPE_EVENT_HTTP=false\n"
-        "SCOPE_EVENT_NET=true\n"
-        "SCOPE_EVENT_FS=false\n"
-        "SCOPE_EVENT_DNS=true\n"
-        "SCOPE_EVENT_LOGFILE_NAME=a\n"
-        "SCOPE_EVENT_CONSOLE_NAME=b\n"
-        "SCOPE_EVENT_SYSLOG_NAME=c\n"
-        "SCOPE_EVENT_METRIC_NAME=d\n"
-        "SCOPE_EVENT_HTTP_NAME=e\n"
-        "SCOPE_EVENT_NET_NAME=f\n"
-        "SCOPE_EVENT_FS_NAME=g\n"
-        "SCOPE_EVENT_DNS_NAME=h\n"
-        "SCOPE_EVENT_LOGFILE_FIELD=i\n"
-        "SCOPE_EVENT_CONSOLE_FIELD=j\n"
-        "SCOPE_EVENT_SYSLOG_FIELD=k\n"
-        "SCOPE_EVENT_METRIC_FIELD=l\n"
-        "SCOPE_EVENT_HTTP_FIELD=m\n"
-        "SCOPE_EVENT_NET_FIELD=n\n"
-        "SCOPE_EVENT_FS_FIELD=o\n"
-        "SCOPE_EVENT_DNS_FIELD=p\n"
-        "SCOPE_EVENT_LOGFILE_VALUE=q\n"
-        "SCOPE_EVENT_CONSOLE_VALUE=r\n"
-        "SCOPE_EVENT_SYSLOG_VALUE=s\n"
-        "SCOPE_EVENT_METRIC_VALUE=t\n"
-        "SCOPE_EVENT_HTTP_VALUE=u\n"
-        "SCOPE_EVENT_NET_VALUE=v\n"
-        "SCOPE_EVENT_FS_VALUE=w\n"
-        "SCOPE_EVENT_DNS_VALUE=x\n"
-        "SCOPE_EVENT_MAXEPS=123456789\n"
-        "SCOPE_ENHANCE_FS=false\n"
-        "SCOPE_PAYLOAD_ENABLE=false\n"
-        "SCOPE_PAYLOAD_DIR=/the/path\n"
+        "APPVIEW_LOG_LEVEL=trace\n"
+        "APPVIEW_METRIC_DEST=file:///tmp/file.tmp\n"
+        "APPVIEW_LOG_DEST=file:///tmp/file.tmp2\n"
+        "APPVIEW_TAG_CUSTOM1=val1\n"
+        "APPVIEW_TAG_CUSTOM2=val2\n"
+        "APPVIEW_EVENT_DEST=udp://host:1234\n"
+        "APPVIEW_EVENT_ENABLE=false\n"
+        "APPVIEW_EVENT_FORMAT=ndjson\n"
+        "APPVIEW_EVENT_LOGFILE=true\n"
+        "APPVIEW_EVENT_CONSOLE=false\n"
+        "APPVIEW_EVENT_SYSLOG=true\n"
+        "APPVIEW_EVENT_METRIC=false\n"
+        "APPVIEW_EVENT_HTTP=false\n"
+        "APPVIEW_EVENT_NET=true\n"
+        "APPVIEW_EVENT_FS=false\n"
+        "APPVIEW_EVENT_DNS=true\n"
+        "APPVIEW_EVENT_LOGFILE_NAME=a\n"
+        "APPVIEW_EVENT_CONSOLE_NAME=b\n"
+        "APPVIEW_EVENT_SYSLOG_NAME=c\n"
+        "APPVIEW_EVENT_METRIC_NAME=d\n"
+        "APPVIEW_EVENT_HTTP_NAME=e\n"
+        "APPVIEW_EVENT_NET_NAME=f\n"
+        "APPVIEW_EVENT_FS_NAME=g\n"
+        "APPVIEW_EVENT_DNS_NAME=h\n"
+        "APPVIEW_EVENT_LOGFILE_FIELD=i\n"
+        "APPVIEW_EVENT_CONSOLE_FIELD=j\n"
+        "APPVIEW_EVENT_SYSLOG_FIELD=k\n"
+        "APPVIEW_EVENT_METRIC_FIELD=l\n"
+        "APPVIEW_EVENT_HTTP_FIELD=m\n"
+        "APPVIEW_EVENT_NET_FIELD=n\n"
+        "APPVIEW_EVENT_FS_FIELD=o\n"
+        "APPVIEW_EVENT_DNS_FIELD=p\n"
+        "APPVIEW_EVENT_LOGFILE_VALUE=q\n"
+        "APPVIEW_EVENT_CONSOLE_VALUE=r\n"
+        "APPVIEW_EVENT_SYSLOG_VALUE=s\n"
+        "APPVIEW_EVENT_METRIC_VALUE=t\n"
+        "APPVIEW_EVENT_HTTP_VALUE=u\n"
+        "APPVIEW_EVENT_NET_VALUE=v\n"
+        "APPVIEW_EVENT_FS_VALUE=w\n"
+        "APPVIEW_EVENT_DNS_VALUE=x\n"
+        "APPVIEW_EVENT_MAXEPS=123456789\n"
+        "APPVIEW_ENHANCE_FS=false\n"
+        "APPVIEW_PAYLOAD_ENABLE=false\n"
+        "APPVIEW_PAYLOAD_DIR=/the/path\n"
     );
 
     openFileAndExecuteCfgProcessCommands(path, cfg);
@@ -1049,30 +1049,30 @@ cfgProcessCommandsEnvSubstitution(void **state)
 
     // test everything else once
     writeFile(path,
-        "SCOPE_METRIC_ENABLE=$MASTER_ENABLE\n"
-        "SCOPE_STATSD_PREFIX=$VAR1.$MY_ENV_VAR\n"
-        "SCOPE_STATSD_MAXLEN=$MAXLEN\n"
-        "SCOPE_SUMMARY_PERIOD=$PERIOD\n"
-        "SCOPE_CMD_DIR=/$MYHOME/scope/\n"
-        "SCOPE_CONFIG_EVENT=$MASTER_ENABLE\n"
-        "SCOPE_METRIC_VERBOSITY=$VERBOSITY\n"
-        "SCOPE_LOG_LEVEL=$LOGLEVEL\n"
-        "SCOPE_METRIC_DEST=file:///\\$VAR1/$MY_ENV_VAR/\n"
-        "SCOPE_LOG_DEST=$DEST\n"
-        "SCOPE_TAG_CUSTOM=$PERIOD\n"
-        "SCOPE_TAG_whyyoumadbro=Bill owes me $5.00\n"
-        "SCOPE_TAG_undefined=$UNDEFINEDENV\n"
-        "SCOPE_EVENT_DEST=udp://ho$st:1234\n"
-        "SCOPE_EVENT_ENABLE=$MASTER_ENABLE\n"
-        "SCOPE_EVENT_LOGFILE=$TRUTH\n"
-        "SCOPE_EVENT_CONSOLE=false\n"
-        "SCOPE_EVENT_SYSLOG=$TRUTH\n"
-        "SCOPE_EVENT_METRIC=false\n"
-        "SCOPE_EVENT_LOGFILE_NAME=$FILTER\n"
-        "SCOPE_EVENT_MAXEPS=$EPS\n"
-        "SCOPE_ENHANCE_FS=$TRUTH\n"
-        "SCOPE_PAYLOAD_ENABLE=$TRUTH\n"
-        "SCOPE_PAYLOAD_DIR=$MYHOME\n"
+        "APPVIEW_METRIC_ENABLE=$MASTER_ENABLE\n"
+        "APPVIEW_STATSD_PREFIX=$VAR1.$MY_ENV_VAR\n"
+        "APPVIEW_STATSD_MAXLEN=$MAXLEN\n"
+        "APPVIEW_SUMMARY_PERIOD=$PERIOD\n"
+        "APPVIEW_CMD_DIR=/$MYHOME/appview/\n"
+        "APPVIEW_CONFIG_EVENT=$MASTER_ENABLE\n"
+        "APPVIEW_METRIC_VERBOSITY=$VERBOSITY\n"
+        "APPVIEW_LOG_LEVEL=$LOGLEVEL\n"
+        "APPVIEW_METRIC_DEST=file:///\\$VAR1/$MY_ENV_VAR/\n"
+        "APPVIEW_LOG_DEST=$DEST\n"
+        "APPVIEW_TAG_CUSTOM=$PERIOD\n"
+        "APPVIEW_TAG_whyyoumadbro=Bill owes me $5.00\n"
+        "APPVIEW_TAG_undefined=$UNDEFINEDENV\n"
+        "APPVIEW_EVENT_DEST=udp://ho$st:1234\n"
+        "APPVIEW_EVENT_ENABLE=$MASTER_ENABLE\n"
+        "APPVIEW_EVENT_LOGFILE=$TRUTH\n"
+        "APPVIEW_EVENT_CONSOLE=false\n"
+        "APPVIEW_EVENT_SYSLOG=$TRUTH\n"
+        "APPVIEW_EVENT_METRIC=false\n"
+        "APPVIEW_EVENT_LOGFILE_NAME=$FILTER\n"
+        "APPVIEW_EVENT_MAXEPS=$EPS\n"
+        "APPVIEW_ENHANCE_FS=$TRUTH\n"
+        "APPVIEW_PAYLOAD_ENABLE=$TRUTH\n"
+        "APPVIEW_PAYLOAD_DIR=$MYHOME\n"
     );
 
 
@@ -1095,7 +1095,7 @@ cfgProcessCommandsEnvSubstitution(void **state)
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "longer.shorter.");
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 1024);
     assert_int_equal(cfgMtcPeriod(cfg), 11);
-    assert_string_equal(cfgCmdDir(cfg), "/home/mydir/scope/");
+    assert_string_equal(cfgCmdDir(cfg), "/home/mydir/appview/");
     assert_int_equal(cfgSendProcessStartMsg(cfg), FALSE);
     assert_int_equal(cfgMtcVerbosity(cfg), 1);
     // test escaped substitution  (a match preceded by '\')
@@ -1227,13 +1227,13 @@ cfgReadGoodYaml(void **state)
         "  enable: false\n"
         "  format:\n"
         "    type: statsd                # statsd, ndjson\n"
-        "    statsdprefix : 'cribl.scope'    # prepends each statsd metric\n"
+        "    statsdprefix : 'cribl.appview'    # prepends each statsd metric\n"
         "    statsdmaxlen : 1024             # max size of a formatted statsd string\n"
         "    verbosity: 3                    # 0-9 (0 is least verbose, 9 is most)\n"
         "  watch:\n"
-        "  transport:                        # defines how scope output is sent\n"
+        "  transport:                        # defines how appview output is sent\n"
         "    type: file                      # udp, unix, file, syslog\n"
-        "    path: '/var/log/scope.log'\n"
+        "    path: '/var/log/appview.log'\n"
         "    buffering: line\n"
         "event:\n"
         "  enable: true\n"
@@ -1261,7 +1261,7 @@ cfgReadGoodYaml(void **state)
         "payload:\n"
         "  enable: false\n"
         "  dir: '/my/dir'\n"
-        "libscope:\n"
+        "libappview:\n"
         "  configevent: true\n"
         "  summaryperiod: 11                 # in seconds\n"
         "  commanddir: /tmp\n"
@@ -1287,7 +1287,7 @@ cfgReadGoodYaml(void **state)
     config_t *config = cfgRead(path);
     assert_non_null(config);
     assert_int_equal(cfgMtcEnable(config), FALSE);
-    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.scope.");
+    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.appview.");
     assert_int_equal(cfgMtcStatsDMaxLen(config), 1024);
     assert_int_equal(cfgMtcWatchEnable(config, CFG_MTC_STATSD), FALSE);
     assert_int_equal(cfgMtcVerbosity(config), 3);
@@ -1312,7 +1312,7 @@ cfgReadGoodYaml(void **state)
     assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_FILE);
     assert_string_equal(cfgTransportHost(config, CFG_MTC), "127.0.0.1");
     assert_string_equal(cfgTransportPort(config, CFG_MTC), "8125");
-    assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/scope.log");
+    assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/appview.log");
     assert_int_equal(cfgTransportBuf(config, CFG_MTC), CFG_BUFFER_LINE);
     assert_int_equal(cfgTransportType(config, CFG_CTL), CFG_TCP);
     assert_string_equal(cfgTransportHost(config, CFG_CTL), "127.0.0.2");
@@ -1322,7 +1322,7 @@ cfgReadGoodYaml(void **state)
     assert_int_equal(cfgTransportType(config, CFG_LOG), CFG_EDGE);
     assert_null(cfgTransportHost(config, CFG_LOG));
     assert_null(cfgTransportPort(config, CFG_LOG));
-    assert_string_equal(cfgTransportPath(config, CFG_LOG), "/tmp/scope.log");
+    assert_string_equal(cfgTransportPath(config, CFG_LOG), "/tmp/appview.log");
     assert_int_equal(cfgTransportBuf(config, CFG_LOG), CFG_BUFFER_FULLY);
     assert_non_null(cfgCustomTags(config));
     assert_string_equal(cfgCustomTagValue(config, "name1"), "value1");
@@ -1343,10 +1343,10 @@ cfgReadGoodYaml(void **state)
 static void
 cfgReadStockYaml(void **state)
 {
-    // The stock scope.yml file up in ../conf/ should parse to the defaults.
+    // The stock appview.yml file up in ../conf/ should parse to the defaults.
     g_protlist = lstCreate(destroyProtEntry);
     assert_non_null(g_protlist);
-    config_t *config = cfgRead("./conf/scope.yml");
+    config_t *config = cfgRead("./conf/appview.yml");
     verifyDefaults(config);
     cfgDestroy(&config);
     lstDestroy(&g_protlist);
@@ -1382,10 +1382,10 @@ cfgReadEveryTransportType(void **state)
         "    port: 'ntp'\n";
     const char *unix_str =
         "    type: unix\n"
-        "    path: '@scope.sock'\n";
+        "    path: '@appview.sock'\n";
     const char *file_str =
         "    type: file\n"
-        "    path: '/var/log/scope.log'\n";
+        "    path: '/var/log/appview.log'\n";
     const char *edge_str =
         "    type: edge\n";
     const char *transport_lines[] = {udp_str, unix_str, file_str, edge_str};
@@ -1406,10 +1406,10 @@ cfgReadEveryTransportType(void **state)
                 assert_string_equal(cfgTransportPort(config, CFG_MTC), "ntp");
         } else if (transport_lines[i] == unix_str) {
                 assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_UNIX);
-                assert_string_equal(cfgTransportPath(config, CFG_MTC), "@scope.sock");
+                assert_string_equal(cfgTransportPath(config, CFG_MTC), "@appview.sock");
         } else if (transport_lines[i] == file_str) {
                 assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_FILE);
-                assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/scope.log");
+                assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/appview.log");
         } else if (transport_lines[i] == edge_str) {
                 assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_EDGE);
         }
@@ -1427,7 +1427,7 @@ cfgReadEveryProcessLevel(void **state)
 {
     const char *yamlText =
         "---\n"
-        "libscope:\n"
+        "libappview:\n"
         "  log:\n"
         "    level: %s\n"
         "...\n";
@@ -1456,7 +1456,7 @@ const char *jsonText =
     "    'enable': 'true',\n"
     "    'format': {\n"
     "      'type': 'ndjson',\n"
-    "      'statsdprefix': 'cribl.scope',\n"
+    "      'statsdprefix': 'cribl.appview',\n"
     "      'statsdmaxlen': '42',\n"
     "      'verbosity': '0'\n"
     "    },\n"
@@ -1465,7 +1465,7 @@ const char *jsonText =
     "    ],\n"
     "    'transport': {\n"
     "      'type': 'file',\n"
-    "      'path': '/var/log/scope.log'\n"
+    "      'path': '/var/log/appview.log'\n"
     "    }\n"
     "  },\n"
     "  'event': {\n"
@@ -1494,7 +1494,7 @@ const char *jsonText =
     "    'enable': 'true',\n"
     "    'dir': '/the/dir'\n"
     "  },\n"
-    "  'libscope': {\n"
+    "  'libappview': {\n"
     "    'configevent': 'true',\n"
     "    'summaryperiod': '13',\n"
     "    'log': {\n"
@@ -1532,7 +1532,7 @@ cfgReadGoodJson(void **state)
     assert_non_null(config);
     assert_int_equal(cfgMtcEnable(config), TRUE);
     assert_int_equal(cfgMtcFormat(config), CFG_FMT_NDJSON);
-    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.scope.");
+    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.appview.");
     assert_int_equal(cfgMtcStatsDMaxLen(config), 42);
     assert_int_equal(cfgMtcVerbosity(config), 0);
     assert_int_equal(cfgMtcWatchEnable(config, CFG_MTC_STATSD), TRUE);
@@ -1556,7 +1556,7 @@ cfgReadGoodJson(void **state)
     assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_FILE);
     assert_string_equal(cfgTransportHost(config, CFG_MTC), "127.0.0.1");
     assert_string_equal(cfgTransportPort(config, CFG_MTC), "8125");
-    assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/scope.log");
+    assert_string_equal(cfgTransportPath(config, CFG_MTC), "/var/log/appview.log");
     assert_int_equal(cfgTransportType(config, CFG_CTL), CFG_FILE);
     assert_string_equal(cfgTransportHost(config, CFG_CTL), "127.0.0.1");
     assert_string_equal(cfgTransportPort(config, CFG_CTL), "9109");
@@ -1564,7 +1564,7 @@ cfgReadGoodJson(void **state)
     assert_int_equal(cfgTransportType(config, CFG_LOG), CFG_EDGE);
     assert_null(cfgTransportHost(config, CFG_LOG));
     assert_null(cfgTransportPort(config, CFG_LOG));
-    assert_string_equal(cfgTransportPath(config, CFG_LOG), "/tmp/scope.log");
+    assert_string_equal(cfgTransportPath(config, CFG_LOG), "/tmp/appview.log");
     assert_non_null(cfgCustomTags(config));
     assert_string_equal(cfgCustomTagValue(config, "tagA"), "val1");
     assert_string_equal(cfgCustomTagValue(config, "tagB"), "val2");
@@ -1608,11 +1608,11 @@ cfgReadBadYamlReturnsDefaults(void **state)
         "---\n"
         "metric:\n"
         "  format: ndjson\n"
-        "  statsdprefix : 'cribl.scope'\n"
+        "  statsdprefix : 'cribl.appview'\n"
         "  transport:\n"
         "    type: file\n"
-        "    path: '/var/log/scope.log'\n"
-        "libscope:\n"
+        "    path: '/var/log/appview.log'\n"
+        "libappview:\n"
         "  log:\n"
         "      level: debug                  # <--- Extra indention!  bad!\n"
         "    transport:\n"
@@ -1646,9 +1646,9 @@ cfgReadExtraFieldsAreHarmless(void **state)
         "  request: 'make it snappy'        # Extra.\n"
         "  transport:\n"
         "    type: unix\n"
-        "    path: '@scope.sock'\n"
+        "    path: '@appview.sock'\n"
         "    color: 'puce'                  # Extra.\n"
-        "libscope:\n"
+        "libappview:\n"
         "  log:\n"
         "    level: info\n"
         "tags:\n"
@@ -1664,7 +1664,7 @@ cfgReadExtraFieldsAreHarmless(void **state)
     assert_int_equal(cfgMtcFormat(config), CFG_FMT_STATSD);
     assert_string_equal(cfgMtcStatsDPrefix(config), DEFAULT_STATSD_PREFIX);
     assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_UNIX);
-    assert_string_equal(cfgTransportPath(config, CFG_MTC), "@scope.sock");
+    assert_string_equal(cfgTransportPath(config, CFG_MTC), "@appview.sock");
     assert_non_null(cfgCustomTags(config));
     assert_string_equal(cfgCustomTagValue(config, "brainfarts"), "135");
     assert_int_equal(cfgLogLevel(config), CFG_LOG_INFO);
@@ -1706,19 +1706,19 @@ cfgReadYamlOrderWithinStructureDoesntMatter(void **state)
         "    host: 127.0.0.2\n"
         "    port: 9009\n"
         "    buffering: line\n"
-        "libscope:\n"
+        "libappview:\n"
         "  log:\n"
         "    level: info\n"
         "  summaryperiod: 42\n"
         "  configevent: false\n"
         "metric:\n"
         "  transport:\n"
-        "    path: '@scope.sock'\n"
+        "    path: '@appview.sock'\n"
         "    type: unix\n"
         "  format:\n"
         "    verbosity: 4294967295\n"
         "    statsdmaxlen: 4294967295\n"
-        "    statsdprefix: 'cribl.scope'\n"
+        "    statsdprefix: 'cribl.appview'\n"
         "    type:  statsd\n"
         "  enable : false\n"
         "tags:\n"
@@ -1733,7 +1733,7 @@ cfgReadYamlOrderWithinStructureDoesntMatter(void **state)
     assert_non_null(config);
     assert_int_equal(cfgMtcEnable(config), FALSE);
     assert_int_equal(cfgMtcFormat(config), CFG_FMT_STATSD);
-    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.scope.");
+    assert_string_equal(cfgMtcStatsDPrefix(config), "cribl.appview.");
     assert_int_equal(cfgMtcStatsDMaxLen(config), 4294967295);
     assert_int_equal(cfgMtcVerbosity(config), CFG_MAX_VERBOSITY);
     assert_int_equal(cfgMtcPeriod(config), 42);
@@ -1755,7 +1755,7 @@ cfgReadYamlOrderWithinStructureDoesntMatter(void **state)
     assert_int_equal(cfgEvtFormatSourceEnabled(config, CFG_SRC_DNS), 1);
     assert_int_equal(cfgTransportType(config, CFG_CTL), CFG_EDGE);
     assert_int_equal(cfgTransportType(config, CFG_MTC), CFG_UNIX);
-    assert_string_equal(cfgTransportPath(config, CFG_MTC), "@scope.sock");
+    assert_string_equal(cfgTransportPath(config, CFG_MTC), "@appview.sock");
     assert_non_null(cfgCustomTags(config));
     assert_string_equal(cfgCustomTagValue(config, "135"), "kittens");
     assert_int_equal(cfgLogLevel(config), CFG_LOG_INFO);
@@ -1815,7 +1815,7 @@ cfgReadEnvSubstitution(void **state)
         "payload:\n"
         "  enable: $MASTER_ENABLE\n"
         "  dir: $MYHOME\n"
-        "libscope:\n"
+        "libappview:\n"
         "  transport:\n"
         "    type: syslog                    # udp, unix, file, syslog\n"
         "    host: 127.0.0.2\n"
@@ -1823,7 +1823,7 @@ cfgReadEnvSubstitution(void **state)
         "    buffering: line\n"
         "  summaryperiod: $PERIOD\n"
         "  configevent: $MASTER_ENABLE\n"
-        "  commanddir: /$MYHOME/scope/\n"
+        "  commanddir: /$MYHOME/appview/\n"
         "  log:\n"
         "    level: $LOGLEVEL\n"
         "    transport:\n"
@@ -1846,7 +1846,7 @@ cfgReadEnvSubstitution(void **state)
     assert_string_equal(cfgMtcStatsDPrefix(cfg), "longer.shorter.");
     assert_int_equal(cfgMtcStatsDMaxLen(cfg), 1024);
     assert_int_equal(cfgMtcPeriod(cfg), 11);
-    assert_string_equal(cfgCmdDir(cfg), "/home/mydir/scope/");
+    assert_string_equal(cfgCmdDir(cfg), "/home/mydir/appview/");
     assert_int_equal(cfgSendProcessStartMsg(cfg), TRUE);
     assert_int_equal(cfgMtcVerbosity(cfg), 1);
     // test escaped substitution  (a match preceded by '\')
@@ -1930,8 +1930,8 @@ jsonObjectFromCfgAndjsonStringFromCfgRoundTrip(void **state)
     g_prot_sequence = 0;
     cJSON_Delete(json1);
     cJSON_Delete(json2);
-    scope_free(stringified_json1);
-    scope_free(stringified_json2);
+    appview_free(stringified_json1);
+    appview_free(stringified_json2);
 }
 
 
@@ -1950,10 +1950,10 @@ initLogReturnsPtr(void **state)
                 cfgTransportPortSet(cfg, CFG_LOG, "4444");
                 break;
             case CFG_UNIX:
-				cfgTransportPathSet(cfg, CFG_LOG, "@scope.sock");
+				cfgTransportPathSet(cfg, CFG_LOG, "@appview.sock");
                 break;
             case CFG_FILE:
-				cfgTransportPathSet(cfg, CFG_LOG, "/tmp/scope.log");
+				cfgTransportPathSet(cfg, CFG_LOG, "/tmp/appview.log");
                 break;
             case CFG_TCP:
             case CFG_EDGE:
@@ -1977,9 +1977,9 @@ initMtcReturnsPtr(void **state)
     for (t=CFG_UDP; t<=CFG_EDGE; t++) {
         cfgTransportTypeSet(cfg, CFG_MTC, t);
         if (t == CFG_UNIX) {
-            cfgTransportPathSet(cfg, CFG_MTC, "@scope.sock");
+            cfgTransportPathSet(cfg, CFG_MTC, "@appview.sock");
         } else if (t == CFG_FILE) {
-            cfgTransportPathSet(cfg, CFG_MTC, "/tmp/scope.log");
+            cfgTransportPathSet(cfg, CFG_MTC, "/tmp/appview.log");
         }
         mtc_t *mtc = initMtc(cfg);
         assert_non_null(mtc);
@@ -2101,8 +2101,8 @@ initProc(const char *procname, const char *cmdline, const char *hostname)
     strncpy(g_proc.hostname, hostname, sizeof(g_proc.hostname));
     strncpy(g_proc.procname, procname, sizeof(g_proc.procname));
 
-    if (g_proc.cmd) { scope_free(g_proc.cmd); g_proc.cmd = NULL; }
-    if (cmdline) g_proc.cmd = scope_strdup(cmdline);
+    if (g_proc.cmd) { appview_free(g_proc.cmd); g_proc.cmd = NULL; }
+    if (cmdline) g_proc.cmd = appview_strdup(cmdline);
 }
 
 static void
@@ -2125,7 +2125,7 @@ cfgReadCustomEmptyFilter(void **state)
         "      event:\n"
         "        enable: false\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2166,7 +2166,7 @@ cfgReadCustomProcnameFilter(void **state)
         "      payload:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2208,7 +2208,7 @@ cfgReadCustomArgFilter(void **state)
         "      payload:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2250,7 +2250,7 @@ cfgReadCustomHostnameFilter(void **state)
         "      payload:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2292,7 +2292,7 @@ cfgReadCustomUsernameFilter(void **state)
         "      payload:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2341,7 +2341,7 @@ cfgReadCustomEnvFilter(void **state)
         "      cribl:\n"
         "        authtoken: secret\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2378,7 +2378,7 @@ cfgReadCustomAncestorFilter(void **state)
         "      event:\n"
         "        enable: false\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2424,7 +2424,7 @@ cfgReadCustomMultipleFilters(void **state)
         "      event:\n"
         "        enable: false\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2465,7 +2465,7 @@ cfgReadCustomOverride(void **state)
         "      event:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2497,7 +2497,7 @@ cfgReadCustomOrder(void **state)
         "metric:\n"
         "  enable: false\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2524,7 +2524,7 @@ cfgReadCustomAnchor(void **state)
         // use that config as a custom config
         "    config: *disable-metrics\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2558,7 +2558,7 @@ cfgReadCustomAnchorExtend(void **state)
         "      payload:\n"
         "        enable: true\n"
         "# EOF\n";
-    const char *yamlFilename = "/tmp/eg-scope.yml";
+    const char *yamlFilename = "/tmp/eg-appview.yml";
     writeFile(yamlFilename, yamlText);
     initProc("test", "test --with args", "myhost");
     config_t *config = cfgRead(yamlFilename);
@@ -2574,7 +2574,7 @@ cfgReadCustomAnchorExtend(void **state)
 static void
 rulesEmptyRulesFileVar1(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_0.yml", dirPath);
     bool res = cfgRulesFileIsValid(path);
     assert_int_equal(res, FALSE);
 }
@@ -2582,7 +2582,7 @@ rulesEmptyRulesFileVar1(void **state) {
 static void
 rulesEmptyRulesFileVar2(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_1.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_1.yml", dirPath);
     bool res = cfgRulesFileIsValid(path);
     assert_int_equal(res, FALSE);
 }
@@ -2590,7 +2590,7 @@ rulesEmptyRulesFileVar2(void **state) {
 static void
 rulesEmptyRulesFileVar3(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_2.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/empty_rules_2.yml", dirPath);
     bool res = cfgRulesFileIsValid(path);
     assert_int_equal(res, FALSE);
 }
@@ -2598,7 +2598,7 @@ rulesEmptyRulesFileVar3(void **state) {
 static void
 rulesInvalidRulesFile(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/corrupted_rules.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/corrupted_rules.yml", dirPath);
     bool res = cfgRulesFileIsValid(path);
     assert_int_equal(res, FALSE);
 }
@@ -2606,7 +2606,7 @@ rulesInvalidRulesFile(void **state) {
 static void
 rulesEmptyProcName(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
@@ -2622,7 +2622,7 @@ rulesEmptyProcName(void **state) {
 static void
 rulesEmptyProcCmdLine(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("foo", NULL, testAccessRulesPath(path), cfg);
@@ -2637,14 +2637,14 @@ rulesEmptyProcCmdLine(void **state) {
  * Note: a NULL rules path implies use default paths.
  * We have not configured defaults. So, there is no
  * rules file found. With no rules file we assume
- * all files are to be scoped. Look for a SCOPED return value.
+ * all files are to be viewed. Look for a APPVIEWD return value.
  */
 static void
 rulesNullRulesPath(void **state) {
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("foo", "foo", NULL, cfg);
-    assert_int_equal(res, RULES_SCOPED);
+    assert_int_equal(res, RULES_APPVIEWD);
     dbgInit(); // reset dbg for the rest of the tests
     // cleanup
     cfgDestroy(&cfg);
@@ -2654,7 +2654,7 @@ rulesNullRulesPath(void **state) {
 static void
 rulesNullCfg(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     rules_status_t res = cfgRulesStatus("foo", "foo", testAccessRulesPath(path), NULL);
     assert_int_equal(res, RULES_ERROR);
     dbgInit(); // reset dbg for the rest of the tests
@@ -2665,13 +2665,13 @@ rulesNullCfg(void **state) {
 static void
 rulesNonExistingRulesFile(void **state) {
     char path[PATH_MAX] = {0};    
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_non_existing.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_non_existing.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, FALSE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("foo", "foo", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED);
+    assert_int_equal(res, RULES_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2680,11 +2680,11 @@ rulesNonExistingRulesFile(void **state) {
 static void
 rulesProcNameAllowListPresent(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("redis", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2693,11 +2693,11 @@ rulesProcNameAllowListPresent(void **state) {
 static void
 rulesProcNameDenyListPresent(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("git", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2706,13 +2706,13 @@ rulesProcNameDenyListPresent(void **state) {
 static void
 rulesArgAllowListPresent(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("", "redis arg1", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2721,11 +2721,11 @@ rulesArgAllowListPresent(void **state) {
 static void
 rulesArgDenyListPresent(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("", "git arg1", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2734,15 +2734,15 @@ rulesArgDenyListPresent(void **state) {
 static void
 rulesArgAllowListPartFindPresent(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("redis-server", "redis-server", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
-    scope_memset(path, 0, sizeof(path));
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
+    appview_memset(path, 0, sizeof(path));
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_1.yml", dirPath);
     res = cfgRulesStatus("redis-server", "redis-server", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2751,12 +2751,12 @@ rulesArgAllowListPartFindPresent(void **state) {
 static void
 rulesArgAllowListEmptyProcMissing(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
 
     rules_status_t res = cfgRulesStatus("memcached", "memcached", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2765,21 +2765,21 @@ rulesArgAllowListEmptyProcMissing(void **state) {
 static void
 rulesArgAllowListNotEmptyProcMissing(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_2.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_2.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("memcached", "memcached", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
 
-    scope_memset(path, 0, PATH_MAX);
+    appview_memset(path, 0, PATH_MAX);
 
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_3.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_3.yml", dirPath);
     validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     res = cfgRulesStatus("memcached", "memcached", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2788,11 +2788,11 @@ rulesArgAllowListNotEmptyProcMissing(void **state) {
 static void
 rulesVerifyCfg(void **state) {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_0.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("redis", "redis", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // redis: cribl disable error log level /tmp/redis.log
     assert_int_equal(cfgLogStreamEnable(cfg), FALSE);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_ERROR);
@@ -2804,7 +2804,7 @@ rulesVerifyCfg(void **state) {
     cfg = cfgCreateDefault();
     assert_non_null(cfg);
     res = cfgRulesStatus("htop", "htop", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // htop: cribl enable info log level /tmp/htop.log
     assert_int_equal(cfgLogStreamEnable(cfg), TRUE);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_INFO);
@@ -2820,13 +2820,13 @@ rulesDenyIsProcessedAfterAllow(void **state)
     // redis is in both the allow list and deny list.
     // verify that "deny" wins.  (is processed after allow)
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_4.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_4.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("redis", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2838,15 +2838,15 @@ rulesConfigIsProcessedAfterProcName(void **state)
     // cfg should be changed if procname or arg matches
     // make sure we process these fields before config.
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_4.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_4.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
 
     // test the default log path before
-    assert_string_equal(cfgTransportPath(cfg, CFG_LOG), "/tmp/scope.log");
+    assert_string_equal(cfgTransportPath(cfg, CFG_LOG), "/tmp/appview.log");
 
     rules_status_t res = cfgRulesStatus("htop", "htop", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
 
     // verify that log path was changed
     assert_string_equal(cfgTransportPath(cfg, CFG_LOG), "/tmp/htop.log");
@@ -2861,19 +2861,19 @@ rulesMatchAllInAllow(void **state)
 {
     // Verify that _MatchAll_ in allow matches all processes
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("blue", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     res = cfgRulesStatus("red", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     res = cfgRulesStatus("green", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     res = cfgRulesStatus("htop", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2884,11 +2884,11 @@ rulesMatchAllInAllowCanBeDenied(void **state)
 {
     // Verify that _MatchAll_ in allow is overriden by a match in deny
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("redis", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2900,14 +2900,14 @@ rulesVerifyMatchAllMergedConfig(void **state)
     // Verify that matches (including _MatchAll_) are applied in order
     // And that matches can be "merged" w.r.t. configuration
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_5.yml", dirPath);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
 
     // green only matches _MatchAll_
     // verify that the log level and log path agree with _MatchAll_
     rules_status_t res = cfgRulesStatus("green", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_ERROR);
     assert_string_equal(cfgTransportPath(cfg, CFG_LOG), "/tmp/match.log");
     cfgDestroy(&cfg);
@@ -2917,7 +2917,7 @@ rulesVerifyMatchAllMergedConfig(void **state)
     //   and that log path is specified by htop
     cfg = cfgCreateDefault();
     res = cfgRulesStatus("htop", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_SCOPED_WITH_CFG);
+    assert_int_equal(res, RULES_APPVIEWD_WITH_CFG);
     assert_int_equal(cfgLogLevel(cfg), CFG_LOG_ERROR);
     assert_string_equal(cfgTransportPath(cfg, CFG_LOG), "/tmp/htop.log");
 
@@ -2931,19 +2931,19 @@ rulesMatchAllInDeny(void **state)
 {
     // Verify that _MatchAll_ in deny denies all processes
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_6.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_6.yml", dirPath);
     bool validRes = cfgRulesFileIsValid(path);
     assert_int_equal(validRes, TRUE);
     config_t *cfg = cfgCreateDefault();
     assert_non_null(cfg);
     rules_status_t res = cfgRulesStatus("blue", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     res = cfgRulesStatus("red", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     res = cfgRulesStatus("green", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     res = cfgRulesStatus("htop", "", testAccessRulesPath(path), cfg);
-    assert_int_equal(res, RULES_NOT_SCOPED);
+    assert_int_equal(res, RULES_NOT_APPVIEWD);
     // cleanup
     cfgDestroy(&cfg);
     assert_null(cfg);
@@ -2953,17 +2953,17 @@ static void
 rulesUnixPathMissing(void **state)
 {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_6.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_6.yml", dirPath);
 
-    const char *origRulesEnv = getenv("SCOPE_RULES");
-    assert_int_equal(setenv("SCOPE_RULES", path, 1), 0);
+    const char *origRulesEnv = getenv("APPVIEW_RULES");
+    assert_int_equal(setenv("APPVIEW_RULES", path, 1), 0);
 
     char *unixPath = cfgRulesUnixPath();
 
     if (origRulesEnv) {
-        assert_int_equal(setenv("SCOPE_RULES", origRulesEnv, 1), 0);
+        assert_int_equal(setenv("APPVIEW_RULES", origRulesEnv, 1), 0);
     } else {
-        assert_int_equal(unsetenv("SCOPE_RULES"), 0);
+        assert_int_equal(unsetenv("APPVIEW_RULES"), 0);
     }
 
     assert_null(unixPath);
@@ -2973,16 +2973,16 @@ static void
 rulesUnixPathPresent(void **state)
 {
     char path[PATH_MAX] = {0};
-    scope_snprintf(path, sizeof(path), "%s/data/rules/rules_edge.yml", dirPath);
+    appview_snprintf(path, sizeof(path), "%s/data/rules/rules_edge.yml", dirPath);
 
-    assert_int_equal(setenv("SCOPE_RULES", path, 1), 0);
+    assert_int_equal(setenv("APPVIEW_RULES", path, 1), 0);
 
     char *unixPath = cfgRulesUnixPath();
 
-    assert_int_equal(unsetenv("SCOPE_RULES"), 0);
+    assert_int_equal(unsetenv("APPVIEW_RULES"), 0);
 
     assert_string_equal(unixPath, "/opt/cribl/state");
-    scope_free(unixPath);
+    appview_free(unixPath);
 }
 
 // Defined in src/cfgutils.c
@@ -3002,18 +3002,18 @@ main(int argc, char *argv[])
 
     initFn();
 
-    source_state_t log = {"SCOPE_EVENT_LOGFILE", CFG_SRC_FILE, DEFAULT_SRC_FILE};
-    source_state_t con = {"SCOPE_EVENT_CONSOLE", CFG_SRC_CONSOLE, DEFAULT_SRC_CONSOLE};
-    source_state_t sys = {"SCOPE_EVENT_SYSLOG" , CFG_SRC_SYSLOG , DEFAULT_SRC_SYSLOG};
-    source_state_t met = {"SCOPE_EVENT_METRIC", CFG_SRC_METRIC , DEFAULT_SRC_METRIC};
-    source_state_t htt = {"SCOPE_EVENT_HTTP", CFG_SRC_HTTP , DEFAULT_SRC_HTTP};
-    source_state_t net = {"SCOPE_EVENT_NET", CFG_SRC_NET , DEFAULT_SRC_NET};
-    source_state_t fs =  {"SCOPE_EVENT_FS", CFG_SRC_FS , DEFAULT_SRC_FS};
-    source_state_t dns = {"SCOPE_EVENT_DNS", CFG_SRC_DNS , DEFAULT_SRC_DNS};
+    source_state_t log = {"APPVIEW_EVENT_LOGFILE", CFG_SRC_FILE, DEFAULT_SRC_FILE};
+    source_state_t con = {"APPVIEW_EVENT_CONSOLE", CFG_SRC_CONSOLE, DEFAULT_SRC_CONSOLE};
+    source_state_t sys = {"APPVIEW_EVENT_SYSLOG" , CFG_SRC_SYSLOG , DEFAULT_SRC_SYSLOG};
+    source_state_t met = {"APPVIEW_EVENT_METRIC", CFG_SRC_METRIC , DEFAULT_SRC_METRIC};
+    source_state_t htt = {"APPVIEW_EVENT_HTTP", CFG_SRC_HTTP , DEFAULT_SRC_HTTP};
+    source_state_t net = {"APPVIEW_EVENT_NET", CFG_SRC_NET , DEFAULT_SRC_NET};
+    source_state_t fs =  {"APPVIEW_EVENT_FS", CFG_SRC_FS , DEFAULT_SRC_FS};
+    source_state_t dns = {"APPVIEW_EVENT_DNS", CFG_SRC_DNS , DEFAULT_SRC_DNS};
 
-    dest_state_t dest_mtc = {"SCOPE_METRIC_DEST", CFG_MTC};
-    dest_state_t dest_evt = {"SCOPE_EVENT_DEST", CFG_CTL};
-    dest_state_t dest_log = {"SCOPE_LOG_DEST", CFG_LOG};
+    dest_state_t dest_mtc = {"APPVIEW_METRIC_DEST", CFG_MTC};
+    dest_state_t dest_evt = {"APPVIEW_EVENT_DEST", CFG_CTL};
+    dest_state_t dest_log = {"APPVIEW_LOG_DEST", CFG_LOG};
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(cfgPathHonorsEnvVar),

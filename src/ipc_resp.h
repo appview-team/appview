@@ -15,47 +15,47 @@ typedef enum {
 } meta_req_t;
 
 /*
- * ipc_scope_req_t describes the scope request command retrieves from IPC communication
+ * ipc_appview_req_t describes the appview request command retrieves from IPC communication
  * IMPORTANT NOTE:
- * ipc_scope_req_t must be inline with client: scopeReqCmd
+ * ipc_appview_req_t must be inline with client: appviewReqCmd
  * NEW VALUES MUST BE PLACED AFTER LAST SUPPORTED CMD AND BEFORE IPC_CMD_UNKNOWN
- * Please extend `cmdScopeName` structure in ipc_resp.c
+ * Please extend `cmdAppViewName` structure in ipc_resp.c
  */
 typedef enum {
     IPC_CMD_GET_SUPPORTED_CMD,    // Retrieves the supported commands, introduced in: 1.3.0
-    IPC_CMD_GET_SCOPE_STATUS,     // Retrieves scope status of application (enabled or disabled), introduced in: 1.3.0
-    IPC_CMD_GET_SCOPE_CFG,        // Retrieves the current configuration, introduced in: 1.3.0
-    IPC_CMD_SET_SCOPE_CFG,        // Update the current configuration, introduced in: 1.3.0
+    IPC_CMD_GET_APPVIEW_STATUS,     // Retrieves appview status of application (enabled or disabled), introduced in: 1.3.0
+    IPC_CMD_GET_APPVIEW_CFG,        // Retrieves the current configuration, introduced in: 1.3.0
+    IPC_CMD_SET_APPVIEW_CFG,        // Update the current configuration, introduced in: 1.3.0
     IPC_CMD_GET_TRANSPORT_STATUS, // Retrieves the transport status, introduced in: 1.3.0
     IPC_CMD_GET_PROC_DETAILS,     // Retrieves the process details, introduced in: 1.4.0
     // Place to add new message
     IPC_CMD_UNKNOWN,              // MUST BE LAST - points to unsupported message
-} ipc_scope_req_t;
+} ipc_appview_req_t;
 
 /*
  * Internal status of parsing the incoming message request, which can be:
  * - success after joining all the frames in the message
  * - error during parsing frames (processing will not wait for all frames)
- * - status is used both for ipc message and scope message
+ * - status is used both for ipc message and appview message
  */
 typedef enum {
     REQ_PARSE_GENERIC_ERROR,            // Error: unknown error
     REQ_PARSE_ALLOCATION_ERROR,         // Error: memory allocation fails or empty queue
     REQ_PARSE_RECEIVE_ERROR,            // Error: general error during receive the message
     REQ_PARSE_RECEIVE_TIMEOUT_ERROR,    // Error: timeout during receive the message
-    REQ_PARSE_MISSING_SCOPE_DATA_ERROR, // Error: missing scope frame in request
+    REQ_PARSE_MISSING_APPVIEW_DATA_ERROR, // Error: missing appview frame in request
     REQ_PARSE_JSON_ERROR,               // Error: request it not based on JSON format
     REQ_PARSE_REQ_ERROR,                // Error: msg frame issue with req field
     REQ_PARSE_UNIQ_ERROR,               // Error: msg frame issue with uniq field
     REQ_PARSE_REMAIN_ERROR,             // Error: msg frame issue with remain field
-    REQ_PARSE_SCOPE_REQ_ERROR,          // Error: scope frame issue with uniq field
-    REQ_PARSE_SCOPE_SIZE_ERROR,         // Error: scope frame issue with size
+    REQ_PARSE_APPVIEW_REQ_ERROR,          // Error: appview frame issue with uniq field
+    REQ_PARSE_APPVIEW_SIZE_ERROR,         // Error: appview frame issue with size
     REQ_PARSE_PARTIAL,                  // Request was succesfully parsed partial
     REQ_PARSE_OK,                       // Request was succesfully parsed
 } req_parse_status_t;
 
 // Forward declaration
-typedef struct scopeRespWrapper scopeRespWrapper;
+typedef struct appviewRespWrapper appviewRespWrapper;
 
 // This must be inline with respStatus in ipccmd.go
 typedef enum {
@@ -66,20 +66,20 @@ typedef enum {
     IPC_RESP_NOT_IMPLEMENTED = 501, // Method not implemented
 } ipc_resp_status_t;
 
-// String representation of scope response
-char *ipcRespScopeRespStr(scopeRespWrapper *);
+// String representation of appview response
+char *ipcRespAppViewRespStr(appviewRespWrapper *);
 
-// Wrapper for Scope responses
-scopeRespWrapper *ipcRespGetScopeCmds(const cJSON *);
-scopeRespWrapper *ipcRespGetScopeStatus(const cJSON *);
-scopeRespWrapper *ipcRespGetScopeCfg(const cJSON *);
-scopeRespWrapper *ipcRespSetScopeCfg(const cJSON *);
-scopeRespWrapper *ipcRespGetTransportStatus(const cJSON *);
-scopeRespWrapper *ipcRespGetProcessDetails(const cJSON *);
-scopeRespWrapper *ipcRespStatusNotImplemented(const cJSON *);
-scopeRespWrapper *ipcRespStatusScopeError(ipc_resp_status_t);
+// Wrapper for AppView responses
+appviewRespWrapper *ipcRespGetAppViewCmds(const cJSON *);
+appviewRespWrapper *ipcRespGetAppViewStatus(const cJSON *);
+appviewRespWrapper *ipcRespGetAppViewCfg(const cJSON *);
+appviewRespWrapper *ipcRespSetAppViewCfg(const cJSON *);
+appviewRespWrapper *ipcRespGetTransportStatus(const cJSON *);
+appviewRespWrapper *ipcRespGetProcessDetails(const cJSON *);
+appviewRespWrapper *ipcRespStatusNotImplemented(const cJSON *);
+appviewRespWrapper *ipcRespStatusAppViewError(ipc_resp_status_t);
 
 // Wrapper destructor
-void ipcRespWrapperDestroy(scopeRespWrapper *);
+void ipcRespWrapperDestroy(appviewRespWrapper *);
 
 #endif // __IPC_RESP_H__

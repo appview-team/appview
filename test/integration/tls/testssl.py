@@ -8,8 +8,8 @@
 # To run this script
 #     test/manual/testssl.py create_certs
 #     ./tcpserver 9109
-#     LD_PRELOAD=lib/linux/libscope.so SCOPE_EVENT_HTTP=true test/manual/testssl.py start_server
-#     LD_PRELOAD=lib/linux/libscope.so SCOPE_EVENT_HTTP=true test/manual/testssl.py run_client
+#     LD_PRELOAD=lib/linux/libappview.so APPVIEW_EVENT_HTTP=true test/manual/testssl.py start_server
+#     LD_PRELOAD=lib/linux/libappview.so APPVIEW_EVENT_HTTP=true test/manual/testssl.py run_client
 
 import os
 import socket

@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "log.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 typedef struct _dbg_t dbg_t;
 
@@ -34,9 +34,9 @@ extern uint64_t g_cbuf_drop_count;
 #define UNREACHABLE() (__builtin_unreachable())
 
 #ifdef static_assert
-#define SCOPE_BUILD_ASSERT(cond, msg) ({static_assert(cond, msg);})
+#define APPVIEW_BUILD_ASSERT(cond, msg) ({static_assert(cond, msg);})
 #else
-#define SCOPE_BUILD_ASSERT(cond, msg)
+#define APPVIEW_BUILD_ASSERT(cond, msg)
 #endif
 //
 //  The DBG macro is used to keep track of unexpected/undesirable
@@ -57,11 +57,11 @@ extern uint64_t g_cbuf_drop_count;
 //
 //  Dynamic commands allow this information to be output from an actively
 //  running process, with process ID <pid>.  It just runs dbgDumpAll(),
-//  outputting the results to the file specified by SCOPE_CMD_DBG_PATH.
+//  outputting the results to the file specified by APPVIEW_CMD_DBG_PATH.
 //  To do this with default configuration settings, run this command and
-//  output should appear in /tmp/mydbg.txt within a SCOPE_SUMMARY_PERIOD:
+//  output should appear in /tmp/mydbg.txt within a APPVIEW_SUMMARY_PERIOD:
 //
-//     echo "SCOPE_CMD_DBG_PATH=/tmp/mydbg.txt" >> /tmp/scope.<pid>
+//     echo "APPVIEW_CMD_DBG_PATH=/tmp/mydbg.txt" >> /tmp/appview.<pid>
 //
 
 
@@ -81,37 +81,37 @@ extern bool g_isgo;
 extern bool g_issighandler;
 extern char g_libpath[];
 
-void scopeLog(cfg_log_level_t, const char *, ...) PRINTF_FORMAT(2,3);
-void scopeLogHex(cfg_log_level_t, const void *, size_t, const char *, ...) PRINTF_FORMAT(4,5);
-void scopeLogDropItOnTheFloor(const char *, ...);
+void appviewLog(cfg_log_level_t, const char *, ...) PRINTF_FORMAT(2,3);
+void appviewLogHex(cfg_log_level_t, const void *, size_t, const char *, ...) PRINTF_FORMAT(4,5);
+void appviewLogDropItOnTheFloor(const char *, ...);
 
-#define scopeLogError(...) scopeLog(CFG_LOG_ERROR, __VA_ARGS__)
-#define scopeLogWarn(...)  scopeLog(CFG_LOG_WARN,  __VA_ARGS__)
-#define scopeLogInfo(...)  scopeLog(CFG_LOG_INFO,  __VA_ARGS__)
+#define appviewLogError(...) appviewLog(CFG_LOG_ERROR, __VA_ARGS__)
+#define appviewLogWarn(...)  appviewLog(CFG_LOG_WARN,  __VA_ARGS__)
+#define appviewLogInfo(...)  appviewLog(CFG_LOG_INFO,  __VA_ARGS__)
 #ifdef DEBUG
-#define scopeLogDebug(...) scopeLog(CFG_LOG_DEBUG, __VA_ARGS__)
-#define scopeLogTrace(...) scopeLog(CFG_LOG_TRACE, __VA_ARGS__)
+#define appviewLogDebug(...) appviewLog(CFG_LOG_DEBUG, __VA_ARGS__)
+#define appviewLogTrace(...) appviewLog(CFG_LOG_TRACE, __VA_ARGS__)
 #else
-#define scopeLogDebug(...) scopeLogDropItOnTheFloor(__VA_ARGS__)
-#define scopeLogTrace(...) scopeLogDropItOnTheFloor(__VA_ARGS__)
+#define appviewLogDebug(...) appviewLogDropItOnTheFloor(__VA_ARGS__)
+#define appviewLogTrace(...) appviewLogDropItOnTheFloor(__VA_ARGS__)
 #endif
 
-#define scopeLogHexError(...) scopeLogHex(CFG_LOG_ERROR, __VA_ARGS__)
-#define scopeLogHexWarn(...)  scopeLogHex(CFG_LOG_WARN,  __VA_ARGS__)
-#define scopeLogHexInfo(...)  scopeLogHex(CFG_LOG_INFO,  __VA_ARGS__)
+#define appviewLogHexError(...) appviewLogHex(CFG_LOG_ERROR, __VA_ARGS__)
+#define appviewLogHexWarn(...)  appviewLogHex(CFG_LOG_WARN,  __VA_ARGS__)
+#define appviewLogHexInfo(...)  appviewLogHex(CFG_LOG_INFO,  __VA_ARGS__)
 #ifdef DEBUG
-#define scopeLogHexDebug(...) scopeLogHex(CFG_LOG_DEBUG, __VA_ARGS__)
-#define scopeLogHexTrace(...) scopeLogHex(CFG_LOG_TRACE, __VA_ARGS__)
+#define appviewLogHexDebug(...) appviewLogHex(CFG_LOG_DEBUG, __VA_ARGS__)
+#define appviewLogHexTrace(...) appviewLogHex(CFG_LOG_TRACE, __VA_ARGS__)
 #else
-#define scopeLogHexDebug(...) scopeLogDropItOnTheFloor (__VA_ARGS__)
-#define scopeLogHexTrace(...) scopeLogDropItOnTheFloor (__VA_ARGS__)
+#define appviewLogHexDebug(...) appviewLogDropItOnTheFloor (__VA_ARGS__)
+#define appviewLogHexTrace(...) appviewLogDropItOnTheFloor (__VA_ARGS__)
 #endif
 
 // Bit operations
 
-#define SCOPE_BIT_SET(base, bit_val)   ((base) |= (1ULL<<(bit_val)))
-#define SCOPE_BIT_CLEAR(base, bit_val) ((base) &= ~(1ULL<<(bit_val)))
-#define SCOPE_BIT_SET_VAR(base, bit_val, val) ((!!(val)) ? SCOPE_BIT_SET(base, bit_val) : SCOPE_BIT_CLEAR(base, bit_val))
-#define SCOPE_BIT_CHECK(base, bit_val) (!!((base) & (1ULL<<(bit_val))))
+#define APPVIEW_BIT_SET(base, bit_val)   ((base) |= (1ULL<<(bit_val)))
+#define APPVIEW_BIT_CLEAR(base, bit_val) ((base) &= ~(1ULL<<(bit_val)))
+#define APPVIEW_BIT_SET_VAR(base, bit_val, val) ((!!(val)) ? APPVIEW_BIT_SET(base, bit_val) : APPVIEW_BIT_CLEAR(base, bit_val))
+#define APPVIEW_BIT_CHECK(base, bit_val) (!!((base) & (1ULL<<(bit_val))))
 
 #endif // __DBG_H__

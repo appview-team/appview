@@ -108,7 +108,7 @@ run_test test/${OS}/nsinfotest
 
 if [ "${OS}" = "linux" ]; then
     SAVEVARS=$ENVARS
-    ENVVARS=$ENVVARS"LD_PRELOAD=./lib/linux/$(uname -m)/libscope.so ""SCOPE_RULES=false ""SCOPE_CRIBL_ENABLE=false ""SCOPE_METRIC_DEST=file:///tmp/dnstest.log ""SCOPE_METRIC_VERBOSITY=9 ""SCOPE_SUMMARY_PERIOD=1 "
+    ENVVARS=$ENVVARS"LD_PRELOAD=./lib/linux/$(uname -m)/libappview.so ""APPVIEW_RULES=false ""APPVIEW_CRIBL_ENABLE=false ""APPVIEW_METRIC_DEST=file:///tmp/dnstest.log ""APPVIEW_METRIC_VERBOSITY=9 ""APPVIEW_SUMMARY_PERIOD=1 "
     run_test test/${OS}/dnstest
     ENVARS=$SAVEVARS
     rm -f "/tmp/dnstest.log"
@@ -133,12 +133,12 @@ fi
 
 
 # wraptest has special requirements, env wise...
-#ENVVARS="SCOPE_HOME=${CWD}/test/ "
+#ENVVARS="APPVIEW_HOME=${CWD}/test/ "
 #if [ "${OS}" = "linux" ]; then
 #    ENVVARS=$ENVVARS"LD_LIBRARY_PATH=lib/${OS}:contrib/build/cmocka/src/ "
 #elif [ "${OS}" = "macOS" ]; then
 #    ENVVARS=$ENVVARS"DYLD_LIBRARY_PATH=lib/${OS}:contrib/build/cmocka/src/ "
-#    ENVVARS=$ENVVARS"DYLD_INSERT_LIBRARIES=${CWD}/lib/${OS}/libscope.so "
+#    ENVVARS=$ENVVARS"DYLD_INSERT_LIBRARIES=${CWD}/lib/${OS}/libappview.so "
 #    ENVVARS=$ENVVARS"DYLD_FORCE_FLAT_NAMESPACE=1 "
 #fi
 #run_test test/${OS}/wraptest

@@ -17,7 +17,7 @@
 
 - A new release implies updates to:
   - The repository Releases page, to include a new release with the binaries for download.
-  - The AppScope images on Docker hub.
+  - The AppView images on Docker hub.
   - The documentation Website.
 
 #### Release Schedule

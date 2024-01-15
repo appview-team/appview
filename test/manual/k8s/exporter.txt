@@ -4,16 +4,16 @@ kubectl apply -f exporter.yml
 kubectl run redis --image=redis:alpine
 
 kubectl exec -it redis -- ash
-% mkdir -p /scope/metrics/1
-% mkdir -p /scope/metrics/2
+% mkdir -p /appview/metrics/1
+% mkdir -p /appview/metrics/2
 # copy paste mertrics data
-% vi /scope/metrics/1/metrics.json
-% vi /scope/metrics/2/metrics.json
+% vi /appview/metrics/1/metrics.json
+% vi /appview/metrics/2/metrics.json
 
-kubectl cp ./bin/linux/aarch64/scope default/prom-exporter-deployment-75f4c9c78d-5pfcg:/usr/local/bin/.
+kubectl cp ./bin/linux/aarch64/appview default/prom-exporter-deployment-75f4c9c78d-5pfcg:/usr/local/bin/.
 
 kubectl exec -it prom-exporter-deployment-75f4c9c78d-5pfcg -- bash
-% scope prom --mport 9100
+% appview prom --mport 9100
 
 kubectl exec -i prom-exporter-deployment-75f4c9c78d-5pfcg -- curl localhost:9100/metrics
 
@@ -26,26 +26,26 @@ Dockerfile.exporter exporter.txt  exporter.yml
 
 kind create cluster
 
-kind load docker-image cribl/scope:dev
+kind load docker-image cribl/appview:dev
 kind load docker-image cribl/prom-exporter:latest
 
 kubectl apply -f exp.yml
 
-kubectl cp ./bin/linux/aarch64/scope default/prom-exporter-deployment-XXX-YYY:/usr/local/bin/.
+kubectl cp ./bin/linux/aarch64/appview default/prom-exporter-deployment-XXX-YYY:/usr/local/bin/.
 
 kubectl exec -it prom-exporter-deployment-XXX-YYY -- bash
-% scope prom
+% appview prom
 
 ./k8ed.sh
 
-###docker run -it --rm cribl/scope:dev scope k8s -c tcp://in.main-default-practical-leavitt.cribl.cloud:10091 | kubectl apply -f -
-##docker run -it --rm cribl/scope:dev scope k8s -m tcp://10.244.0.5:9109  -e tcp://10.244.0.6:10092 | kubectl apply -f -
-docker run -it --rm cribl/scope:dev scope k8s -metricformat statsd --metricprefix appscope -m tcp://10.244.0.5:9109  -e tcp://10.244.0.6:10092 | kubectl apply -f -
-kubectl label namespace default scope=enabled
+###docker run -it --rm cribl/appview:dev appview k8s -c tcp://in.main-default-practical-leavitt.cribl.cloud:10091 | kubectl apply -f -
+##docker run -it --rm cribl/appview:dev appview k8s -m tcp://10.244.0.5:9109  -e tcp://10.244.0.6:10092 | kubectl apply -f -
+docker run -it --rm cribl/appview:dev appview k8s -metricformat statsd --metricprefix appview -m tcp://10.244.0.5:9109  -e tcp://10.244.0.6:10092 | kubectl apply -f -
+kubectl label namespace default appview=enabled
 
 kubectl run redis --image=redis:alpine
 kubectl exec -it redis -- ash
-% cd /scope
+% cd /appview
 
 
 

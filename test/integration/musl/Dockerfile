@@ -14,38 +14,38 @@ RUN mkdir -p /opt/sig_test
 COPY ./musl/sigusrhandler.c /opt/sig_test/sigusrhandler.c
 RUN gcc -g -o /opt/sig_test/sigusrhandler /opt/sig_test/sigusrhandler.c
 
-RUN mkdir -p /opt/extract_scope && \
-    mkdir -p /opt/patch_libscope
+RUN mkdir -p /opt/extract_appview && \
+    mkdir -p /opt/patch_libappview
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=error
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=true
-ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-ENV SCOPE_EVENT_HTTP=true
-ENV SCOPE_EVENT_NET=true
-ENV SCOPE_EVENT_FS=false
-ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
-ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=error
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=true
+ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+ENV APPVIEW_EVENT_HTTP=true
+ENV APPVIEW_EVENT_NET=true
+ENV APPVIEW_EVENT_FS=false
+ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
+ENV APPVIEW_EVENT_DEST=file:///opt/test-runner/logs/events.log
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-RUN echo "export PATH=/usr/local/scope:/usr/local/scope/bin:${PATH}" >/etc/profile.d/path.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+RUN echo "export PATH=/usr/local/appview:/usr/local/appview/bin:${PATH}" >/etc/profile.d/path.sh
 
-COPY scope-profile.sh /etc/profile.d/scope.sh
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
      mkdir -p /opt/test-runner/logs/ && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY musl/scope-test /usr/local/scope/scope-test
+COPY musl/appview-test /usr/local/appview/appview-test
 
 
-RUN (cd /usr/local/scope &&  \
+RUN (cd /usr/local/appview &&  \
      openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem \
       -subj "/C=US/ST=MN/L=Excelsior/O=Cribl/OU=Engineering/CN=cribl.io")
 

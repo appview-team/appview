@@ -1,0 +1,13 @@
+- title: Why AppView?
+  items:
+    - item: AppView is language agnostic and completely userland; works with any application; scales from the CLI to production
+      icon: appAppView_icon_simple.svg
+      title: Simple
+    - item: Send AppView data to any existing monitoring tool, timeseries database, or log tool
+      icon: appAppView_icon_tools.svg
+      title: No New Tools
+    - item: Extends APM reach into every application, affordably
+      icon: appAppView_icon_cost.svg
+      title: Cost
+    #ctaText: Working With AppView
+    #ctaLink: /docs/working-with

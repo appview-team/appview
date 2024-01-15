@@ -1,8 +1,8 @@
 /*
  * Testing the operation of Interposing Functions in Dependent Libraries
- * The libscope library has intgerposed malloc. Call malloc and see that we get the interposed function.
+ * The libappview library has intgerposed malloc. Call malloc and see that we get the interposed function.
  *
- * gcc -g -I ~/appscope/src test/manual/armtimer.c -o at
+ * gcc -g -I ~/appview/src test/manual/armtimer.c -o at
  */
 
 #include <stdio.h>

@@ -14,9 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/criblio/scope/events"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/events"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/util"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -149,7 +149,7 @@ func getFlowEvents(r io.ReadSeeker) (FlowMap, error) {
 		Sources: []string{"net.open", "net.close"},
 	}
 
-	in := make(chan libscope.EventBody)
+	in := make(chan libappview.EventBody)
 	var readerr error
 	go func() {
 		err := em.Events(r, in)

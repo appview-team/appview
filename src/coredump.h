@@ -1,7 +1,7 @@
 #ifndef __COREDUMP_H__
 #define __COREDUMP_H__
 
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 bool coreDumpGenerate(const char *);
 

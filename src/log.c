@@ -5,7 +5,7 @@
 
 #include "dbg.h"
 #include "log.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 struct _log_t
 {
@@ -16,7 +16,7 @@ struct _log_t
 log_t*
 logCreate(void)
 {
-    log_t* log = scope_calloc(1, sizeof(log_t));
+    log_t* log = appview_calloc(1, sizeof(log_t));
     if (!log) {
         DBG(NULL);
         return NULL;
@@ -33,7 +33,7 @@ logDestroy(log_t** log)
     if (!log || !*log) return;
     log_t* l = *log;
     transportDestroy(&l->transport);
-    scope_free(l);
+    appview_free(l);
     *log = NULL;
 }
 
@@ -44,7 +44,7 @@ logSend(log_t* log, const char* msg, cfg_log_level_t mlevel)
 
     if ((log->level == CFG_LOG_NONE) || (log->level > mlevel)) return 0;
     
-    return transportSend(log->transport, msg, scope_strlen(msg));
+    return transportSend(log->transport, msg, appview_strlen(msg));
 }
 
 cfg_log_level_t

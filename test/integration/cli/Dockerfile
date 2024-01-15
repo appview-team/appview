@@ -25,32 +25,32 @@ COPY ./cli/payload_conf.yml /opt/test/bin/payload_conf.yml
 COPY ./cli/update_log_dest.yml /opt/test/bin/update_log_dest.yml
 
 RUN mkdir /opt/test-runner && \
-    mkdir -p /var/run/appscope/ && \
+    mkdir -p /var/run/appview/ && \
     mkdir -p /opt/cribl/state/ && \
     mkdir -p /opt/cribl/home/state && \
     touch /opt/test-runner/empty_file
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=error
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=true
-ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-ENV SCOPE_EVENT_HTTP=true
-ENV SCOPE_CLI_SKIP_HOST=true
-ENV SCOPE_RULES=false
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=error
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=true
+ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+ENV APPVIEW_EVENT_HTTP=true
+ENV APPVIEW_CLI_SKIP_HOST=true
+ENV APPVIEW_RULES=false
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY cli/scope-test /usr/local/scope/scope-test
+COPY cli/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

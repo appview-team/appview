@@ -7,9 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/criblio/scope/events"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/events"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -37,19 +37,19 @@ var eventsCmd = &cobra.Command{
 	Use:   "events [flags] ([eventId])",
 	Short: "Outputs events for a session",
 	Long:  `Outputs events for a session. You can obtain detailed information about each event by inputting the Event ID as a positional parameter. (By default, the Event ID appears in blue in []'s at the left.) You can provide filters to narrow down by name (e.g., http, net, fs, console), or by field (e.g., fs.open, stdout, or net.open). You can use JavaScript expressions to further refine the query, and to express logic.`,
-	Example: `  scope events
-  scope events m61
-  scope events --sourcetype http
-  scope events --source stderr
-  scope events --match file
-  scope events --fields net_bytes_sent,net_bytes_recv --match net_bytes
-  scope events --follow
-  scope events --all
-  scope events --allfields
-  scope events --id 4
-  scope events --sort _time --reverse
-  scope events --eval 'sourcetype!="net"'
-  scope events -n 1000 -e 'sourcetype!="console" && source.indexOf("cribl.log") == -1 && (data["file.name"] || "").indexOf("/proc") == -1'`,
+	Example: `  appview events
+  appview events m61
+  appview events --sourcetype http
+  appview events --source stderr
+  appview events --match file
+  appview events --fields net_bytes_sent,net_bytes_recv --match net_bytes
+  appview events --follow
+  appview events --all
+  appview events --allfields
+  appview events --id 4
+  appview events --sort _time --reverse
+  appview events --eval 'sourcetype!="net"'
+  appview events -n 1000 -e 'sourcetype!="console" && source.indexOf("cribl.log") == -1 && (data["file.name"] || "").indexOf("/proc") == -1'`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var em events.EventMatch
@@ -138,7 +138,7 @@ var eventsCmd = &cobra.Command{
 
 		// Filter and match events
 		// File "file" -> EventMatch filter "em" -> All events (channel) "out"
-		out := make(chan libscope.EventBody)
+		out := make(chan libappview.EventBody)
 		go func() {
 			err := em.Events(file, out)
 			if err != nil && strings.Contains(err.Error(), "Error searching for Offset: EOF") {

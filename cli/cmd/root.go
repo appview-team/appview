@@ -5,22 +5,22 @@ import (
 	"os"
 	"strings"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/run"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/run"
 	"github.com/spf13/cobra"
 )
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
-	Use:   "scope",
-	Short: "Cribl AppScope\n\nGain observability into any Linux command or application with no code modification.\n\nRunning `scope` with no subcommands will execute the `scope run` command.",
-	Example: `  scope curl wttr.in
-  scope events
-  scope metrics
-  scope flows
-  scope run -- git pull
-  scope attach top
-  scope rules --add nginx`,
+	Use:   "appview",
+	Short: "Cribl AppView\n\nGain observability into any Linux command or application with no code modification.\n\nRunning `appview` with no subcommands will execute the `appview run` command.",
+	Example: `  appview curl wttr.in
+  appview events
+  appview metrics
+  appview flows
+  appview run -- git pull
+  appview attach top
+  appview rules --add nginx`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -37,7 +37,7 @@ func Execute() {
 				}
 			}
 
-			// If not a known command, scope run by default
+			// If not a known command, appview run by default
 			internal.InitConfig()
 			rc := run.Config{}
 			rc.Run(os.Args[1:])
@@ -49,5 +49,5 @@ func Execute() {
 
 func init() {
 	// Constructor flags (for help only)
-	RootCmd.Flags().BoolP("passthrough", "z", false, "Scope an application with current environment & no config.")
+	RootCmd.Flags().BoolP("passthrough", "z", false, "AppView an application with current environment & no config.")
 }

@@ -3,12 +3,12 @@
   .nav {
     background: #fff;
 
-    #uncontrolled-tab-example-tab-AppScope {
+    #uncontrolled-tab-example-tab-AppView {
       img {
         filter: brightness(0) invert(1);
       }
     }
-    #uncontrolled-tab-example-tab-AppScope,
+    #uncontrolled-tab-example-tab-AppView,
     #uncontrolled-tab-example-tab-Cribl {
       background-color: #565656;
       border: none;
@@ -19,7 +19,7 @@
       align-items: center;
       width: 42%;
     }
-    #uncontrolled-tab-example-tab-AppScope.active,
+    #uncontrolled-tab-example-tab-AppView.active,
     #uncontrolled-tab-example-tab-Cribl.active {
       background-color: $black;
 

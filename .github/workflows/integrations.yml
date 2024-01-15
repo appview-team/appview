@@ -1,7 +1,7 @@
 #
-# AppScope - Integrations Workflow
+# AppView - Integrations Workflow
 #
-# This is the GitHub Workflow to build and run integration tests for AppScope.
+# This is the GitHub Workflow to build and run integration tests for AppView.
 #
 
 name: Integration Tests
@@ -114,7 +114,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       # We'll tell BuildX to `--cache-from` this folder to speed up the build
-      # of our `appscope-builder` image. 
+      # of our `appview-builder` image. 
       - name: Setup Docker Cache
         uses: actions/cache@v3.3.1
         with:
@@ -207,7 +207,7 @@ jobs:
           key: ${{ runner.os }}-${{ steps.env.outputs.arch }}-coredumper-${{ hashFiles('contrib/*', 'contrib/coredumper/**') }}
           upload-chunk-size: 1000000
 
-      # Build our `appscope-builder` image. This should only end up using the
+      # Build our `appview-builder` image. This should only end up using the
       # cached image but because it needs to transfer the results from the
       # builder container into the local Docker registry, it stills take more
       # time that we'd like.
@@ -219,14 +219,14 @@ jobs:
         run: df -h && make builder
 
       # Run `make all` in the builder container to build the core and CLI.
-      - name: Build AppScope
+      - name: Build AppView
         env:
           VERSION: ${{ needs.info.outputs.tag }}
           BUILDER: ${{ steps.buildx.outputs.name }}
         run: make build NOBUILD=1 CMD="make all" CI=${CI}
 
       # Run `make test` in the builder container to unit-test the core and CLI.
-      - name: Unit-Test AppScope
+      - name: Unit-Test AppView
         env:
           VERSION: ${{ needs.info.outputs.tag }}
           BUILDER: ${{ steps.buildx.outputs.name }}
@@ -244,11 +244,11 @@ jobs:
 
       - name: Print size of Binaries
         run: |
-          echo "::group::libscope.so"
-          stat -c %s lib/linux/${{ steps.env.outputs.arch }}/libscope.so
+          echo "::group::libappview.so"
+          stat -c %s lib/linux/${{ steps.env.outputs.arch }}/libappview.so
           echo "::endgroup::"
-          echo "::group::scope"
-          stat -c %s bin/linux/${{ steps.env.outputs.arch }}/scope
+          echo "::group::appview"
+          stat -c %s bin/linux/${{ steps.env.outputs.arch }}/appview
           echo "::endgroup::"
 
       # Upload the built binaries for use by later stages. We specify the same
@@ -259,8 +259,8 @@ jobs:
         with:
           name: binaries
           path: |
-            lib/linux/${{ steps.env.outputs.arch }}/libscope.so
-            bin/linux/${{ steps.env.outputs.arch }}/scope
+            lib/linux/${{ steps.env.outputs.arch }}/libappview.so
+            bin/linux/${{ steps.env.outputs.arch }}/appview
 
       # To prevent the cache from growing uncbounded, we used `--cache-to` a
       # different folder that the `--cache-from`. This moves the results of the

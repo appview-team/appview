@@ -19,7 +19,7 @@
 
 #include "inject.h"
 #include "loaderutils.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 typedef enum {
     REM_CMD_DLOPEN,
@@ -34,7 +34,7 @@ typedef enum {
 // Offset between injected path code and injected code segment
 #define PATH_CODE_OFFSET (16)
 // Maximum size of injected path
-#define SCOPE_PATH_SIZE (256)
+#define APPVIEW_PATH_SIZE (256)
 
 typedef struct {
     char *path;
@@ -169,7 +169,7 @@ inject(pid_t pid, remote_cmd_t cmd, uint64_t remAddr, char *path, int glibc)
     unsigned char *oldcode = NULL;
     int status;
     uint64_t freeAddr, codeAddr, freeAddrSize;
-    char libpath[SCOPE_PATH_SIZE] = {0};
+    char libpath[APPVIEW_PATH_SIZE] = {0};
     int libpathLen;
     int ret = EXIT_FAILURE;
 
@@ -177,8 +177,8 @@ inject(pid_t pid, remote_cmd_t cmd, uint64_t remAddr, char *path, int glibc)
         if (!path) return ret;
 
         libpathLen = strlen(path) + 1;
-        if (libpathLen > SCOPE_PATH_SIZE) {
-            fprintf(stderr, "library path %s is longer than %d, library could not be injected\n", path, SCOPE_PATH_SIZE);
+        if (libpathLen > APPVIEW_PATH_SIZE) {
+            fprintf(stderr, "library path %s is longer than %d, library could not be injected\n", path, APPVIEW_PATH_SIZE);
             goto exit;
         }
         strncpy(libpath, path, libpathLen);
@@ -215,12 +215,12 @@ inject(pid_t pid, remote_cmd_t cmd, uint64_t remAddr, char *path, int glibc)
 
     // write the path to the library
     if (cmd == REM_CMD_DLOPEN) {
-        if (ptraceWrite(pid, freeAddr, &libpath, SCOPE_PATH_SIZE)) {
+        if (ptraceWrite(pid, freeAddr, &libpath, APPVIEW_PATH_SIZE)) {
             goto restore_app;
         }
 
         // inject the code after offset the library path
-        codeAddr = freeAddr + SCOPE_PATH_SIZE + PATH_CODE_OFFSET;
+        codeAddr = freeAddr + APPVIEW_PATH_SIZE + PATH_CODE_OFFSET;
         if (ptraceWrite(pid, codeAddr, &call_remfunc, call_remfunc_end - call_remfunc)) {
             goto restore_app;
         }
@@ -281,7 +281,7 @@ inject(pid_t pid, remote_cmd_t cmd, uint64_t remAddr, char *path, int glibc)
 
         if (RET_REG != 0) {
             ret = EXIT_SUCCESS;
-            //printf("Appscope library injected at %p\n", (void*)RET_REG);
+            //printf("Appappview library injected at %p\n", (void*)RET_REG);
         } else {
             fprintf(stderr, "error: %s: remote function failed\n", __FUNCTION__);
         }
@@ -306,7 +306,7 @@ exit:
 }
 
 int 
-injectScope(int pid, char *path)
+injectAppView(int pid, char *path)
 {
     int glibc = FALSE;
     void *dlopenAddr = NULL;
@@ -329,9 +329,9 @@ injectScope(int pid, char *path)
 
     remAddr = remLib + (uint64_t)dlopenAddr;
 
-    //printf("dlopen %p remLib 0x%lx remAddr 0x%lx libscope %s\n", dlopenAddr, remLib, remAddr, path);
+    //printf("dlopen %p remLib 0x%lx remAddr 0x%lx libappview %s\n", dlopenAddr, remLib, remAddr, path);
 
-    // inject libscope.so into the target process
+    // inject libappview.so into the target process
     return inject(pid, REM_CMD_DLOPEN, (uint64_t)remAddr, path, glibc);
 }
 

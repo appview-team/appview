@@ -1,5 +1,5 @@
 #define _GNU_SOURCE
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "strset.h"
 #include <stdlib.h>
 #include <string.h>
@@ -13,8 +13,8 @@ typedef struct _strset_t {
 strset_t *
 strSetCreate(unsigned int initialCapacity)
 {
-    strset_t *set = scope_malloc(sizeof(*set));
-    const char **str = scope_malloc(initialCapacity * sizeof(char *));
+    strset_t *set = appview_malloc(sizeof(*set));
+    const char **str = appview_malloc(initialCapacity * sizeof(char *));
     if (!set || !str) goto err;
 
     set->str = str;
@@ -24,8 +24,8 @@ strSetCreate(unsigned int initialCapacity)
     return set;
 
 err:
-    if (set) scope_free(set);
-    if (str) scope_free(str);
+    if (set) appview_free(set);
+    if (str) appview_free(str);
     return NULL;
 }
 
@@ -35,8 +35,8 @@ strSetDestroy(strset_t **set_ptr)
     if (!set_ptr || !*set_ptr) return;
 
     strset_t *set = *set_ptr;
-    scope_free(set->str);
-    scope_free(set);
+    appview_free(set->str);
+    appview_free(set);
     *set_ptr = NULL;
 }
 
@@ -51,7 +51,7 @@ strSetAdd(strset_t *set, const char *str)
     // grow if needed
     if (set->count >= set->capacity) {
         unsigned int new_capacity = (set->capacity) ? set->capacity * 4 : 2;
-        const char **new_str = scope_realloc(set->str, new_capacity * sizeof(char *));
+        const char **new_str = appview_realloc(set->str, new_capacity * sizeof(char *));
         if (!new_str) {
             return FALSE;
         }
@@ -71,7 +71,7 @@ strSetContains(strset_t *set, const char *str)
 
     unsigned int i;
     for (i=0; i < set->count; i++) {
-        if (scope_strcmp(set->str[i], str) == 0) {
+        if (appview_strcmp(set->str[i], str) == 0) {
             return TRUE;
         }
     }

@@ -29,7 +29,7 @@
 #include <semaphore.h>
 
 
-#define EVENTFILE "/tmp/scope_peer.log"
+#define EVENTFILE "/tmp/appview_peer.log"
 #define SEMNAME "/sync"
 
 char *pfile;

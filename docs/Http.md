@@ -1,6 +1,6 @@
-# AppScope HTTP Support
+# AppView HTTP Support
 
-The AppScope library can generate events and metrics for HTTP traffic it sees.
+The AppView library can generate events and metrics for HTTP traffic it sees.
 This developer doc introduces the the emitted message formats, points to where
 the logic is implemented in the code, and explains the relevant runtime configs.
 
@@ -39,7 +39,7 @@ for the event formatting.
 
 ## HTTP Events
 
-The AppScope library passes unencrypted HTTP payloads to the `doHttp()` function
+The AppView library passes unencrypted HTTP payloads to the `doHttp()` function
 in [`src/httpstate.c`](../src/httpstate.c) when HTTP events are
 [enabled](#event-watch). Each chunk of the payload is passed to `doHttpBuffer()`
 which handles detection of HTTP/1 vs HTTP/2.
@@ -151,7 +151,7 @@ message on the same HTTP/1 channel or HTTP/2 stream; specifically,
 
 The `http_server_duration` field in the example above is the difference in the
 timestamps of the request and response. It will be named with "server" if the
-scoped process received the response; i.e. it's the HTTP server. If the process
+viewed process received the response; i.e. it's the HTTP server. If the process
 sent the request (i.e. it's the client), the field is `http_client_duraction`
 instead.
 
@@ -196,7 +196,7 @@ There are three HTTP metrics:
 ### Protocol Detection
 
 HTTP protocol detection events described [earlier](#http-detection) are
-configured by an entry in `scope.yml`'s `protocol` list with the `name` entry
+configured by an entry in `appview.yml`'s `protocol` list with the `name` entry
 set to `HTTP`. The regex there is applied to the initial unencrypted payload on
 each network channel and when it matches, the channel is flagged as HTTP. The
 detection event will be emitted if the `detect` property is set in that entry.
@@ -248,7 +248,7 @@ derived from the following message fields and headers:
 * status
 * target
 * user-agent
-* x-appscope
+* x-appview
 * x-forwarded-for
 
 Additional headers from requests and responses will be included if their `name:

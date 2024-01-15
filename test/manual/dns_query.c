@@ -1,4 +1,4 @@
-// gcc -g test/manual/dns_query.c -lresolv -o ~/scope/utils/dnsq
+// gcc -g test/manual/dns_query.c -lresolv -o ~/appview/utils/dnsq
 
 #include <stdio.h>
 #include <stdlib.h>

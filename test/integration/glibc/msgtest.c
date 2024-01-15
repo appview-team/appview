@@ -8,7 +8,7 @@
 #include <unistd.h>
 
 // The intention of the this test is to check handling NULL
-// value in case of msg by the scope
+// value in case of msg by the appview
 // Calling `sendmmsg`/`recvmmsg` with empty values can be used
 // for checking the support for the calls
 

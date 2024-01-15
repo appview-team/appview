@@ -7,7 +7,7 @@
 
 #include "libver.h"
 #include "test.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 static void
 normalizedVersionOfficialTest(void **state) {

@@ -26,7 +26,7 @@ type ReadSeekCloser interface {
 }
 
 func init() {
-	if os.Getenv("SCOPE_NOTRAND") != "" {
+	if os.Getenv("APPVIEW_NOTRAND") != "" {
 		rand.Seed(0)
 	} else {
 		rand.Seed(time.Now().UnixNano())
@@ -44,9 +44,9 @@ func RandString(n int) string {
 	return string(b)
 }
 
-// ScopeHome returns the scope home directory, default $HOME/.scope
-func ScopeHome() string {
-	base, match := os.LookupEnv("SCOPE_HOME")
+// AppViewHome returns the appview home directory, default $HOME/.appview
+func AppViewHome() string {
+	base, match := os.LookupEnv("APPVIEW_HOME")
 	if match {
 		if absPath, err := filepath.Abs(base); err == nil {
 			base = absPath
@@ -60,12 +60,12 @@ func ScopeHome() string {
 			home = "/tmp"
 		}
 	}
-	return filepath.Join(home, ".scope")
+	return filepath.Join(home, ".appview")
 }
 
 // GetConfigPath returns path to our default config file
 func GetConfigPath() string {
-	return filepath.Join(ScopeHome(), "config.yml")
+	return filepath.Join(AppViewHome(), "config.yml")
 }
 
 // CheckErrSprintf writes a format string to stderr and then exits with a status code of 1 if there is an error
@@ -228,7 +228,7 @@ func NewTailReader(f ReadSeekCloser) TailReader {
 	return TailReader{f}
 }
 
-// FormatTimestamp prints a human readable timestamp from scope's secs.millisecs format.
+// FormatTimestamp prints a human readable timestamp from appview's secs.millisecs format.
 func FormatTimestamp(timeFp float64) string {
 	return ParseEventTime(timeFp).Format(time.Stamp)
 }
@@ -464,9 +464,9 @@ func GetContainersPids(rootdir string) []int {
 	return cPids
 }
 
-// Extract extracts scope to the scope version directory
-func Extract(scopeDirVersion string) error {
-	// Copy scope
+// Extract extracts appview to the appview version directory
+func Extract(appviewDirVersion string) error {
+	// Copy appview
 	perms := os.FileMode(0755)
 	exPath, err := os.Executable()
 	if err != nil {
@@ -475,11 +475,11 @@ func Extract(scopeDirVersion string) error {
 			Msgf("Error getting executable path")
 		return err
 	}
-	if _, err := CopyFile(exPath, filepath.Join(scopeDirVersion, "scope"), perms); err != nil {
+	if _, err := CopyFile(exPath, filepath.Join(appviewDirVersion, "appview"), perms); err != nil {
 		if err != os.ErrExist {
 			log.Error().
 				Err(err).
-				Msgf("Error writing scope to %s.", scopeDirVersion)
+				Msgf("Error writing appview to %s.", appviewDirVersion)
 			return err
 		}
 	}

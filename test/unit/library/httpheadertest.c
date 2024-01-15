@@ -6,7 +6,7 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "dbg.h"
 #include "plattime.h"
 #include "runtimecfg.h"
@@ -31,8 +31,8 @@ needleTestSetup(void** state)
     initFn();
     initState();
 
-    scope_strcpy(g_proc.hostname, "thisHostName");
-    scope_strcpy(g_proc.procname, "thisProcName");
+    appview_strcpy(g_proc.hostname, "thisHostName");
+    appview_strcpy(g_proc.procname, "thisProcName");
     g_proc.pid = 77;
 
     // Call the general groupSetup() too.
@@ -88,7 +88,7 @@ getUnix(int fd)
     struct sockaddr_un sa;
     bzero((char *)&sa, sizeof(sa));
     sa.sun_family = AF_UNIX;
-    scope_strncpy(sa.sun_path, UNIX_SOCK_PATH, sizeof(sa.sun_path)-1);
+    appview_strncpy(sa.sun_path, UNIX_SOCK_PATH, sizeof(sa.sun_path)-1);
 
     doSetConnection(fd, (struct sockaddr *)&sa, sizeof(struct sockaddr_in), LOCAL);
 
@@ -125,7 +125,7 @@ headerBasicRequest(void **state)
                        "\"http_host\":\"localhost:4430\"",
                        "\"http_user_agent\":\"curl/7.68.0\""
                      };
-    size_t buflen = scope_strlen(request);
+    size_t buflen = appview_strlen(request);
 
     net_info net = {0};
     net.fd = 0;
@@ -136,9 +136,9 @@ headerBasicRequest(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
 }
 
 static void
@@ -161,9 +161,9 @@ headerBasicResponse(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
 }
 
 static void
@@ -193,9 +193,9 @@ headerRequestIP(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("[%d] looking for %s\n", i, result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
 }
 
 static void
@@ -222,9 +222,9 @@ headerResponseIP(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
 }
 
 static void
@@ -250,9 +250,9 @@ headerRequestUnix(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
 }
 
 static void
@@ -290,16 +290,16 @@ userDefinedHeaderExtract(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
-    scope_free(header_event);
+    appview_free(header_event);
     cfgDestroy(&cfg);
 }
 
 static void
-xAppScopeHeaderExtract(void **state)
+xAppViewHeaderExtract(void **state)
 {
-    char *request = "GET /hello HTTP/1.1\r\nHost: localhost:4430\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\nContent-Length: 12345\r\nX-appScope: app=utest\r\nX-Forwarded-For: 192.7.7.7\r\n\r\n";
+    char *request = "GET /hello HTTP/1.1\r\nHost: localhost:4430\r\nUser-Agent: curl/7.68.0\r\nAccept: */*\r\nContent-Length: 12345\r\nX-appAppView: app=utest\r\nX-Forwarded-For: 192.7.7.7\r\n\r\n";
     char *result[] = {
         "\"http_method\":\"GET\"",
         "\"http_target\":\"/hello\"",
@@ -314,7 +314,7 @@ xAppScopeHeaderExtract(void **state)
         "\"net_host_ip\":\"192.1.2.3\"",
         "\"net_host_port\":9999",
         "\"http_request_content_length\":12345",
-        "\"x-appscope\":\"app=utest\""
+        "\"x-appview\":\"app=utest\""
     };
 
     config_t *cfg = cfgCreateDefault();
@@ -327,10 +327,10 @@ xAppScopeHeaderExtract(void **state)
     int i;
     for (i=0; i<sizeof(result)/sizeof(result[0]); i++) {
         //printf("looking for %s\n", result[i]);
-        assert_non_null(scope_strstr(header_event, result[i]));
+        assert_non_null(appview_strstr(header_event, result[i]));
     }
 
-    scope_free(header_event);
+    appview_free(header_event);
     cfgDestroy(&cfg);
 }
 
@@ -346,7 +346,7 @@ main(int argc, char *argv[])
         cmocka_unit_test(headerResponseIP),
         cmocka_unit_test(headerRequestUnix),
         cmocka_unit_test(userDefinedHeaderExtract),
-        cmocka_unit_test(xAppScopeHeaderExtract),
+        cmocka_unit_test(xAppViewHeaderExtract),
     };
     return cmocka_run_group_tests(tests, needleTestSetup, needleTestTeardown);
 }

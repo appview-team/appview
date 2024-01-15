@@ -10,7 +10,7 @@
 #include "plattime.h"
 #include "strsearch.h"
 #include "atomic.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 #define MIN_HDR_ALLOC (4  * 1024)
 #define MAX_HDR_ALLOC (16 * 1024)
@@ -49,20 +49,20 @@ setHttpState(http_state_t *httpstate, http_enum_t toState)
         case HTTP_NONE:
             // cleanup the stash for the RX and TX sides
             if (httpstate->http2Buf.buf) {
-                scope_free(httpstate->http2Buf.buf);
+                appview_free(httpstate->http2Buf.buf);
                 httpstate->http2Buf.buf = NULL;
             }
             httpstate->http2Buf.len = 0;
             httpstate->http2Buf.size = 0;
             if (httpstate->hdr) {
-                scope_free(httpstate->hdr);
+                appview_free(httpstate->hdr);
                 httpstate->hdr = NULL;
             }
 
             httpstate->hdrlen = 0;
             httpstate->hdralloc = 0;
             httpstate->clen = 0;
-            scope_memset(&(httpstate->id), 0, sizeof(httpId_t));
+            appview_memset(&(httpstate->id), 0, sizeof(httpId_t));
             break;
         case HTTP_HDR:
         case HTTP_HDREND:
@@ -94,9 +94,9 @@ appendHeader(http_state_t *httpstate, char* buf, size_t len)
         }
     }
 
-    // If we need more space, scope_realloc
+    // If we need more space, appview_realloc
     if (alloc_size != httpstate->hdralloc) {
-        char* temp = scope_realloc(httpstate->hdr, alloc_size);
+        char* temp = appview_realloc(httpstate->hdr, alloc_size);
         if (!temp) {
             DBG(NULL);
             // Don't return partial headers...  All or nothing.
@@ -108,7 +108,7 @@ appendHeader(http_state_t *httpstate, char* buf, size_t len)
     }
 
     // Append the data
-    scope_memcpy(&httpstate->hdr[httpstate->hdrlen], buf, len);
+    appview_memcpy(&httpstate->hdr[httpstate->hdrlen], buf, len);
     httpstate->hdrlen += len;
 }
 
@@ -133,7 +133,7 @@ getContentLength(char *header, size_t len)
     PCRE2_UCHAR *cLen; PCRE2_SIZE cLenLen;
     pcre2_substring_get_bynumber(matches, 1, &cLen, &cLenLen);
 
-    size_t ret = scope_strtoull((const char *)cLen, NULL, 0);
+    size_t ret = appview_strtoull((const char *)cLen, NULL, 0);
     if ((ret == 0) || (ret == ULLONG_MAX)) {
         ret = -1;
     }
@@ -244,12 +244,12 @@ reportHttp1(http_state_t *httpstate)
     if ((net = getNetEntry(proto->fd))) {
         proto->sock_type = net->type;
         if (net->addrSetLocal) {
-            scope_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
+            appview_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
         } else {
             proto->localConn.ss_family = -1;
         }
         if (net->addrSetRemote) {
-            scope_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
+            appview_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
         } else {
             proto->remoteConn.ss_family = -1;
         }
@@ -280,14 +280,14 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
         const uint8_t *buf, uint32_t frameLen, httpId_t *httpId)
 {
     if (!state || !stash || !buf || !frameLen || !httpId) {
-        scopeLogError("ERROR: NULL reportHttp2() parameter");
+        appviewLogError("ERROR: NULL reportHttp2() parameter");
         DBG(NULL);
         return FALSE;
     }
 
     protocol_info *proto = evtProtoAllocHttp2Frame(frameLen);
     if (!proto) {
-        scopeLogError("ERROR: failed to allocate protocol object");
+        appviewLogError("ERROR: failed to allocate protocol object");
         DBG(NULL);
         return FALSE;
     }
@@ -297,10 +297,10 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
     post->start_duration = getTime();
     post->id             = state->id;
     if (stash->len) {
-        scope_memcpy(post->hdr, stash->buf, stash->len);
-        scope_memcpy(post->hdr + stash->len, buf, frameLen - stash->len);
+        appview_memcpy(post->hdr, stash->buf, stash->len);
+        appview_memcpy(post->hdr + stash->len, buf, frameLen - stash->len);
     } else {
-        scope_memcpy(post->hdr, buf, frameLen);
+        appview_memcpy(post->hdr, buf, frameLen);
     }
 
     // Unlike in the HTTP/1 case, we're sending TRUE here if the frame was
@@ -314,12 +314,12 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
     if (net) {
         proto->sock_type = net->type;
         if (net->addrSetLocal) {
-            scope_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
+            appview_memcpy(&proto->localConn, &net->localConn, sizeof(struct sockaddr_storage));
         } else {
             proto->localConn.ss_family = -1;
         }
         if (net->addrSetRemote) {
-            scope_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
+            appview_memcpy(&proto->remoteConn, &net->remoteConn, sizeof(struct sockaddr_storage));
         } else {
             proto->remoteConn.ss_family = -1;
         }
@@ -331,7 +331,7 @@ reportHttp2(http_state_t *state, net_info *net, http_buf_t *stash,
 
     bool ret = (uint8_t)(post->hdr[4]) & 0x04; // TRUE if END_HEADERS flag set
 
-    //scopeLogDebug("DEBUG: posting HTTP/2 frame");
+    //appviewLogDebug("DEBUG: posting HTTP/2 frame");
     cmdPostEvent(g_ctl, (char *)proto);
 
     return ret;
@@ -453,17 +453,17 @@ initHttpState(void)
 
     if (!(g_http_clength = pcre2_compile((PCRE2_SPTR)HTTP_CLENGTH,
             PCRE2_ZERO_TERMINATED, 0, &errNum, &errPos, NULL))) {
-        scopeLogError("ERROR: HTTP/1 content-length regex failed; err=%d, pos=%ld",
+        appviewLogError("ERROR: HTTP/1 content-length regex failed; err=%d, pos=%ld",
                 errNum, errPos);
     }
     if (!(g_http_upgrade = pcre2_compile((PCRE2_SPTR)HTTP_UPGRADE,
             PCRE2_ZERO_TERMINATED, 0, &errNum, &errPos, NULL))) {
-        scopeLogError("ERROR: HTTP/1 upgrade regex failed; err=%d, pos=%ld",
+        appviewLogError("ERROR: HTTP/1 upgrade regex failed; err=%d, pos=%ld",
                 errNum, errPos);
     }
     if (!(g_http_connect = pcre2_compile((PCRE2_SPTR)HTTP_CONNECT,
             PCRE2_ZERO_TERMINATED, 0, &errNum, &errPos, NULL))) {
-        scopeLogError("ERROR: HTTP/1 connection regex failed; err=%d, pos=%ld",
+        appviewLogError("ERROR: HTTP/1 connection regex failed; err=%d, pos=%ld",
                 errNum, errPos);
     }
 }
@@ -481,7 +481,7 @@ static void
 http2StashFrame(http_buf_t *stash, const uint8_t *buf, size_t len)
 {
     if (!stash) {
-        scopeLogError("ERROR: null stash");
+        appviewLogError("ERROR: null stash");
         DBG(NULL);
         return;
     }
@@ -489,11 +489,11 @@ http2StashFrame(http_buf_t *stash, const uint8_t *buf, size_t len)
     // need to store the `len` we're given plus whatever's already stashed
     size_t need = len + stash->len;
     if (need > stash->size) {
-        // round up to the next 1k boundary and scope_realloc
+        // round up to the next 1k boundary and appview_realloc
         need = ((need + 1023) / 1024) * 1024;
-        uint8_t *newBuf = scope_realloc(stash->buf, need);
+        uint8_t *newBuf = appview_realloc(stash->buf, need);
         if (!newBuf) {
-            scopeLogError("ERROR: failed to (re)allocate frame buffer");
+            appviewLogError("ERROR: failed to (re)allocate frame buffer");
             DBG(NULL);
             return;
         }
@@ -502,7 +502,7 @@ http2StashFrame(http_buf_t *stash, const uint8_t *buf, size_t len)
     }
 
     // append what we're given to the stash
-    scope_memcpy(stash->buf + stash->len, buf, len);
+    appview_memcpy(stash->buf + stash->len, buf, len);
     stash->len += len;
 }
 
@@ -510,7 +510,7 @@ static uint32_t
 http2GetFrameLength(http_buf_t *stash, const uint8_t *buf, size_t len)
 {
     if (!stash) {
-        scopeLogError("ERROR: null stash");
+        appviewLogError("ERROR: null stash");
         DBG(NULL);
         return -1;
     }
@@ -546,7 +546,7 @@ static uint8_t
 http2GetFrameType(http_buf_t *stash, const uint8_t *buf, size_t len)
 {
     if (!stash) {
-        scopeLogError("ERROR: null stash");
+        appviewLogError("ERROR: null stash");
         DBG(NULL);
         return -1;
     }
@@ -571,7 +571,7 @@ static uint8_t
 http2GetFrameFlags(http_buf_t *stash, const uint8_t *buf, size_t len)
 {
     if (!stash) {
-        scopeLogError("ERROR: null stash");
+        appviewLogError("ERROR: null stash");
         DBG(NULL);
         return -1;
     }
@@ -597,7 +597,7 @@ static uint32_t
 http2GetFrameStream(http_buf_t *stash, const uint8_t *buf, size_t len)
 {
     if (!stash) {
-        scopeLogError("ERROR: null stash");
+        appviewLogError("ERROR: null stash");
         DBG(NULL);
         return -1;
     }
@@ -642,7 +642,7 @@ parseHttp2(http_state_t* state, net_info *net, int isTx,
         const uint8_t *buf, size_t len, httpId_t *httpId)
 {
     if (!buf || !len) {
-        scopeLogError("ERROR: empty HTTP/2 buffer");
+        appviewLogError("ERROR: empty HTTP/2 buffer");
         DBG(NULL);
         return FALSE;
     }
@@ -654,7 +654,7 @@ parseHttp2(http_state_t* state, net_info *net, int isTx,
     http_buf_t    *stash  = &state->http2Buf;       // stash for partial frames
     while (bufLen > 0) {
         // skip over MAGIC
-        if (bufLen >= HTTP2_MAGIC_LEN && !scope_strncmp((char*)buf, HTTP2_MAGIC, HTTP2_MAGIC_LEN)) {
+        if (bufLen >= HTTP2_MAGIC_LEN && !appview_strncmp((char*)buf, HTTP2_MAGIC, HTTP2_MAGIC_LEN)) {
             bufPos += HTTP2_MAGIC_LEN;
             bufLen -= HTTP2_MAGIC_LEN;
             if (!bufLen) return FALSE;
@@ -678,7 +678,7 @@ parseHttp2(http_state_t* state, net_info *net, int isTx,
             return FALSE;
         }
 
-        //scopeLogDebug("DEBUG: HTTP/2 %s frame found; type=0x%02x, flags=0x%02x, stream=%d",
+        //appviewLogDebug("DEBUG: HTTP/2 %s frame found; type=0x%02x, flags=0x%02x, stream=%d",
         //        isTx ? "TX" : "RX", fType, fFlags, fStream);
 
         // process interesting frames
@@ -717,13 +717,13 @@ doHttpBuffer(http_state_t states[HTTP_NUM], net_info *net, char *buf, size_t len
     int isTx  = (src == NETTX || src == TLSTX) ? 1 : 0;
     http_state_t *state = &states[isTx];
 
-    //scopeLogHexDebug(buf, len>64 ? 64 : len, "DEBUG: HTTP %s payload; ver=%d, len=%ld",
+    //appviewLogHexDebug(buf, len>64 ? 64 : len, "DEBUG: HTTP %s payload; ver=%d, len=%ld",
     //        isTx ? "TX" : "RX", state->version, len);
 
     // detect HTTP version
     if (state->version == 0) {
         // Detect HTTP/2 by looking for the "magic" string at the start
-        if (len >= HTTP2_MAGIC_LEN && !scope_strncmp(buf, HTTP2_MAGIC, HTTP2_MAGIC_LEN)) {
+        if (len >= HTTP2_MAGIC_LEN && !appview_strncmp(buf, HTTP2_MAGIC, HTTP2_MAGIC_LEN)) {
             states[HTTP_RX].version = 2;
             states[HTTP_TX].version = 2;
 
@@ -747,7 +747,7 @@ doHttpBuffer(http_state_t states[HTTP_NUM], net_info *net, char *buf, size_t len
         }
 
         else {
-            scopeLogError("ERROR: HTTP version detection failed");
+            appviewLogError("ERROR: HTTP version detection failed");
             DBG(NULL);
             return FALSE;
         }
@@ -782,7 +782,7 @@ doHttpBuffer(http_state_t states[HTTP_NUM], net_info *net, char *buf, size_t len
     }
 
     // invalid HTTP version
-    scopeLogError("ERROR: HTTP/? unexpected version on %s; version=%d",
+    appviewLogError("ERROR: HTTP/? unexpected version on %s; version=%d",
             isTx ? "TX" : "RX", state->version);
     DBG(NULL);
     return FALSE;
@@ -792,13 +792,13 @@ bool
 doHttp(int sockfd, net_info *net, char *buf, size_t len, metric_t src, src_data_t dtype)
 {
     if (!buf || !len) {
-        scopeLogWarn("WARN: doHttp() got no buffer");
+        appviewLogWarn("WARN: doHttp() got no buffer");
         return FALSE;
     }
 
     // If we know we're not looking at a stream, bail.
     if (!net || net->type != SOCK_STREAM) {
-        scopeLogWarn("WARN: doHttp() not on SOCK_STREAM");
+        appviewLogWarn("WARN: doHttp() not on SOCK_STREAM");
         return FALSE;
     }
 
@@ -862,7 +862,7 @@ doHttp(int sockfd, net_info *net, char *buf, size_t len, metric_t src, src_data_
         }
 
         default:
-            scopeLogWarn("WARN: doHttp() got unknown data type; %d", dtype);
+            appviewLogWarn("WARN: doHttp() got unknown data type; %d", dtype);
             DBG("%d", dtype);
             break;
     }

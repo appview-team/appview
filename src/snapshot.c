@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
 #include "snapshot.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "log.h"
 #include "utils.h"
 #include "coredump.h"
@@ -19,7 +19,7 @@
  * Prefix for snapshot directory
  * TODO: this can be configurable
  */
-#define SNAPSHOT_DIR_PREFIX "/tmp/appscope/"
+#define SNAPSHOT_DIR_PREFIX "/tmp/appview/"
 #define SNAPSHOT_DIR_LEN  C_STRLEN(SNAPSHOT_DIR_PREFIX)
 
 extern proc_id_t g_proc;
@@ -32,12 +32,12 @@ extern rtconfig g_cfg;
 /*
  * snapshotWriteConstStr - write the string with known length
  */
-#define snapshotWriteConstStr(fd, s) scope_write(fd, s, C_STRLEN(s))
+#define snapshotWriteConstStr(fd, s) appview_write(fd, s, C_STRLEN(s))
 
 /*
  * snapshotWriteStr - write the string with unknown length
  */
-#define snapshotWriteStr(fd, s) scope_write(fd, s, (scope_strlen(s)))
+#define snapshotWriteStr(fd, s) appview_write(fd, s, (appview_strlen(s)))
 
 /*
  * snapshotWriteNumber - convert specific number and writes it
@@ -148,7 +148,7 @@ callSavedHandler(struct sigaction *handler, int sig, siginfo_t *info, void *secr
 }
 
 /*
- * Call original application handler saved by AppScope
+ * Call original application handler saved by AppView
  */
 static void inline
 appSignalHandler(int sig, siginfo_t *info, void *secret) {
@@ -172,15 +172,15 @@ appSignalHandler(int sig, siginfo_t *info, void *secret) {
 static bool
 snapInfo(const char *dirPath, const char *epochStr, siginfo_t *unused) {
     char filePath[PATH_MAX] = {0};
-    scope_strcpy(filePath, dirPath);
-    scope_strcat(filePath, "info_");
-    scope_strcat(filePath, epochStr);
-    int fd = scope_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+    appview_strcpy(filePath, dirPath);
+    appview_strcat(filePath, "info_");
+    appview_strcat(filePath, epochStr);
+    int fd = appview_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
     if (!fd) {
         return FALSE;
     }
-    snapshotWriteConstStr(fd, "Scope Version: ");
-    snapshotWriteConstStr(fd, SCOPE_VER);
+    snapshotWriteConstStr(fd, "AppView Version: ");
+    snapshotWriteConstStr(fd, APPVIEW_VER);
     snapshotWriteConstStr(fd, "\nUnix Time: ");
     snapshotWriteConstStr(fd, epochStr);
     snapshotWriteConstStr(fd, " sec\nPID: ");
@@ -188,8 +188,8 @@ snapInfo(const char *dirPath, const char *epochStr, siginfo_t *unused) {
     snapshotWriteConstStr(fd ,"\nProcess name: ");
     snapshotWriteStr(fd, g_proc.procname);
 
-    scope_close(fd);
-    return (scope_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
+    appview_close(fd);
+    return (appview_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
 }
 
 /*
@@ -202,17 +202,17 @@ snapConfig(const char *dirPath, const char *epochStr, siginfo_t *unused) {
         return FALSE;
     }
     char filePath[PATH_MAX] = {0};
-    scope_strcpy(filePath, dirPath);
-    scope_strcat(filePath, "cfg_");
-    scope_strcat(filePath, epochStr);
-    int fd = scope_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+    appview_strcpy(filePath, dirPath);
+    appview_strcat(filePath, "cfg_");
+    appview_strcat(filePath, epochStr);
+    int fd = appview_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
     if (!fd) {
         return FALSE;
     }
 
     snapshotWriteStr(fd, g_cfg.cfgStr);
-    scope_close(fd);
-    return (scope_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
+    appview_close(fd);
+    return (appview_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
 }
 
 /*
@@ -220,7 +220,7 @@ snapConfig(const char *dirPath, const char *epochStr, siginfo_t *unused) {
  */
 static bool
 snapActionBacktraceEnabled(void) {
-    return SCOPE_BIT_CHECK(snapshotOpt, SNP_OPT_BACKTRACE);
+    return APPVIEW_BIT_CHECK(snapshotOpt, SNP_OPT_BACKTRACE);
 }
 
 /*
@@ -229,10 +229,10 @@ snapActionBacktraceEnabled(void) {
 static bool
 snapBacktrace(const char *dirPath, const char *epochStr, siginfo_t *info) {
     char filePath[PATH_MAX] = {0};
-    scope_strcpy(filePath, dirPath);
-    scope_strcat(filePath, "backtrace_");
-    scope_strcat(filePath, epochStr);
-    int fd = scope_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
+    appview_strcpy(filePath, dirPath);
+    appview_strcat(filePath, "backtrace_");
+    appview_strcat(filePath, epochStr);
+    int fd = appview_open(filePath, O_CREAT | S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH|S_IWOTH);
     if (!fd) {
         return FALSE;
     }
@@ -347,7 +347,7 @@ snapBacktrace(const char *dirPath, const char *epochStr, siginfo_t *info) {
     unw_context_t uc;
     unw_word_t ip;
 
-    unw_scope_getcontext(&uc);
+    unw_appview_getcontext(&uc);
     unw_init_local(&cursor, &uc);
     int frame_count = 0;
     snapshotWriteConstStr(fd, "--- backtrace\n");
@@ -378,8 +378,8 @@ snapBacktrace(const char *dirPath, const char *epochStr, siginfo_t *info) {
         frame_count++;
     }
 
-    scope_close(fd);
-    return (scope_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
+    appview_close(fd);
+    return (appview_chmod(filePath, 0755) == 0) ? TRUE : FALSE;
 }
 
 /*
@@ -387,7 +387,7 @@ snapBacktrace(const char *dirPath, const char *epochStr, siginfo_t *info) {
  */
 static bool
 snapActionCoredumpEnabled(void) {
-    return SCOPE_BIT_CHECK(snapshotOpt, SNP_OPT_COREDUMP);
+    return APPVIEW_BIT_CHECK(snapshotOpt, SNP_OPT_COREDUMP);
 }
 
 /*
@@ -399,9 +399,9 @@ snapCoreDump(const char *dirPath, const char *epochStr, siginfo_t *unused) {
     if (g_isgo) return TRUE;
 
     char filePath[PATH_MAX] = {0};
-    scope_strcpy(filePath, dirPath);
-    scope_strcat(filePath, "core_");
-    scope_strcat(filePath, epochStr);
+    appview_strcpy(filePath, dirPath);
+    appview_strcat(filePath, "core_");
+    appview_strcat(filePath, epochStr);
     return coreDumpGenerate(filePath);
 }
 
@@ -421,7 +421,7 @@ struct snapshotAction allSnapshotActions[] = {
  */
 void
 snapshotSetCoredump(bool val) {
-    SCOPE_BIT_SET_VAR(snapshotOpt, SNP_OPT_COREDUMP, val);
+    APPVIEW_BIT_SET_VAR(snapshotOpt, SNP_OPT_COREDUMP, val);
 }
 
 /*
@@ -429,7 +429,7 @@ snapshotSetCoredump(bool val) {
  */
 void
 snapshotSetBacktrace(bool val) {
-    SCOPE_BIT_SET_VAR(snapshotOpt, SNP_OPT_BACKTRACE, val);
+    APPVIEW_BIT_SET_VAR(snapshotOpt, SNP_OPT_BACKTRACE, val);
 }
 
 /*
@@ -451,21 +451,21 @@ snapshotSignalHandler(int sig, siginfo_t *info, void *secret) {
     g_issighandler = TRUE;
 
     // Start with create a prefix path
-    scope_memcpy(snapPidDirPath, SNAPSHOT_DIR_PREFIX, SNAPSHOT_DIR_LEN);
+    appview_memcpy(snapPidDirPath, SNAPSHOT_DIR_PREFIX, SNAPSHOT_DIR_LEN);
 
     char pidBuf[32] = {0};
     int msgLen = 0;
 
     // Append PID to path
-    sigSafeUtoa(scope_getpid(), pidBuf, 10, &msgLen);
+    sigSafeUtoa(appview_getpid(), pidBuf, 10, &msgLen);
     currentOffset += msgLen + 1;
     if (currentOffset > PATH_MAX) {
         DBG(NULL);
         g_issighandler = FALSE;
         return;
     }
-    scope_memcpy(snapPidDirPath + SNAPSHOT_DIR_LEN, pidBuf, msgLen);
-    scope_memcpy(snapPidDirPath + SNAPSHOT_DIR_LEN + msgLen, "/", 1);
+    appview_memcpy(snapPidDirPath + SNAPSHOT_DIR_LEN, pidBuf, msgLen);
+    appview_memcpy(snapPidDirPath + SNAPSHOT_DIR_LEN + msgLen, "/", 1);
     // Create the base PID directory
     sigSafeMkdirRecursive(snapPidDirPath);
 
@@ -473,7 +473,7 @@ snapshotSignalHandler(int sig, siginfo_t *info, void *secret) {
     char timeBuf[1024] = {0};
     msgLen = 0;
     // Convert epoch to string
-    sigSafeUtoa(scope_time(NULL), timeBuf, 10, &msgLen);
+    sigSafeUtoa(appview_time(NULL), timeBuf, 10, &msgLen);
 
     // Perform all snapshot actions which are enabled
     for (int index = 0; index < ARRAY_SIZE(allSnapshotActions); ++index) {
@@ -484,7 +484,7 @@ snapshotSignalHandler(int sig, siginfo_t *info, void *secret) {
     }
 
     /*
-    * This sleep is a fragile way to give the scope daemon time to read
+    * This sleep is a fragile way to give the appview daemon time to read
     * the snapshot output files before this process exits (think: containerized
     * process). At the time this was written, after the daemon sees the signal
     * it just waits one second before grabbing these files. The coredump

@@ -5,7 +5,7 @@ DEBUG=0  # set this to 1 to capture the LOG_FILE for each test
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 
-LOG_FILE="/tmp/scope.log"
+LOG_FILE="/tmp/appview.log"
 touch $LOG_FILE
 
 starttest(){
@@ -49,7 +49,7 @@ endtest(){
 starttest plainServerDynamic
 cd /go/net
 PORT=80
-scope -z ./plainServerDynamic ${PORT} &
+appview -z ./plainServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -65,7 +65,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -77,7 +77,7 @@ endtest
 starttest plainServerStatic
 cd /go/net
 PORT=81
-scope -z ./plainServerStatic ${PORT} &
+appview -z ./plainServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -93,7 +93,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -105,7 +105,7 @@ endtest
 starttest tlsServerDynamic
 cd /go/net
 PORT=4430
-scope -z ./tlsServerDynamic ${PORT} &
+appview -z ./tlsServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -121,7 +121,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -133,7 +133,7 @@ endtest
 starttest tlsServerStatic
 cd /go/net
 PORT=4431
-scope -z ./tlsServerStatic ${PORT} &
+appview -z ./tlsServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -149,7 +149,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -160,7 +160,7 @@ endtest
 #
 starttest plainClientDynamic
 cd /go/net
-scope -z ./plainClientDynamic
+appview -z ./plainClientDynamic
 ERR+=$?
 
 # this sleep gives plainClientDynamic a chance to report its events on exit
@@ -168,7 +168,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -179,7 +179,7 @@ endtest
 #
 starttest plainClientStatic
 cd /go/net
-scope -z ./plainClientStatic
+appview -z ./plainClientStatic
 ERR+=$?
 
 # this sleep gives plainClientStatic a chance to report its events on exit
@@ -187,7 +187,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -198,7 +198,7 @@ endtest
 #
 starttest tlsClientDynamic
 cd /go/net
-scope -z ./tlsClientDynamic
+appview -z ./tlsClientDynamic
 ERR+=$?
 
 # this sleep gives tlsClientDynamic a chance to report its events on exit
@@ -206,7 +206,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -217,7 +217,7 @@ endtest
 #
 starttest tlsClientStatic
 cd /go/net
-scope -z ./tlsClientStatic
+appview -z ./tlsClientStatic
 ERR+=$?
 
 # this sleep gives tlsClientStatic a chance to report its events on exit
@@ -225,7 +225,7 @@ sleep 0.5
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -236,11 +236,11 @@ endtest
 #
 starttest fileThread
 cd /go/thread
-scope -z ./fileThread
+appview -z ./fileThread
 ERR+=$?
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -251,11 +251,11 @@ endtest
 #
 starttest cgoDynamic
 cd /go/cgo
-LD_LIBRARY_PATH=. scope -z ./cgoDynamic
+LD_LIBRARY_PATH=. appview -z ./cgoDynamic
 ERR+=$?
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest
@@ -266,12 +266,12 @@ endtest
 #
 starttest cgoStatic
 cd /go/cgo
-scope -z ./cgoStatic
+appview -z ./cgoStatic
 ERR+=$?
 
 evaltest
 
-grep "Continuing without AppScope." ${LOG_FILE}
+grep "Continuing without AppView." ${LOG_FILE}
 ERR+=$?
 
 endtest

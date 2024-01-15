@@ -1,7 +1,7 @@
 /*
  * envloop - Event Loop Tool
  *
- * A simple program to display any `SCOPE_*` environment variables in a loop so
+ * A simple program to display any `APPVIEW_*` environment variables in a loop so
  * we can test setting them when we "attach".
  */
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv, char **env)
     while (running) {
         int i;
         for (i = 0; environ[i]; i++) {
-            if (strlen(environ[i]) > 6 && strncmp(environ[i], "SCOPE_", 6) == 0) {
+            if (strlen(environ[i]) > 6 && strncmp(environ[i], "APPVIEW_", 6) == 0) {
                 printf("  %s\n", environ[i]);
             }
         }

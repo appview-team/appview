@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -14,7 +14,7 @@ import (
 func InitConfig() {
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
-	CreateLogFile(filepath.Join(util.ScopeHome(), "scope.log"), 0644)
+	CreateLogFile(filepath.Join(util.AppViewHome(), "appview.log"), 0644)
 }
 
 // GetConfigMap returns configuration as a map

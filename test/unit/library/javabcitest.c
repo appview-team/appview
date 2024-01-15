@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "javabci.h"
 
 /*
@@ -162,7 +162,7 @@ javaBciAddMethod(void** state)
 
     javaAddMethod(classInfo, "anotherNativeMethod", "(Ljava/lang/String;)V", ACC_NATIVE, 0, 0, NULL, 0);
 
-    int classIndex = javaFindClassIndex(classInfo, "io/cribl/scope/JavaTest");
+    int classIndex = javaFindClassIndex(classInfo, "io/cribl/appview/JavaTest");
     assert_int_equal(classIndex, 4);
 
     uint16_t printNameAndTypeIdx = javaAddNameAndTypeTag(classInfo, "print", "(Ljava/lang/String;)V");
@@ -218,7 +218,7 @@ javaBciConvertMethodToNative(void** state)
 
     javaDestroy(&modClassInfo);
     free(dest);
-    scope_free(addrConv);
+    appview_free(addrConv);
 }
 
 static void
@@ -252,7 +252,7 @@ javaBciAddStringTag(void** state)
     java_class_t *classInfo = javaReadClass(JavaTest_class);
     assert_non_null(classInfo);
 
-    int idx = javaAddStringTag(classInfo, "Scope is DOPE");
+    int idx = javaAddStringTag(classInfo, "AppView is DOPE");
     
     unsigned char *dest = malloc(classInfo->length);
     javaWriteClass(dest, classInfo);

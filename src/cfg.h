@@ -2,7 +2,7 @@
 #define __CFG_H__
 #include <pcre2posix.h>
 
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 typedef struct _config_t config_t;
 

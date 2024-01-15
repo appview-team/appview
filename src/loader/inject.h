@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-int injectScope(int, char*);
+int injectAppView(int, char*);
 int injectFirstAttach(int, uint64_t);
 
 #endif

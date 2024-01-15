@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/util"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateAll(t *testing.T) {
 	os.MkdirAll(".foo", 0755)
 	CreateAll(".foo")
-	files := []string{"libscope.so", "scope.yml"}
+	files := []string{"libappview.so", "appview.yml"}
 	perms := []os.FileMode{0755, 0644}
 	for i, f := range files {
 		path := fmt.Sprintf(".foo/%s", f)
@@ -37,21 +37,21 @@ func TestCreateAll(t *testing.T) {
 	os.RemoveAll(".foo")
 }
 
-func TestEnvironNoScope(t *testing.T) {
-	hasScope := func(testArr []string) bool {
+func TestEnvironNoAppView(t *testing.T) {
+	hasAppView := func(testArr []string) bool {
 		for _, s := range testArr {
-			if strings.HasPrefix(s, "SCOPE") {
+			if strings.HasPrefix(s, "APPVIEW") {
 				return true
 			}
 		}
 		return false
 	}
-	assert.False(t, hasScope(os.Environ()))
-	os.Setenv("SCOPE_FOO", "true")
-	assert.True(t, hasScope(os.Environ()))
-	assert.False(t, hasScope(environNoScope()))
-	os.Unsetenv("SCOPE_FOO")
-	assert.False(t, hasScope(os.Environ()))
+	assert.False(t, hasAppView(os.Environ()))
+	os.Setenv("APPVIEW_FOO", "true")
+	assert.True(t, hasAppView(os.Environ()))
+	assert.False(t, hasAppView(environNoAppView()))
+	os.Unsetenv("APPVIEW_FOO")
+	assert.False(t, hasAppView(os.Environ()))
 }
 
 /* Todo this should be an integration test
@@ -61,14 +61,14 @@ func TestCreateWorkDir(t *testing.T) {
 	assert.NoError(t, err)
 	f.Close()
 	cmd := exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=createWorkDir", "SCOPE_HOME=.test", "SCOPE_TEST=true")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=createWorkDir", "APPVIEW_HOME=.test", "APPVIEW_TEST=true")
 	err = cmd.Run()
 	assert.Error(t, err, "exit status 1")
 	os.Remove(".test")
 
 	// Test CreateWorkDir, successfully
 	cmd = exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=createWorkDir", "SCOPE_HOME=.test", "SCOPE_TEST=true")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=createWorkDir", "APPVIEW_HOME=.test", "APPVIEW_TEST=true")
 	var outb, errb bytes.Buffer
 	cmd.Stdout = &outb
 	cmd.Stderr = &errb
@@ -92,7 +92,7 @@ func TestCreateWorkDir(t *testing.T) {
 }
 */
 
-func testDefaultScopeConfigYaml(wd string, verbosity int) string {
+func testDefaultAppViewConfigYaml(wd string, verbosity int) string {
 	wd, _ = filepath.Abs(wd)
 	expectedYaml := `cribl:
   enable: false
@@ -159,7 +159,7 @@ event:
     name: .*
     field: .*
     value: .*
-libscope:
+libappview:
   configevent: true
   summaryperiod: 10
   commanddir: CMDDIR
@@ -167,7 +167,7 @@ libscope:
     level: warning
     transport:
       type: file
-      path: LIBSCOPELOGPATH
+      path: LIBAPPVIEWLOGPATH
       buffering: line
       tls:
         enable: false
@@ -182,13 +182,13 @@ libscope:
 	expectedYaml = strings.Replace(expectedYaml, "METRICSPATH", filepath.Join(wd, "metrics.json"), 1)
 	expectedYaml = strings.Replace(expectedYaml, "EVENTSPATH", filepath.Join(wd, "events.json"), 1)
 	expectedYaml = strings.Replace(expectedYaml, "CMDDIR", filepath.Join(wd, "cmd"), 1)
-	expectedYaml = strings.Replace(expectedYaml, "LIBSCOPELOGPATH", filepath.Join(wd, "libscope.log"), 1)
+	expectedYaml = strings.Replace(expectedYaml, "LIBAPPVIEWLOGPATH", filepath.Join(wd, "libappview.log"), 1)
 	return expectedYaml
 }
 
 func TestSetupWorkDir(t *testing.T) {
-	os.Setenv("SCOPE_HOME", ".foo")
-	os.Setenv("SCOPE_TEST", "true")
+	os.Setenv("APPVIEW_HOME", ".foo")
+	os.Setenv("APPVIEW_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
 	rc.setupWorkDir([]string{"/bin/foo"}, false)
@@ -200,11 +200,11 @@ func TestSetupWorkDir(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `["/bin/foo"]`, string(argsJSONBytes))
 
-	expectedYaml := testDefaultScopeConfigYaml(wd, 4)
+	expectedYaml := testDefaultAppViewConfigYaml(wd, 4)
 
-	scopeYAMLBytes, err := os.ReadFile(filepath.Join(wd, "scope.yml"))
+	appviewYAMLBytes, err := os.ReadFile(filepath.Join(wd, "appview.yml"))
 	assert.NoError(t, err)
-	assert.Equal(t, expectedYaml, string(scopeYAMLBytes))
+	assert.Equal(t, expectedYaml, string(appviewYAMLBytes))
 
 	cmdDirExists := util.CheckFileExists(filepath.Join(wd, "cmd"))
 	assert.True(t, cmdDirExists)
@@ -212,13 +212,13 @@ func TestSetupWorkDir(t *testing.T) {
 	payloadsDirExists := util.CheckFileExists(filepath.Join(wd, "payloads"))
 	assert.True(t, payloadsDirExists)
 	os.RemoveAll(".foo")
-	os.Unsetenv("SCOPE_TEST")
-	os.Unsetenv("SCOPE_HOME")
+	os.Unsetenv("APPVIEW_TEST")
+	os.Unsetenv("APPVIEW_HOME")
 }
 
 func TestSetupWorkDirAttach(t *testing.T) {
-	os.Setenv("SCOPE_HOME", ".foo")
-	os.Setenv("SCOPE_TEST", "true")
+	os.Setenv("APPVIEW_HOME", ".foo")
+	os.Setenv("APPVIEW_TEST", "true")
 	rc := Config{}
 	rc.now = func() time.Time { return time.Unix(0, 0) }
 	cmd := exec.Command("sleep", "600")
@@ -235,11 +235,11 @@ func TestSetupWorkDirAttach(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `["sleep","600"]`, string(argsJSONBytes))
 
-	expectedYaml := testDefaultScopeConfigYaml(filepath.Join("/tmp", filepath.Base(wd)), 4)
+	expectedYaml := testDefaultAppViewConfigYaml(filepath.Join("/tmp", filepath.Base(wd)), 4)
 
-	scopeYAMLBytes, err := os.ReadFile(filepath.Join(wd, "scope.yml"))
+	appviewYAMLBytes, err := os.ReadFile(filepath.Join(wd, "appview.yml"))
 	assert.NoError(t, err)
-	assert.Equal(t, expectedYaml, string(scopeYAMLBytes))
+	assert.Equal(t, expectedYaml, string(appviewYAMLBytes))
 
 	cmdDirExists := util.CheckFileExists(filepath.Join(wd, "cmd"))
 	assert.True(t, cmdDirExists)
@@ -248,6 +248,6 @@ func TestSetupWorkDirAttach(t *testing.T) {
 	assert.True(t, payloadsDirExists)
 	os.RemoveAll(wd)
 	os.RemoveAll(".foo")
-	os.Unsetenv("SCOPE_TEST")
-	os.Unsetenv("SCOPE_HOME")
+	os.Unsetenv("APPVIEW_TEST")
+	os.Unsetenv("APPVIEW_HOME")
 }

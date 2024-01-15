@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/util"
 )
 
-// Config represents options to change how we run scope
+// Config represents options to change how we run appview
 type Config struct {
 	WorkDir       string
 	Verbosity     int
@@ -33,26 +33,26 @@ type Config struct {
 	Rootdir       string
 
 	now func() time.Time
-	sc  *libscope.ScopeConfig
+	sc  *libappview.AppViewConfig
 }
 
-// Run executes a scoped command
+// Run executes a viewed command
 func (rc *Config) Run(args []string) {
 	env := os.Environ()
 
-	// Disable detection of a scope rules file with this command
-	env = append(env, "SCOPE_RULES=false")
+	// Disable detection of a appview rules file with this command
+	env = append(env, "APPVIEW_RULES=false")
 
 	// Disable cribl event breaker with this command
 	if rc.NoBreaker {
-		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
+		env = append(env, "APPVIEW_CRIBL_NO_BREAKER=true")
 	}
 
 	// Normal operation, create a directory for this run.
-	// Directory contains scope.yml which is configured to output to that
+	// Directory contains appview.yml which is configured to output to that
 	// directory and has a command directory configured in that directory.
 	rc.setupWorkDir(args, false)
-	env = append(env, "SCOPE_CONF_PATH="+filepath.Join(rc.WorkDir, "scope.yml"))
+	env = append(env, "APPVIEW_CONF_PATH="+filepath.Join(rc.WorkDir, "appview.yml"))
 
 	// Handle custom library path
 	if len(rc.LibraryPath) > 0 {

@@ -26,7 +26,7 @@ type Options struct {
 	ExporterPromPort       int
 	ExporterStatsDPort     int
 	ExporterStatsDProtocol string
-	ScopeConfigYaml        []byte
+	AppViewConfigYaml        []byte
 }
 
 // PrintConfig will output a k8s config to the specified writer

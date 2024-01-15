@@ -4,7 +4,7 @@
 #include <sys/wait.h>
 
 #include "nsinfo.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "test.h"
 
 

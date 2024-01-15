@@ -4,7 +4,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/util"
 	"github.com/stretchr/testify/assert"
 )
 

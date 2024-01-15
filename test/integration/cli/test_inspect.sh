@@ -3,7 +3,7 @@ DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 INSPECT_FILE="/opt/test/inspect.txt"
-CRIBL_SOCKET="/opt/cribl/state/appscope.sock"
+CRIBL_SOCKET="/opt/cribl/state/appview.sock"
 
 starttest(){
     CURRENT_TEST=$1
@@ -70,10 +70,10 @@ responses_length_check() {
     fi
 }
 
-# Call scope inspect and redirect to file
+# Call appview inspect and redirect to file
 inspect_file_redirect_to_file() {
     local pid=$1
-    scope inspect $pid > $INSPECT_FILE
+    appview inspect $pid > $INSPECT_FILE
     if [ $? != 0 ]; then
         echo "inspect_file_redirect_to_file fails, params $pid"
         cat $INSPECT_FILE
@@ -83,9 +83,9 @@ inspect_file_redirect_to_file() {
     sleep 2
 }
 
-# Call scope inspect --all and redirect to file
+# Call appview inspect --all and redirect to file
 inspect_all_file_redirect_to_file() {
-    scope inspect --all > $INSPECT_FILE
+    appview inspect --all > $INSPECT_FILE
     if [ $? != 0 ]; then
         echo "inspect_all_file_redirect_to_file fails"
         cat $INSPECT_FILE
@@ -101,12 +101,12 @@ inspect_all_file_redirect_to_file() {
 starttest test_inspect_default_values
 
 # First test that we are not connected
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
 
-LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 PYTHON_PID=`pidof python3`
 
 inspect_file_redirect_to_file $PYTHON_PID
@@ -143,18 +143,18 @@ endtest
 starttest test_inspect_all
 
 # First test that we are not connected
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
 
 # Start 2 processes
-LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 PYTHON_PID=`pidof python3`
 
-LD_PRELOAD=/usr/local/scope/lib/libscope.so sleep 1000 1> /dev/null 2> /dev/null &
+LD_PRELOAD=/usr/local/appview/lib/libappview.so sleep 1000 1> /dev/null 2> /dev/null &
 sleep 2
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 SLEEP_PID=`pidof sleep`
 
 inspect_all_file_redirect_to_file
@@ -177,7 +177,7 @@ endtest
 # disabled cribl expected to see log, events, metrics
 starttest test_inspect_cribl_disable_payload_disable
 
-SCOPE_CRIBL_ENABLE=false LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+APPVIEW_CRIBL_ENABLE=false LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
 PYTHON_PID=`pidof python3`
 
@@ -214,7 +214,7 @@ endtest
 # disabled cribl, enabled payloads enabled (via env var) expected to see log, events, metrics, payload
 starttest test_inspect_cribl_disable_payload_enable_via_env
 
-SCOPE_CRIBL_ENABLE=false SCOPE_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+APPVIEW_CRIBL_ENABLE=false APPVIEW_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
 PYTHON_PID=`pidof python3`
 
@@ -236,7 +236,7 @@ endtest
 # in config disabled cribl payloads enabled (via protocol list) expected to see log, events, metrics, payload
 starttest test_inspect_cribl_disable_payload_enable_via_config
 
-SCOPE_CONF_PATH=/opt/test/bin/payload_conf.yml LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+APPVIEW_CONF_PATH=/opt/test/bin/payload_conf.yml LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
 PYTHON_PID=`pidof python3`
 
@@ -258,7 +258,7 @@ endtest
 # enabled cribl, payload_to_disk enable, expected to see log, events, metrics
 starttest test_inspect_cribl_enable_payload_disable
 
-SCOPE_PAYLOAD_TO_DISK=true LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
+APPVIEW_PAYLOAD_TO_DISK=true LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
 sleep 2
 PYTHON_PID=`pidof python3`
 
@@ -278,10 +278,10 @@ endtest
 # disabled cribl, payload enable, expected to see log, cribl, payload
 starttest test_inspect_cribl_enable_payload_enable
 
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
-SCOPE_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
+APPVIEW_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 sleep 2
 PYTHON_PID=`pidof python3`
 
@@ -303,10 +303,10 @@ endtest
 # enabled cribl, payload enable, payload_to_disk enable, expected to see log, cribl, payload
 starttest test_inspect_cribl_enable_payload_enable_payload_to_disk_enable
 
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
-SCOPE_PAYLOAD_TO_DISK=true SCOPE_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/scope/lib/libscope.so python3 -m http.server 1> /dev/null 2> /dev/null &
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
+APPVIEW_PAYLOAD_TO_DISK=true APPVIEW_PAYLOAD_ENABLE=true LD_PRELOAD=/usr/local/appview/lib/libappview.so python3 -m http.server 1> /dev/null 2> /dev/null &
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 sleep 2
 PYTHON_PID=`pidof python3`
 

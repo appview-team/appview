@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/util"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -38,7 +38,7 @@ func TestRun(t *testing.T) {
 
 	// Test SetupWorkDir, successfully
 	cmd := exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "SCOPE_HOME=.test", "SCOPE_TEST=true")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "APPVIEW_HOME=.test", "APPVIEW_TEST=true")
 	err := cmd.Run()
 	assert.NoError(t, err)
 	files, err := ioutil.ReadDir(".test/history")
@@ -61,11 +61,11 @@ func TestRun(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `["/bin/echo","true"]`, string(argsJSONBytes))
 
-	expectedYaml := testDefaultScopeConfigYaml(wd, 4)
+	expectedYaml := testDefaultAppViewConfigYaml(wd, 4)
 
-	scopeYAMLBytes, err := ioutil.ReadFile(filepath.Join(wd, "scope.yml"))
+	appviewYAMLBytes, err := ioutil.ReadFile(filepath.Join(wd, "appview.yml"))
 	assert.NoError(t, err)
-	assert.Equal(t, expectedYaml, string(scopeYAMLBytes))
+	assert.Equal(t, expectedYaml, string(appviewYAMLBytes))
 
 	cmdDirExists := util.CheckFileExists(filepath.Join(wd, "cmd"))
 	assert.True(t, cmdDirExists)
@@ -76,7 +76,7 @@ func TestSubprocess(t *testing.T) {
 	os.RemoveAll(".test")
 	defer os.RemoveAll(".test")
 
-	os.Setenv("SCOPE_HOME", ".test")
+	os.Setenv("APPVIEW_HOME", ".test")
 	// Test SetupWorkDir, successfully
 	internal.InitConfig()
 	rc := Config{Subprocess: true}
@@ -101,14 +101,14 @@ func TestSubprocess(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `["/bin/echo","true"]`, string(argsJSONBytes))
 
-	expectedYaml := testDefaultScopeConfigYaml(wd, 4)
+	expectedYaml := testDefaultAppViewConfigYaml(wd, 4)
 
-	scopeYAMLBytes, err := ioutil.ReadFile(filepath.Join(wd, "scope.yml"))
+	appviewYAMLBytes, err := ioutil.ReadFile(filepath.Join(wd, "appview.yml"))
 	assert.NoError(t, err)
-	assert.Equal(t, expectedYaml, string(scopeYAMLBytes))
+	assert.Equal(t, expectedYaml, string(appviewYAMLBytes))
 
 	cmdDirExists := util.CheckFileExists(filepath.Join(wd, "cmd"))
 	assert.True(t, cmdDirExists)
 
-	os.Unsetenv("SCOPE_HOME")
+	os.Unsetenv("APPVIEW_HOME")
 }

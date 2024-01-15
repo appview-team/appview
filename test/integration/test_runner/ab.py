@@ -19,7 +19,7 @@ def run_apache_benchmark(url, requests=10, concur=4, post_file=None):
 
     logging.debug("Running Apache Benchmark. Command " + command)
 
-    # We're not testing scoped `ab` so disable this
+    # We're not testing viewed `ab` so disable this
     os.unsetenv('LD_PRELOAD')
 
     out = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,

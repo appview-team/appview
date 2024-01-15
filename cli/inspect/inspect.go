@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/criblio/scope/ipc"
+	"github.com/appview-team/appview/ipc"
 )
 
 var errInspectCfg = errors.New("error inspect cfg")
@@ -24,23 +24,23 @@ type procDetails struct {
 }
 
 type InspectOutput struct {
-	Cfg     ipc.ScopeGetCfgResponseCfg `mapstructure:"cfg" json:"cfg" yaml:"cfg"`
-	Desc    ipc.ScopeInterfaceDesc     `mapstructure:"interfaces" json:"interfaces" yaml:"interfaces"`
+	Cfg     ipc.AppViewGetCfgResponseCfg `mapstructure:"cfg" json:"cfg" yaml:"cfg"`
+	Desc    ipc.AppViewInterfaceDesc     `mapstructure:"interfaces" json:"interfaces" yaml:"interfaces"`
 	Process procDetails                `mapstructure:"process" json:"process" yaml:"process"`
 }
 
-// InspectProcess returns the configuration and status of scoped process
+// InspectProcess returns the configuration and status of viewed process
 func InspectProcess(pidCtx ipc.IpcPidCtx) (InspectOutput, string, error) {
 	var iout InspectOutput
 
 	// Get configuration
-	cmdGetCfg := ipc.CmdGetScopeCfg{}
+	cmdGetCfg := ipc.CmdGetAppViewCfg{}
 	resp, err := cmdGetCfg.Request(pidCtx)
 	if err != nil {
 		return iout, "", err
 	}
 
-	err = cmdGetCfg.UnmarshalResp(resp.ResponseScopeMsgData)
+	err = cmdGetCfg.UnmarshalResp(resp.ResponseAppViewMsgData)
 	if err != nil {
 		return iout, "", err
 	}
@@ -55,7 +55,7 @@ func InspectProcess(pidCtx ipc.IpcPidCtx) (InspectOutput, string, error) {
 		return iout, "", err
 	}
 
-	err = cmdGetTransportStatus.UnmarshalResp(respTr.ResponseScopeMsgData)
+	err = cmdGetTransportStatus.UnmarshalResp(respTr.ResponseAppViewMsgData)
 	if err != nil {
 		return iout, "", err
 	}
@@ -71,7 +71,7 @@ func InspectProcess(pidCtx ipc.IpcPidCtx) (InspectOutput, string, error) {
 		return iout, "", err
 	}
 
-	err = cmdGetProcDetails.UnmarshalResp(respPd.ResponseScopeMsgData)
+	err = cmdGetProcDetails.UnmarshalResp(respPd.ResponseAppViewMsgData)
 	if err != nil {
 		return iout, "", err
 	}

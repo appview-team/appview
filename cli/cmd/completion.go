@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -14,8 +14,8 @@ var completionCmd = &cobra.Command{
 	Use:   "completion [flags] [bash|zsh]",
 	Short: "Generates completion code for specified shell",
 	Long:  "Generates completion code for specified shell.",
-	Example: `  scope completion bash > /etc/bash_completion.d/scope # Generate and install scope autocompletion for bash
-  source <(scope completion bash)                      # Generates and load scope autocompletion for bash
+	Example: `  appview completion bash > /etc/bash_completion.d/appview # Generate and install appview autocompletion for bash
+  source <(appview completion bash)                      # Generates and load appview autocompletion for bash
 `,
 	ValidArgs: []string{"bash", "zsh"},
 	Args:      cobra.ExactValidArgs(1),

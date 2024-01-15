@@ -1,15 +1,15 @@
 // gcc -g test/manual/clonetest.c -o clonetest
 // Different behavior in case of:
 // ./clonetest
-// scope -z ./clonetest
+// appview -z ./clonetest
 //
-// This test was written to show that we could see scope
+// This test was written to show that we could see appview
 // affecting threaded applications.
 //
 // This has since been understood and solved. (The behavior
 // is now the same regardless of whether this test program is
-// scoped or not.) See the writeup here:
-//      https://github.com/criblio/appscope/issues/1170
+// viewed or not.) See the writeup here:
+//      https://github.com/criblio/appview/issues/1170
 //
 
 #define _GNU_SOURCE

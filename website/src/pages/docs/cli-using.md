@@ -4,97 +4,97 @@ title: Using the CLI
 
 ## Using The Command Line Interface (CLI)
 
-As soon as you [download](/docs/downloading) AppScope, you can start using the CLI to explore and gain insight into application behavior. No installation or configuration is required.
+As soon as you [download](/docs/downloading) AppView, you can start using the CLI to explore and gain insight into application behavior. No installation or configuration is required.
 
 The CLI provides a rich set of capabilities for capturing and managing data from single applications. Data is captured in the local filesystem by default, and you can [specify](#invoke-config) a different destination.
 
-By default, the AppScope CLI redacts binary data from console output. Although in most situations, the default behaviors of the AppScope CLI and library are the same, they differ for binary data: it's omitted in the CLI, and allowed when using the library. To change this, use the `allowbinary=true` flag. The equivalent environment variable is `SCOPE_ALLOW_BINARY_CONSOLE`. In the config file, `allowbinary` is an attribute of the `console` watch type for events.
+By default, the AppView CLI redacts binary data from console output. Although in most situations, the default behaviors of the AppView CLI and library are the same, they differ for binary data: it's omitted in the CLI, and allowed when using the library. To change this, use the `allowbinary=true` flag. The equivalent environment variable is `APPVIEW_ALLOW_BINARY_CONSOLE`. In the config file, `allowbinary` is an attribute of the `console` watch type for events.
 
-To learn more, see the [CLI Reference](/docs/cli-reference), and/or run `scope --help` or `scope -h`. And check out the [Further Examples](/docs/examples-use-cases), which include both CLI and library use cases.
+To learn more, see the [CLI Reference](/docs/cli-reference), and/or run `appview --help` or `appview -h`. And check out the [Further Examples](/docs/examples-use-cases), which include both CLI and library use cases.
 
 ### CLI Basics
 
-The basic AppScope CLI command is `scope`. The following examples progress from simple to more involved. Scoping a running process gets [its own section](#scope-running). The final section explains how to scope an app that generates a large data set, and then [explore](#explore-captured) that data.
+The basic AppView CLI command is `appview`. The following examples progress from simple to more involved. Scoping a running process gets [its own section](#appview-running). The final section explains how to appview an app that generates a large data set, and then [explore](#explore-captured) that data.
 
-#### Scope a New Process 
+#### View a New Process 
 
 Try scoping some well-known Linux commands, and view the results:
 
 ```
-scope top
+appview top
 ```
 
 ```
-scope ls -al
+appview ls -al
 ```
 
 ```
-scope curl https://www.google.com
+appview curl https://www.google.com
 ```
 
-When scoping browsers, we use the `--no-sandbox` option because virtually all modern browsers incorporate the [sandbox](https://web.dev/browser-sandbox/) security mechanism, and some sandbox implementations can interact with AppScope in ways that cause the browser to hang, or not to start.
+When scoping browsers, we use the `--no-sandbox` option because virtually all modern browsers incorporate the [sandbox](https://web.dev/browser-sandbox/) security mechanism, and some sandbox implementations can interact with AppView in ways that cause the browser to hang, or not to start.
 
 ```
-scope firefox --no-sandbox
+appview firefox --no-sandbox
 ```
 
-#### Scope a Series of Shell Commands
+#### View a Series of Shell Commands
 
-In the shell that you open in this example, every command you run will be scoped:
+In the shell that you open in this example, every command you run will be viewed:
 
 ```
-scope bash
+appview bash
 ```
 
-To release a process like `scope bash` above, `exit` the process in the shell. If you do this with the bash shell itself, you won't be able to `scope bash` again in the same terminal session.
+To release a process like `appview bash` above, `exit` the process in the shell. If you do this with the bash shell itself, you won't be able to `appview bash` again in the same terminal session.
 
-#### Scope [Cribl Stream](https://cribl.io/download/)
+#### AppView [Cribl Stream](https://cribl.io/download/)
 
-See what AppScope shows Cribl Stream doing:
+See what AppView shows Cribl Stream doing:
 
-`scope $CRIBL_HOME/bin/cribl server`
+`appview $CRIBL_HOME/bin/cribl server`
 
-You can take the idea of using AppScope to reveal application behavior [much further](https://cribl.io/blog/appscope-1-0-changing-the-game-for-infosec-part-2/). 
+You can take the idea of using AppView to reveal application behavior [much further](https://cribl.io/blog/appview-1-0-changing-the-game-for-infosec-part-2/). 
 
 #### Use a Custom HTTP Header to Mark Your Data
 
-When scoping apps that make HTTP requests, you can add the `X-Appscope` header, setting its content to the string of your choice. 
+When scoping apps that make HTTP requests, you can add the `X-Appappview` header, setting its content to the string of your choice. 
 
 Here's a trivial example of how this feature might be useful:
 
-Suppose you want to scope HTTP requests to a weather forecast service, looking at many different cities, but labeling the data by country.
+Suppose you want to appview HTTP requests to a weather forecast service, looking at many different cities, but labeling the data by country.
 
-You could use the `X-Appscope` header to do your labeling:
+You could use the `X-Appappview` header to do your labeling:
 
 ```
-scope curl --header "X-Appscope: Canada" wttr.in/calgary
-scope curl --header "X-Appscope: Canada" wttr.in/ottawa
+appview curl --header "X-Appappview: Canada" wttr.in/calgary
+appview curl --header "X-Appappview: Canada" wttr.in/ottawa
 ...
 
-scope curl --header "X-Appscope: Brazil" wttr.in/recife
-scope curl --header "X-Appscope: Brazil" wttr.in/riodejaneiro
+appview curl --header "X-Appappview: Brazil" wttr.in/recife
+appview curl --header "X-Appappview: Brazil" wttr.in/riodejaneiro
 ...
 ```
 
-In the resulting AppScope events, the `body` > `data` element would include an `"x-appscope"` field whose value would be the country named in the request's `X-Appscope` header.
+In the resulting AppView events, the `body` > `data` element would include an `"x-appview"` field whose value would be the country named in the request's `X-Appappview` header.
 
 <span id="invoke-config"></span>
 
 #### Invoke a Config File While Scoping a New Process
 
-Why create a custom configuration file? One popular reason is to change the destination to which AppScope sends captured data to someplace other than the local filesystem (the default). To learn about the possibilities, read the comments in the default [Configuration File](/docs/config-file).
+Why create a custom configuration file? One popular reason is to change the destination to which AppView sends captured data to someplace other than the local filesystem (the default). To learn about the possibilities, read the comments in the default [Configuration File](/docs/config-file).
 
-This example scopes the `echo` command while invoking a configuration file named `cloud.yml`:
+This example appviews the `echo` command while invoking a configuration file named `cloud.yml`:
 
 ```
-scope run -u cloud.yml -- echo foo
+appview run -u cloud.yml -- echo foo
 ```
 
-<span id="scope-running"></span>
+<span id="appview-running"></span>
 
 ### Scoping a Running Process
 
-You [attach](/docs/cli-reference#attach) AppScope to a process using either a process ID or a process name.
+You [attach](/docs/cli-reference#attach) AppView to a process using either a process ID or a process name.
 
 #### Attaching by Process ID
 
@@ -110,80 +110,80 @@ ubuntu    1925 30025  0 21:06 pts/3    00:00:00 grep --color=auto cribl
 Then, we'll attach to a process of interest:
 
 ```
-ubuntu@ip-127-0-0-1:~/someusername/appscope3$ sudo scope attach 1820
+ubuntu@ip-127-0-0-1:~/someusername/appview3$ sudo appview attach 1820
 ```
 
 #### Attaching by Process Name
 
-In this example, we try to attach to a Cribl Stream process by its name, which will be `cribl`. Since there's more than one process, AppScope lists them and prompts us to choose one:
+In this example, we try to attach to a Cribl Stream process by its name, which will be `cribl`. Since there's more than one process, AppView lists them and prompts us to choose one:
 
 ```
-$ sudo scope attach cribl
+$ sudo appview attach cribl
 Found multiple processes matching that name...
-ID  PID   USER    SCOPED  COMMAND
+ID  PID   USER    APPVIEWD  COMMAND
 1   1820  ubuntu  false   /home/ubuntu/someusername/cribl/4.0.3/m/cribl/bin/cribl server
 2   1838  ubuntu  false   /home/ubuntu/someusername/cribl/4.0.3/m/cribl/bin/cribl /home/ubuntu/someusername/cribl/4.0.3/m/cribl/bin/cribl.js server -r CONFIG_HELPER
 Select an ID from the list:
 2
-WARNING: Session history will be stored in /home/ubuntu/.scope/history and owned by root
+WARNING: Session history will be stored in /home/ubuntu/.appview/history and owned by root
 Attaching to process 1838
 ```
 
 #### Detaching from Processes
 
-You can also [detach](/docs/cli-reference#detach) AppScope from a process.
+You can also [detach](/docs/cli-reference#detach) AppView from a process.
 
-Furthermore, if you want to undo the effects of the `scope attach`, `scope start`, and/or `scope service` commands, run the `scope stop` [command](/docs/cli-reference#stop). This runs `scope detach --all`, removes the rules file from the system, and removes `scope` from service configurations.
+Furthermore, if you want to undo the effects of the `appview attach`, `appview start`, and/or `appview service` commands, run the `appview stop` [command](/docs/cli-reference#stop). This runs `appview detach --all`, removes the rules file from the system, and removes `appview` from service configurations.
 
-When you detach from a process, AppScope:
+When you detach from a process, AppView:
 
 - Stops emitting events and metrics for the process.
 - Closes relevant connections.
 - Removes its interpositions from the process' functions, and/or unhooks from the process' functions, as relevant.
 
-What AppScope does **not** do is unload its library.
+What AppView does **not** do is unload its library.
 
 #### More About Scoping Running Processes
 
-To attach AppScope to a running process:
+To attach AppView to a running process:
 
-1. You must run `scope` as root, or with `sudo`.
-1. If you attach to a shell, AppScope does not automatically scope its child processes. <!-- TBD correct? ask Donn -->
-1. You can attach to a process that is executing within a container context by running `scope attach` **inside** that container or from the host.
+1. You must run `appview` as root, or with `sudo`.
+1. If you attach to a shell, AppView does not automatically appview its child processes. <!-- TBD correct? ask Donn -->
+1. You can attach to a process that is executing within a container context by running `appview attach` **inside** that container or from the host.
 
-When you attach AppScope to a process, its child processes are not automatically scoped.
+When you attach AppView to a process, its child processes are not automatically viewed.
 
 You cannot attach to a static executable's process.
 
-No HTTP/1.1 events and headers are emitted when AppScope attaches to a Go process that uses the `azure-sdk-for-go` package. <!-- TBD still true? ask John  -->
+No HTTP/1.1 events and headers are emitted when AppView attaches to a Go process that uses the `azure-sdk-for-go` package. <!-- TBD still true? ask John  -->
 
-No events are emitted from files or sockets that exist before AppScope attaches to a process.
+No events are emitted from files or sockets that exist before AppView attaches to a process.
 
-- AppScope events will be produced only for file or socket descriptors opened **after** AppScope is attached.
+- AppView events will be produced only for file or socket descriptors opened **after** AppView is attached.
   
-  - For example, suppose a process opens a socket descriptor before AppScope is attached. Subsequent sends and receives on this socket will not produce AppScope events.
+  - For example, suppose a process opens a socket descriptor before AppView is attached. Subsequent sends and receives on this socket will not produce AppView events.
 
 <span id="payloads"></span>
 
 ### Working with HTTP Payloads
 
-When you scope an app that produces HTTP traffic, you can capture the payloads using the `-p` or `--payloads` option. This is AppScope's  **payloads** feature (see the `payload` section in the AppScope [config file](/docs/config)), which is disabled by default, because it can create large amounts of data, and because it captures payloads unencrypted.
+When you appview an app that produces HTTP traffic, you can capture the payloads using the `-p` or `--payloads` option. This is AppView's  **payloads** feature (see the `payload` section in the AppView [config file](/docs/config)), which is disabled by default, because it can create large amounts of data, and because it captures payloads unencrypted.
 
-When the **payloads** feature is enabled, setting `SCOPE_PAYLOAD_TO_DISK` to `true` guarantees that AppScope will write payloads to the local directory specified in `SCOPE_PAYLOAD_DIR`.
+When the **payloads** feature is enabled, setting `APPVIEW_PAYLOAD_TO_DISK` to `true` guarantees that AppView will write payloads to the local directory specified in `APPVIEW_PAYLOAD_DIR`.
 
 <span id="explore-captured"></span>
 
 ### Exploring Captured Data
 
-You can scope apps that generate large data sets, and then use AppScope CLI subcommands and options to monitor and visualize the data. The following extended example introduces this technique.
+You can appview apps that generate large data sets, and then use AppView CLI subcommands and options to monitor and visualize the data. The following extended example introduces this technique.
 
 Start by scoping the `ps` command:
 
 ```
-scope run -- ps -ef
+appview run -- ps -ef
 ```
 
-Show last session's captured metrics with `scope metrics`:
+Show last session's captured metrics with `appview metrics`:
 
 ```
 NAME             VALUE      TYPE     UNIT           PID     TAGS
@@ -202,7 +202,7 @@ fs.stat          136        Count    operation      5470    host: my_hostname,pr
 ...
 ```
 
-Plot a chart of last session's `proc.cpu` metric with `scope metrics -m proc.cpu -g`:
+Plot a chart of last session's `proc.cpu` metric with `appview metrics -m proc.cpu -g`:
 
 ```
  80000 ┼                   ╭╮
@@ -228,7 +228,7 @@ Plot a chart of last session's `proc.cpu` metric with `scope metrics -m proc.cpu
      0 ┼╯                ╰╯       ╰╯                            ╰╯    ╰╯             ╰╯
 ```
 
-Display the last session's captured events with `scope events`:
+Display the last session's captured events with `appview events`:
 
 ```
 [EkA1] Jul 12 02:11:15 ps fs fs.open file:/proc/17721/stat
@@ -241,20 +241,20 @@ Display the last session's captured events with `scope events`:
 ...
 ```
 
-Now scope a command which produces HTTP and other kinds of events:
+Now view a command which produces HTTP and other kinds of events:
 
 ```
-scope run -- curl https://www.google.com
+appview run -- curl https://www.google.com
 ```
 
-Filter out everything but `http` from the last session's events, with `scope events -t http`:
+Filter out everything but `http` from the last session's events, with `appview events -t http`:
 
 ```
 [vL1] Jul 12 02:14:07 curl http http.req http_host:www.google.com http_method:GET http_scheme:https http_target:/
 [PU1] Jul 12 02:14:08 curl http http.resp http_host:www.google.com http_method:GET http_target:/
 ```
 
-View the history of the current AppScope session with `scope history`:
+View the history of the current AppView session with `appview history`:
 
 ```
 Displaying last 20 sessions
@@ -263,10 +263,10 @@ ID	COMMAND	CMDLINE                  	PID 	AGE 	DURATION	TOTAL EVENTS
 5 	curl   	curl https://www.google.…	5492	14s 	141ms   	20
 ```
 
-Scope another command which will produce a variety of events ...
+AppView another command which will produce a variety of events ...
 
 ```
-# scope run -- apt update
+# appview run -- apt update
 Hit:1 http://us-west-2.ec2.archive.ubuntu.com/ubuntu bionic InRelease
 Get:2 http://us-west-2.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease [88.7 kB]                                      
 Get:3 http://us-west-2.ec2.archive.ubuntu.com/ubuntu bionic-backports InRelease [74.6 kB]                                    
@@ -279,7 +279,7 @@ Hit:6 https://baltocdn.com/helm/stable/debian all InRelease
 ... Then, show only the last 10 events of sourcetype `console`, sorted in ascending order by timestamp:
 
 ```
-# scope events --sort _time --sourcetype console --last 10 --reverse
+# appview events --sort _time --sourcetype console --last 10 --reverse
 [g2Wg] Jul 12 02:14:49 apt console stdout message:"                                  0% [Working] 0% [16 Packages store 0 B]                …"
 [zvUe] Jul 12 02:14:49 apt console stdout message:"                                  0% [Working] 0% [16 Packages store 0 B]                …"
 [ucRe] Jul 12 02:14:50 find console stdout message:/var/lib/apt/lists/security.ubuntu.com_ubuntu_dists_bionic-security_universe_binary-amd6…
@@ -292,10 +292,10 @@ Hit:6 https://baltocdn.com/helm/stable/debian all InRelease
 [QU2i] Jul 12 02:14:56 apt console stderr message:"W: An error occurred during the signature verification. The repository is not updated and…"
 ```
 
-Scope a command which reads and writes over the network:
+View a command which reads and writes over the network:
   
 ```
-# scope curl wttr.in    
+# appview curl wttr.in    
 Weather report: Portland, Oregon, United States
 
       \   /     Sunny
@@ -319,7 +319,7 @@ Weather report: Portland, Oregon, United States
 Then, show only events containing the string `net_bytes`, and display the fields `net_bytes_sent` and `net_bytes_recv`, with their values:
 
 ```
-# scope events --fields net_bytes_sent,net_bytes_recv --match net_bytes
+# appview events --fields net_bytes_sent,net_bytes_recv --match net_bytes
 [e91] Jul 12 02:15:41 curl net net.close net_bytes_sent:71 net_bytes_recv:8773
 ```
 

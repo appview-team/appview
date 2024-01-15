@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/ahmetb/go-linq/v3"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/util"
 	"github.com/dop251/goja"
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
@@ -100,7 +100,7 @@ func AnsiStrip(str string) string {
 
 // EventReader reads a newline delimited JSON documents and sends parsed documents
 // to the passed out channel. It exits the process on error.
-func EventReader(r io.Reader, initOffset int64, match func(string) bool, out chan libscope.EventBody) (int, error) {
+func EventReader(r io.Reader, initOffset int64, match func(string) bool, out chan libappview.EventBody) (int, error) {
 	br, err := util.NewlineReader(r, match, func(idx int, Offset int64, b []byte) error {
 		event, err := ParseEvent(b)
 		if err != nil {
@@ -121,8 +121,8 @@ func EventReader(r io.Reader, initOffset int64, match func(string) bool, out cha
 }
 
 // ParseEvent unmarshals event text into an Event, returning only the Event.Body
-func ParseEvent(b []byte) (libscope.EventBody, error) {
-	var event libscope.Event
+func ParseEvent(b []byte) (libappview.EventBody, error) {
+	var event libappview.Event
 	err := json.Unmarshal(b, &event)
 	if err != nil {
 		return event.Body, err
@@ -146,7 +146,7 @@ type EventMatch struct {
 }
 
 // Events matches events based on EventMatch config
-func (em EventMatch) Events(file io.ReadSeeker, in chan libscope.EventBody) error {
+func (em EventMatch) Events(file io.ReadSeeker, in chan libappview.EventBody) error {
 	var err error
 	if !em.AllEvents && em.Offset == 0 {
 		var err error
@@ -203,7 +203,7 @@ func (em EventMatch) filter() func(string) bool {
 }
 
 // PrintEvent prints a single event
-func PrintEvent(in chan libscope.EventBody, jsonOut bool) {
+func PrintEvent(in chan libappview.EventBody, jsonOut bool) {
 	enc := json.NewEncoder(os.Stdout)
 	e := <-in
 	if jsonOut {
@@ -228,7 +228,7 @@ func PrintEvent(in chan libscope.EventBody, jsonOut bool) {
 // PrintEvents prints multiple events
 // handles --eval
 // handles --json
-func PrintEvents(in chan libscope.EventBody, fields []string, sortField, eval string, jsonOut, sortReverse, allFields, forceColor bool, width int, follow bool) {
+func PrintEvents(in chan libappview.EventBody, fields []string, sortField, eval string, jsonOut, sortReverse, allFields, forceColor bool, width int, follow bool) {
 	enc := json.NewEncoder(os.Stdout)
 	var vm *goja.Runtime
 	var prog *goja.Program
@@ -239,7 +239,7 @@ func PrintEvents(in chan libscope.EventBody, fields []string, sortField, eval st
 		util.CheckErrSprintf(err, "error compiling JavaScript expression: %v", err)
 	}
 
-	events := make([]libscope.EventBody, 0)
+	events := make([]libappview.EventBody, 0)
 	for e := range in {
 		if eval != "" {
 			// Initialize keys and values from the event for goja query
@@ -310,7 +310,7 @@ func (co colorOpts) color(color string) *color.Color {
 // handles --color
 // handles --fields
 // handles --allfields
-func GetEventText(e libscope.EventBody, forceColor, allFields bool, fields []string, width int) string {
+func GetEventText(e libappview.EventBody, forceColor, allFields bool, fields []string, width int) string {
 	co := darkColorOpts // Hard coded for now
 	if forceColor {
 		color.NoColor = false
@@ -397,7 +397,7 @@ func getEventDataText(e interface{}, co colorOpts, onlyFields []string, truncLen
 // sortEvents sorts an array of events
 // handles --sort
 // handles --reverse
-func sortEvents(arr []libscope.EventBody, sortField string, sortReverse bool) []libscope.EventBody {
+func sortEvents(arr []libappview.EventBody, sortField string, sortReverse bool) []libappview.EventBody {
 	sortFunc := func(i, j interface{}) bool {
 		f1 := util.GetJSONField(i, sortField)
 		if f1 == nil {
@@ -430,7 +430,7 @@ func sortEvents(arr []libscope.EventBody, sortField string, sortReverse bool) []
 		return ret
 	}
 
-	sorted := make([]libscope.EventBody, 0)
+	sorted := make([]libappview.EventBody, 0)
 	from := linq.From(arr)
 	from = from.Sort(sortFunc)
 	from.ToSlice(&sorted)

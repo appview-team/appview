@@ -2,14 +2,14 @@ id: default
 groups: {}
 routes:
   - id: hrn4bd
-    name: appscope
+    name: appview
     final: false
     disabled: false
     pipeline: passthru
     description: ""
     clones:
       - {}
-    filter: __inputId=='appscope:in_appscope'
+    filter: __inputId=='appview:in_appview'
     output: test_output
   - id: default
     name: default

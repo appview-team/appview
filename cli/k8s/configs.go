@@ -4,11 +4,11 @@ var webhook string = `---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
-  name: {{ .App }}.{{ .Namespace }}.appscope.io
+  name: {{ .App }}.{{ .Namespace }}.appview.io
   labels:
     app: {{ .App }}
 webhooks:
-  - name: {{ .App }}.{{ .Namespace }}.appscope.io
+  - name: {{ .App }}.{{ .Namespace }}.appview.io
     sideEffects: None
     admissionReviewVersions: ["v1", "v1beta1"]
     matchPolicy: Equivalent
@@ -23,10 +23,10 @@ webhooks:
         apiGroups: [""]
         apiVersions: ["v1"]
         resources: ["pods"]
-        scope: "*"
+        appview: "*"
     namespaceSelector:
       matchLabels:
-        scope: enabled
+        appview: enabled
 `
 
 var csr string = `---
@@ -48,7 +48,7 @@ spec:
           - "--service"
           - "{{ .App }}"
           - "--webhook"
-          - "{{ .App }}.{{ .Namespace }}.appscope.io"
+          - "{{ .App }}.{{ .Namespace }}.appview.io"
           - "--secret"
           - "{{ .App }}-secret"
           - "--namespace"
@@ -107,11 +107,11 @@ var webhookDeployment string = `---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: scope-cluster-role
+  name: appview-cluster-role
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
-    resourceNames: ["scope"]
+    resourceNames: ["appview"]
     verbs: ["get", "patch", "put", "update"]
   - apiGroups: [""]
     resources: ["configmaps"]
@@ -120,20 +120,20 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: scope-cluster-role-binding
+  name: appview-cluster-role-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: scope-cluster-role
+  name: appview-cluster-role
 subjects:
   - kind: ServiceAccount
-    name: scope-cert-sa
+    name: appview-cert-sa
     namespace: {{ .Namespace }}
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: scope-cert-sa
+  name: appview-cert-sa
   namespace: {{ .Namespace }}
 ---
 apiVersion: apps/v1
@@ -160,14 +160,14 @@ spec:
         prometheus.io/port: "{{ .ExporterPromPort }}"
 {{- end }}
     spec:
-      serviceAccountName: scope-cert-sa
+      serviceAccountName: appview-cert-sa
       containers:
         - name: {{ .App }}
-          image: cribl/scope:{{ .Version }}
+          image: cribl/appview:{{ .Version }}
           command: ["/bin/bash"]
           args:
           - "-c"
-          - "/usr/local/bin/scope k8s --server{{if .Debug}} --debug{{end}}{{if gt (len .MetricDest) 0}} --metricdest {{ .MetricDest }}{{end}}{{if and (gt (len .MetricFormat) 0) (eq (len .CriblDest) 0)}} --metricformat {{ .MetricFormat }} --metricprefix {{ .MetricPrefix }}{{end}}{{if gt (len .EventDest) 0}} --eventdest {{ .EventDest }}{{end}}{{if gt (len .CriblDest) 0}} --cribldest {{ .CriblDest}}{{end}} || sleep 1000"
+          - "/usr/local/bin/appview k8s --server{{if .Debug}} --debug{{end}}{{if gt (len .MetricDest) 0}} --metricdest {{ .MetricDest }}{{end}}{{if and (gt (len .MetricFormat) 0) (eq (len .CriblDest) 0)}} --metricformat {{ .MetricFormat }} --metricprefix {{ .MetricPrefix }}{{end}}{{if gt (len .EventDest) 0}} --eventdest {{ .EventDest }}{{end}}{{if gt (len .CriblDest) 0}} --cribldest {{ .CriblDest}}{{end}} || sleep 1000"
           imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: certs
@@ -252,7 +252,7 @@ data:
         buckets: [ 0.01, 0.025, 0.05, 0.1 ]
         native_histogram_bucket_factor: 1.1
         native_histogram_max_buckets: 256
-      name: "appscope_http_duration_server"
+      name: "appview_http_duration_server"
 {{- end }}
 ---
 apiVersion: v1
@@ -276,8 +276,8 @@ metadata:
   name: {{ .App }}
   namespace: {{ .Namespace }}
 data:
-  scope.yml: |
-{{ .ScopeConfigYaml | toString | indent 4 }}
+  appview.yml: |
+{{ .AppViewConfigYaml | toString | indent 4 }}
 `
 
 // - "k8s"

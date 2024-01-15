@@ -1,9 +1,9 @@
 OS=macOS
 CC=gcc
 CFLAGS=-fPIC -g -Wall -Wno-nonnull
-SCOPE_VER:="$(shell git --no-pager describe --abbrev=12 --dirty=+ --always --tags)"
+APPVIEW_VER:="$(shell git --no-pager describe --abbrev=12 --dirty=+ --always --tags)"
 TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -coverage
-TEST_CFLAGS+=-DSCOPE_VER=\"$(SCOPE_VER)\"
+TEST_CFLAGS+=-DAPPVIEW_VER=\"$(APPVIEW_VER)\"
 LD_FLAGS=$(PCRE2_AR) -Wl, -ldl -lpthread -lresolv
 INCLUDES=-I./contrib/libyaml/include -I./contrib/cJSON -I./os/$(OS) -I./contrib/pcre2/src -I./contrib/pcre2/build -I./contrib/funchook/distorm/include
 YAML_DEFINES=-DYAML_VERSION_MAJOR="0" -DYAML_VERSION_MINOR="2" -DYAML_VERSION_PATCH="2" -DYAML_VERSION_STRING="\"0.2.2\""
@@ -17,7 +17,7 @@ TEST_INCLUDES=-I./src -I./contrib/cmocka/include
 TEST_LD_FLAGS=-Lcontrib/cmocka/build/src -lcmocka -ldl -lresolv
 
 .PHONY: all clean test
-all: libscope.so
+all: libappview.so
 
 $(PCRE2_AR):
 	@echo "Building pcre2"
@@ -25,18 +25,18 @@ $(PCRE2_AR):
 	cd contrib/pcre2/build && cmake ..
 	cd contrib/pcre2/build && make
 
-libscope.so: src/wrap.c src/state.c src/httpstate.c src/report.c src/httpagg.c src/plattime.c src/fn.c os/$(OS)/os.c src/cfgutils.c src/cfg.c src/transport.c src/log.c src/mtc.c src/circbuf.c src/linklist.c src/evtformat.c src/ctl.c src/mtcformat.c src/com.c src/scopestdlib.c src/dbg.c src/search.c src/utils.c $(YAML_SRC) contrib/cJSON/cJSON.c src/ipc.c src/ipc_resp.c
-	@echo "Building libscope.so ..."
+libappview.so: src/wrap.c src/state.c src/httpstate.c src/report.c src/httpagg.c src/plattime.c src/fn.c os/$(OS)/os.c src/cfgutils.c src/cfg.c src/transport.c src/log.c src/mtc.c src/circbuf.c src/linklist.c src/evtformat.c src/ctl.c src/mtcformat.c src/com.c src/appviewstdlib.c src/dbg.c src/search.c src/utils.c $(YAML_SRC) contrib/cJSON/cJSON.c src/ipc.c src/ipc_resp.c
+	@echo "Building libappview.so ..."
 	make $(PCRE2_AR)
-	$(CC) $(CFLAGS) -shared -fvisibility=hidden -DSCOPE_VER=\"$(SCOPE_VER)\" $(YAML_DEFINES) -o ./lib/$(OS)/$@ $(INCLUDES) $^ -e,prog_version $(LD_FLAGS)
-	$(CC) -c $(CFLAGS) -DSCOPE_VER=\"$(SCOPE_VER)\" $(YAML_DEFINES) $(INCLUDES) $^
+	$(CC) $(CFLAGS) -shared -fvisibility=hidden -DAPPVIEW_VER=\"$(APPVIEW_VER)\" $(YAML_DEFINES) -o ./lib/$(OS)/$@ $(INCLUDES) $^ -e,prog_version $(LD_FLAGS)
+	$(CC) -c $(CFLAGS) -DAPPVIEW_VER=\"$(APPVIEW_VER)\" $(YAML_DEFINES) $(INCLUDES) $^
 	rm -rf ./test/selfinterpose && mkdir ./test/selfinterpose && mv *.o ./test/selfinterpose/
 
 clean:
-	rm -f ./lib/$(OS)/libscope.so contrib/funchook/build/*.a
+	rm -f ./lib/$(OS)/libappview.so contrib/funchook/build/*.a
 
 SRC_C_FILES:=$(wildcard src/*.c)
-SRC_C_FILES:=$(filter-out src/wrap.c src/wrap_go.c src/sysexec.c src/scope.c src/scopeelf.c src/javaagent.c src/javabci.c, $(SRC_C_FILES))
+SRC_C_FILES:=$(filter-out src/wrap.c src/wrap_go.c src/sysexec.c src/appview.c src/appviewelf.c src/javaagent.c src/javabci.c, $(SRC_C_FILES))
 TEST_C_FILES:=$(wildcard test/*.c)
 TEST_C_FILES:=$(filter-out test/glibcvertest.c test/wraptest.c test/javabcitest.c, $(TEST_C_FILES))
 C_FILES:=$(SRC_C_FILES) $(TEST_C_FILES) os/$(OS)/os.c
@@ -68,7 +68,7 @@ test: $(C_FILES)
 	$(CC) $(TEST_CFLAGS) -o test/$(OS)/searchtest searchtest.o search.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
 	@echo "Running Tests and Generating Test Coverage"
 	test/unit/execute.sh
-# see file:///Users/cribl/scope/coverage/index.html
+# see file:///Users/cribl/appview/coverage/index.html
 
 $(YAML_AR): $(YAML_SRC)
 	@echo "Building libyaml"

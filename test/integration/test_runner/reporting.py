@@ -14,11 +14,11 @@ def get_status(result):
     return "fail" if not result.passed else "pass"
 
 
-def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
+def store_results_to_file(watcher: TestWatcher, path: str, appview_version: str):
     def exec_data_to_json(exec_data: TestExecutionData):
         return {
             "status": get_status(exec_data.result),
-            "scope_messages": exec_data.scope_messages,
+            "appview_messages": exec_data.appview_messages,
             "error": exec_data.result.error if exec_data.result else None,
             "duration": exec_data.duration,
             "test_data": exec_data.test_data
@@ -32,8 +32,8 @@ def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
                 "type": "test_results",
                 "test": test,
                 "status": get_status(result),
-                "scoped_exec_data": exec_data_to_json(result.scoped_execution_data),
-                "unscoped_exec_data": exec_data_to_json(result.unscoped_execution_data),
+                "viewed_exec_data": exec_data_to_json(result.viewed_execution_data),
+                "unviewd_exec_data": exec_data_to_json(result.unviewd_execution_data),
                 "error": result.error
             }
             json.dump(log_row, f, default=lambda o: o.__dict__)
@@ -42,7 +42,7 @@ def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
         summary_row = {
             "id": watcher.execution_id,
             "type": "summary",
-            "scope_version": scope_version,
+            "appview_version": appview_version,
             "execution_error": watcher.execution_error,
             "status": "pass" if not watcher.has_failures() else "fail",
             "start_date": watcher.start_date.isoformat(),
@@ -56,15 +56,15 @@ def store_results_to_file(watcher: TestWatcher, path: str, scope_version: str):
 
 def print_summary(results: Dict[str, TestSetResult]):
     def to_table_row(name: str, result: TestSetResult):
-        unscoped_msg_count = len(result.unscoped_execution_data.scope_messages)
-        scoped_msg_count = len(result.scoped_execution_data.scope_messages)
+        unviewd_msg_count = len(result.unviewd_execution_data.appview_messages)
+        viewed_msg_count = len(result.viewed_execution_data.appview_messages)
 
         return [
             name,
             get_status(result),
-            f"{get_status(result.unscoped_execution_data.result)}/{get_status(result.scoped_execution_data.result)}",
-            f"{result.unscoped_execution_data.duration}/{result.scoped_execution_data.duration}",
-            f"{unscoped_msg_count}/{scoped_msg_count}",
+            f"{get_status(result.unviewd_execution_data.result)}/{get_status(result.viewed_execution_data.result)}",
+            f"{result.unviewd_execution_data.duration}/{result.viewed_execution_data.duration}",
+            f"{unviewd_msg_count}/{viewed_msg_count}",
             result.error
         ]
 
@@ -75,5 +75,5 @@ def print_summary(results: Dict[str, TestSetResult]):
     print("Total failed:\t" + str(total_failed))
     table = [to_table_row(k, v) for k, v in results.items()]
 
-    print(tabulate(table, headers=["Test", "Result", "Result unscoped/scoped", "Duration unscoped/scoped",
-                                   "Messages unscoped/scoped", "Error"]))
+    print(tabulate(table, headers=["Test", "Result", "Result unviewd/viewed", "Duration unviewd/viewed",
+                                   "Messages unviewd/viewed", "Error"]))

@@ -1,4 +1,4 @@
-# AppScope Build System
+# AppView Build System
 
 We use simple Makefiles to build the binaries and run the tests. GitHub Workflows/Actions handle CI. This document explans aspects of both.
 
@@ -13,7 +13,7 @@ With the required tools in place, `git clone` the repository, `cd` into the work
 
 ### `make build`
 
-This will run `docker build` first to build our "appscope-builder" container image. It tries to pull the existing image from the project's image repository to speed things up but this step can take a while the first time.
+This will run `docker build` first to build our "appview-builder" container image. It tries to pull the existing image from the project's image repository to speed things up but this step can take a while the first time.
 
 Once the builder image is ready, it runs `make all test` in the container. The local working directory is mounted into the container so the result should end up the in the same place as if you'd run that command locally.
 
@@ -31,8 +31,8 @@ make build ARCH=aarch64
 
 The resulting binaries are listed below. `$ARCH` will be `x86_64` or `aarch64`.
 
-* `lib/linux/$ARCH/libscope.so`
-* `bin/linux/$ARCH/scope`
+* `lib/linux/$ARCH/libappview.so`
+* `bin/linux/$ARCH/appview`
 
 ### `make run`
 
@@ -40,7 +40,7 @@ This uses the same builder container image as `make build` but drops into a shel
 
 ### `make all`
 
-This starts a build of the core (the library and loaders) and CLI. Use `make coreall` if you'd like to skip building the CLI. Use `make scope` for the opposite.
+This starts a build of the core (the library and loaders) and CLI. Use `make coreall` if you'd like to skip building the CLI. Use `make appview` for the opposite.
 
 These commands run the build in the local environment using locally installed dependencies. This is only supported on Ubuntu 18.04 and will generated a warning if it detects another local operating system. You are encoraged to use `make build` instead.
 
@@ -60,7 +60,7 @@ We maintain a suite of container images used to perform integration tests. They'
 
 ## CI Workflows
 
-We use GitHub [Actions] to build, test, package, and distribute AppScope automatically. They're defined in [`.github/workflows/`](../.github/workflows/).
+We use GitHub [Actions] to build, test, package, and distribute AppView automatically. They're defined in [`.github/workflows/`](../.github/workflows/).
 
 ## Caching
 
@@ -78,7 +78,7 @@ In CI, we are caching the contents of these subdirectories to speed up the build
 
 ### Test Containers
 
-The container images for the integration tests are pulled from the project's [package repository](https://github.com/orgs/criblio/packages?repo_name=appscope) at GitHub. They're named `appscope-test-*` and tagged with either `x86_64` or `aarch64` depending on the architecture they're run on. The image is rebuilt using the current Dockerfile and other content in case anything has changed on the branch being built. The resulting image is pushed back up to GitHub only for `push` actions on the default branch.
+The container images for the integration tests are pulled from the project's [package repository](https://github.com/orgs/criblio/packages?repo_name=appview) at GitHub. They're named `appview-test-*` and tagged with either `x86_64` or `aarch64` depending on the architecture they're run on. The image is rebuilt using the current Dockerfile and other content in case anything has changed on the branch being built. The resulting image is pushed back up to GitHub only for `push` actions on the default branch.
 
 ## Notes
 
@@ -89,7 +89,7 @@ Various aspects of the build system that didn't fit else where are listed below.
 
   > Note: We only really support building on Linux. The MacOS build support has essentially been abandoned.
 * The `os/linux/Makefile` includes architecture-specific `os/linux/x86_64.mk` or `os/linux/aarch64.mk` files.
-* The top-level `Makefile` has a `cli%` pattern rule and relays to corresponding targets in `cli/Makefile`. It `cd`'s into`/cli` to run those targets. We also have a `scope` target as a shortcut to build the CLI from the top-level directory.
+* The top-level `Makefile` has a `cli%` pattern rule and relays to corresponding targets in `cli/Makefile`. It `cd`'s into`/cli` to run those targets. We also have a `appview` target as a shortcut to build the CLI from the top-level directory.
 
 [QEMU]: https://www.qemu.org/
 [`binfmt`]: https://www.kernel.org/doc/html/latest/admin-guide/binfmt-misc.html

@@ -5,7 +5,7 @@
 #include "oci.h"
 #include "cJSON.h"
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 static char dirPath[PATH_MAX];
 
@@ -23,32 +23,32 @@ static int
 testDirPath(char *path, const char *argv0) {
     char buf[PATH_MAX];
     if (argv0[0] == '/') {
-        scope_strcpy(buf, argv0);
+        appview_strcpy(buf, argv0);
     } else {
-        if (scope_getcwd(buf, PATH_MAX) == NULL) {
-            scope_perror("getcwd error");
+        if (appview_getcwd(buf, PATH_MAX) == NULL) {
+            appview_perror("getcwd error");
             return -1;
         }
-        scope_strcat(buf, "/");
-        scope_strcat(buf, argv0);
+        appview_strcat(buf, "/");
+        appview_strcat(buf, argv0);
     }
 
-    if (scope_realpath(buf, path) == NULL) {
-        scope_perror("scope_realpath error");
+    if (appview_realpath(buf, path) == NULL) {
+        appview_perror("appview_realpath error");
         return -1;
     }
 
     /*
     * Retrieve the test directory path.
     * From:
-    * /<dir>/appscope/test/linux/cfgutilsrulestest
+    * /<dir>/appview/test/linux/cfgutilsrulestest
     * To:
-    * /<dir>/appscope/test/
+    * /<dir>/appview/test/
     */
     for (int i= 0; i < 2; ++i) {
-        path = scope_dirname(path);
+        path = appview_dirname(path);
         if (path == NULL) {
-            scope_perror("scope_dirname error");
+            appview_perror("appview_dirname error");
             return -1;
         }
     }
@@ -57,42 +57,42 @@ testDirPath(char *path, const char *argv0) {
 
 static bool
 verifyModifiedCfg(int id, const char *cmpStr, const char *outPath) {
-    int fdOut = scope_open(outPath, O_RDONLY);
+    int fdOut = appview_open(outPath, O_RDONLY);
     if (fdOut == -1) {
         assert_non_null(NULL);
         return FALSE;
     }
 
     struct stat stOut;
-    if (scope_fstat(fdOut, &stOut) == -1) {
+    if (appview_fstat(fdOut, &stOut) == -1) {
         assert_non_null(NULL);
-        scope_close(fdOut);
+        appview_close(fdOut);
         return FALSE;
     }
 
-    void *fdOutMap = scope_mmap(NULL, stOut.st_size, PROT_READ, MAP_PRIVATE, fdOut, 0);
+    void *fdOutMap = appview_mmap(NULL, stOut.st_size, PROT_READ, MAP_PRIVATE, fdOut, 0);
     if (fdOutMap == MAP_FAILED) {
         assert_non_null(NULL);
-        scope_close(fdOut);
+        appview_close(fdOut);
         return FALSE;
     }
-    scope_close(fdOut);
+    appview_close(fdOut);
 
     cJSON* parseOut = cJSON_Parse(fdOutMap);
     char* outBuf = cJSON_PrintUnformatted(parseOut);
     cJSON_Delete(parseOut);
 
-    // assert_int_equal(scope_strlen(outBuf), scope_strlen(cmpStr));
-    if (scope_strcmp(cmpStr, outBuf) != 0 ){
-        scope_fprintf(scope_stderr, cmpStr);
-        scope_fprintf(scope_stderr, outBuf);
+    // assert_int_equal(appview_strlen(outBuf), appview_strlen(cmpStr));
+    if (appview_strcmp(cmpStr, outBuf) != 0 ){
+        appview_fprintf(appview_stderr, cmpStr);
+        appview_fprintf(appview_stderr, outBuf);
         assert_non_null(NULL);
-        scope_munmap(fdOutMap, stOut.st_size);
+        appview_munmap(fdOutMap, stOut.st_size);
         return FALSE;
     }
 
-    scope_free(outBuf);
-    scope_munmap(fdOutMap, stOut.st_size);
+    appview_free(outBuf);
+    appview_munmap(fdOutMap, stOut.st_size);
 
     return TRUE;
 }
@@ -101,25 +101,25 @@ static bool
 rewriteOpenContainersConfigTest(int id, const char* unixSocketPath) {
 
     char inPath [PATH_MAX] = {0};
-    scope_snprintf(inPath, PATH_MAX, "%s/data/oci/oci%din.json", dirPath, id);
-    const char *scopeWithVersion = "/usr/lib/appscope/1.2.3/scope";
+    appview_snprintf(inPath, PATH_MAX, "%s/data/oci/oci%din.json", dirPath, id);
+    const char *appviewWithVersion = "/usr/lib/appview/1.2.3/appview";
 
     void *cfgMem = ociReadCfgIntoMem(inPath);
 
-    char *modifMem = ociModifyCfg(cfgMem, scopeWithVersion, unixSocketPath);
+    char *modifMem = ociModifyCfg(cfgMem, appviewWithVersion, unixSocketPath);
 
     char outPath [PATH_MAX] = {0};
 
     if (unixSocketPath) {
-        scope_snprintf(outPath, PATH_MAX, "%s/data/oci/oci%doutfull.json", dirPath, id);
+        appview_snprintf(outPath, PATH_MAX, "%s/data/oci/oci%doutfull.json", dirPath, id);
     } else {
-        scope_snprintf(outPath, PATH_MAX, "%s/data/oci/oci%doutpartial.json", dirPath, id);
+        appview_snprintf(outPath, PATH_MAX, "%s/data/oci/oci%doutpartial.json", dirPath, id);
     }
 
     bool res = verifyModifiedCfg(id, modifMem, outPath);
 
-    scope_free(cfgMem);
-    scope_free(modifMem);
+    appview_free(cfgMem);
+    appview_free(modifMem);
 
     return res;
 }
@@ -127,9 +127,9 @@ rewriteOpenContainersConfigTest(int id, const char* unixSocketPath) {
 static void
 ocitest_with_unix_path(void **state) {
     for (int i = 0; i < ARRAY_SIZE(testTypeJson); ++i) {
-        bool res = rewriteOpenContainersConfigTest(i, "/var/run/appscope/appscope.sock");
+        bool res = rewriteOpenContainersConfigTest(i, "/var/run/appview/appview.sock");
         if (res != TRUE) {
-            scope_fprintf(scope_stderr, "Error with test: id=%d name=%s\n", i, testTypeJson[i]);
+            appview_fprintf(appview_stderr, "Error with test: id=%d name=%s\n", i, testTypeJson[i]);
         }
         assert_int_equal(res, TRUE);
     }
@@ -140,7 +140,7 @@ ocitest_without_unix_path(void **state) {
     for (int i = 0; i < ARRAY_SIZE(testTypeJson); ++i) {
         bool res = rewriteOpenContainersConfigTest(i, NULL);
         if (res != TRUE) {
-            scope_fprintf(scope_stderr, "Error with test: id=%d name=%s\n", i, testTypeJson[i]);
+            appview_fprintf(appview_stderr, "Error with test: id=%d name=%s\n", i, testTypeJson[i]);
         }
         assert_int_equal(res, TRUE);
     }
@@ -149,7 +149,7 @@ ocitest_without_unix_path(void **state) {
 int
 main(int argc, char* argv[])
 {
-    scope_printf("running %s\n", argv[0]);
+    appview_printf("running %s\n", argv[0]);
     if (testDirPath(dirPath, argv[0])) {
         return EXIT_FAILURE;
     }

@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include "dbg.h"
 #include "httpmatch.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "utils.h"
 
 // Set to prime number of what seems like a reasonable size
@@ -40,7 +40,7 @@ storeCreate(net_info const * const netInfo,
 {
     if (!netInfo || !extraNetInfo || !freeData) return NULL;
 
-    store_t *match = scope_calloc(1, sizeof(store_t));
+    store_t *match = appview_calloc(1, sizeof(store_t));
     if (!match) {
         DBG(NULL);
         return NULL;
@@ -53,11 +53,11 @@ storeCreate(net_info const * const netInfo,
     // Not great, but duplicated from ctlCreate()
     match->cbufSize = DEFAULT_CBUF_SIZE;
     char *qlen_str;
-    if ((qlen_str = fullGetEnv("SCOPE_QUEUE_LENGTH")) != NULL) {
+    if ((qlen_str = fullGetEnv("APPVIEW_QUEUE_LENGTH")) != NULL) {
         unsigned long qlen;
-        scope_errno = 0;
-        qlen = scope_strtoul(qlen_str, NULL, 10);
-        if (!scope_errno && qlen) {
+        appview_errno = 0;
+        qlen = appview_strtoul(qlen_str, NULL, 10);
+        if (!appview_errno && qlen) {
             match->cbufSize = qlen;
         }
     }
@@ -84,7 +84,7 @@ deleteHashTableItem(httpmatch_t *match, hashTable_t **itemptr)
     if (!match || !itemptr || !*itemptr) return;
     hashTable_t *item = *itemptr;
     if (match->freeData && item->data) match->freeData(item->data);
-    scope_free(item);
+    appview_free(item);
     *itemptr = NULL;
 }
 
@@ -118,7 +118,7 @@ storeDestroy(store_t **storeptr)
 
     deleteAllLists(store);
 
-    scope_free(store);
+    appview_free(store);
     *storeptr = NULL;
 }
 
@@ -126,7 +126,7 @@ static hashTable_t *
 createHashTableItem(void *data, uint64_t sockid, int sockfd)
 {
     if (!data) return NULL;
-    hashTable_t *item = scope_calloc(1, sizeof(*item));
+    hashTable_t *item = appview_calloc(1, sizeof(*item));
     if (!item) return NULL;
     item->sockid = sockid;
     item->sockfd = sockfd;
@@ -172,7 +172,7 @@ storeSave(store_t *store, void *data, uint64_t sockid, int sockfd)
 
     if (!addHashTableItemToList(listptr, item)) {
         DBG("Found duplicate data.  Deleting new data.");
-        scope_free(item);
+        appview_free(item);
         return FALSE;
     }
 

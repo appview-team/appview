@@ -30,7 +30,7 @@ VERSION ?= $(shell git describe --match "v*" --abbrev=0 --tags | tr -d v)
 # cli expects us to write this file
 $(shell echo -n $(VERSION) > cli/VERSION)
 
-# github repository name; i.e. criblio/appview
+# github repository name; i.e. appview-team/appview
 # set automatically in CI so don't overwrite that
 GITHUB_REPOSITORY ?= $(shell git config --get remote.origin.url | cut -d: -f2 | sed -e 's/^\/\///' -e 's/\.git$$//')
 

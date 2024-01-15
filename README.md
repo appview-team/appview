@@ -41,9 +41,28 @@ graph LR
 - Create a report on unique file and network activity.
 - Install AppView in a Kubernetes cluster.
 
+## ✨ Example
+
+```
+appview attach nginx
+curl localhost
+appview events
+```
+```
+[Bu] Jan 15 15:53:19 ker process net net.open net_peer_ip:127.0.0.1 net_peer_port:60240 net_host_ip:0.0.0.0 net_host_port:80 net_protocol:http net_transport:IP.TCP
+[BB] Jan 15 15:53:19 ker process net net.app fd:3 host:precision pid:1504 proc:"ker process" protocol:HTTP
+[CH] Jan 15 15:53:19 ker process http http.req http_host:localhost http_method:GET http_scheme:http http_target:/
+[uQ] Jan 15 15:53:19 ker process fs fs.open file:/var/www/html/index.nginx-debian.html
+[1Z] Jan 15 15:53:19 ker process http http.resp http_host:localhost http_method:GET http_scheme:http http_target:/ http_response_content_length:612
+[C91] Jan 15 15:53:19 ker process fs fs.close file:/var/www/html/index.nginx-debian.html file_read_bytes:0 file_read_ops:0 file_write_bytes:612 file_write_ops:1
+[Gj1] Jan 15 15:53:19 ker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
+```
+
 ## 🛟 Support
 
 AppView runs on most Linux distributions and is able to instrument **most applications**. You might be surprised to learn that AppView is even able to instrument static applications, and applications running in other containers. 
+
+We regularly test against applications like nginx, redis, ssh, curl, bash, git, python.
 
 However, AppView **cannot**:
 
@@ -60,9 +79,8 @@ Before you begin, ensure that your environment meets the AppView [requirements](
 
 **With the Download**
 ```
-LATEST=$(curl -Ls https://cdn.cribl.io/dl/appview/latest)
-curl -Lo appview https://cdn.cribl.io/dl/appview/$LATEST/linux/$(uname -m)/appview
-curl -Ls https://cdn.cribl.io/dl/appview/$LATEST/linux/$(uname -m)/appview.md5 | md5sum -c 
+curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.4.3/scope-x86_64
+curl -Ls https://github.com/appview-team/appview/releases/download/v1.4.3/scope-x86_64.md5 | md5sum -c
 chmod +x appview
 appview <some app>
 appview metrics

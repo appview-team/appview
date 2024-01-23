@@ -1285,7 +1285,8 @@ doDetectFile(const char *path, fs_info *fs)
         !fs || !path ||
         scope_strstr(path, "stdin") ||
         scope_strstr(path, "stdout") ||
-        scope_strstr(path, "stderr")) return;
+        scope_strstr(path, "stderr") ||
+        scope_strstr(path, "/proc")) return;
 
     int i;
     char *this;
@@ -1328,23 +1329,6 @@ doDetectFile(const char *path, fs_info *fs)
         }
         i--;
     } while (isalnum(path[i]) == 0);
-
-    // check for a double file extension
-    int num_entries = 0;
-    char *dext = (char *)path;
-
-    while ((dext = scope_strstr(dext, ".")) != NULL) {
-            num_entries++;
-            dext++;
-    }
-
-    if (num_entries >= 2) {
-        char msg[PATH_MAX + 128];
-
-        scope_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
-                       path);
-        notify(NOTIFY_FILES, msg);
-    }
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set

@@ -2051,14 +2051,25 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          * From libscope.
          *   It's us and we modifiy the GOT.
          */
-        if (scope_strstr(file_from_maps_file, "/libc-") ||
-            scope_strstr(file_from_maps_file, "/libc.") ||
-            scope_strstr(file_from_maps_file, "libscope") ||
-            scope_strstr(file_from_maps_file, "/libpthread") ||
+        if (scope_strstr(file_from_maps_file, "libscope") ||
+            scope_strstr(file_from_maps_file, "/usr/lib") ||
+            scope_strstr(file_from_maps_file, "/usr/bin") ||
             !scope_strcmp(file_from_maps_file, "[vdso]")) goto next;
-
         char msg[128];
         scope_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
+#ifdef DEBUG
+        printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
+               __FUNCTION__, __LINE__, dl_info.dli_sname, fname, got_value, dl_info.dli_saddr);
+
+        if (scope_strncmp(fname, dl_info.dli_sname, scope_strlen(dl_info.dli_sname))) {
+            printf("%s:%d len link map %ld dladdr1 %ld\n", __FUNCTION__, __LINE__,
+                   scope_strlen(fname), scope_strlen(dl_info.dli_sname));
+        }
+
+        if ((void*)got_value != dl_info.dli_saddr) {
+            printf("%s:%d\n", __FUNCTION__, __LINE__);
+        }
+#endif
         notify(NOTIFY_LIBS, msg);
 
 next:

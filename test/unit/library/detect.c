@@ -20,7 +20,6 @@
 #include "notify.h"
 
 #define WRITE "/tmp/modok"
-#define DOUBLEX "/tmp/detect.txt.log"
 #define SPACES "/tmp/spaces "
 #define SUID "/tmp/suid"
 #define GUID "/tmp/guid"
@@ -51,7 +50,6 @@ initThis(void)
     initState();
 
      // create a few files for test
-    rv = open(DOUBLEX, O_CREAT | O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     rv = open(SPACES, O_CREAT | O_RDONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     rv = open(SUID, O_CREAT | O_RDONLY, S_ISUID | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     rv = open(GUID, O_CREAT | O_RDONLY, S_ISGID | S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -68,7 +66,6 @@ static void
 restoreThis(void)
 {
     setenv(NOTIFY_IQ_VAR, "FALSE", 1);
-    unlink(DOUBLEX);
     unlink(SPACES);
     unlink(WRITE);
     unlink(SUID);
@@ -139,16 +136,6 @@ spaceAtEnd(void **state)
     // should notify
     g_notified = FALSE;
     doOpen(7, SPACES, FD, "openFunc");
-    assert_int_equal(g_notified, TRUE);
-    doClose(7, "closeFunc");
-}
-
-static void
-doubleExtension(void **state)
-{
-    // should notify
-    g_notified = FALSE;
-    doOpen(7, DOUBLEX, FD, "openFunc");
     assert_int_equal(g_notified, TRUE);
     doClose(7, "closeFunc");
 }
@@ -308,7 +295,6 @@ main(int argc, char* argv[])
         cmocka_unit_test(fileRead),
         cmocka_unit_test(fileWrite),
         cmocka_unit_test(spaceAtEnd),
-        cmocka_unit_test(doubleExtension),
         cmocka_unit_test(setUID),
         cmocka_unit_test(setGID),
         cmocka_unit_test(modExec),

@@ -100,7 +100,7 @@ removeAppViewCfgFile1Change(void **state) {
     assert_int_equal(res, 0);
 
     stat(file_path, &st);
-    assert_int_equal(orig_file_size - 41, st.st_size);
+    assert_int_equal(orig_file_size - 42, st.st_size);
 
     if (remove(file_path)) {
         fail_msg("Couldn't remove file %s", file_path);
@@ -137,7 +137,7 @@ removeAppViewCfgFile2Changes(void **state) {
     assert_int_equal(res, 0);
 
     stat(file_path, &st);
-    assert_int_equal(orig_file_size - 82, st.st_size);
+    assert_int_equal(orig_file_size - 84, st.st_size);
 
     if (remove(file_path)) {
         fail_msg("Couldn't remove file %s", file_path);

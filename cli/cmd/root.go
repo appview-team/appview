@@ -13,7 +13,7 @@ import (
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "appview",
-	Short: "Cribl AppView\n\nGain observability into any Linux command or application with no code modification.\n\nRunning `appview` with no subcommands will execute the `appview run` command.",
+	Short: "AppView\n\nGain observability into any Linux command or application with no code modification.\n\nRunning `appview` with no subcommands will execute the `appview run` command.",
 	Example: `  appview curl wttr.in
   appview events
   appview metrics

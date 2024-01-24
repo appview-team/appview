@@ -661,9 +661,9 @@ cfgProcessEnvironment(config_t* cfg)
     char* e = NULL;
     int i = 0;
     while ((e = environ[i++])) {
-        // Everything we care about starts with a capital 'S'.  Skip 
+        // Everything we care about starts with a capital 'A'.  Skip
         // everything else for performance.
-        if (e[0] != 'S') continue;
+        if (e[0] != 'A') continue;
 
         // Some things should only be processed as commands, not as
         // environment variables.  Skip them here.

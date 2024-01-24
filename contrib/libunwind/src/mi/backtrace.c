@@ -77,7 +77,7 @@ unw_backtrace (void **buffer, int size)
 }
 
 int
-unw_scope_getcontext(unw_context_t *uc) {
+unw_appview_getcontext(unw_context_t *uc) {
   return unw_getcontext(uc);
 }
 

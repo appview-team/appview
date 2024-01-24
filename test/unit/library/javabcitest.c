@@ -162,7 +162,7 @@ javaBciAddMethod(void** state)
 
     javaAddMethod(classInfo, "anotherNativeMethod", "(Ljava/lang/String;)V", ACC_NATIVE, 0, 0, NULL, 0);
 
-    int classIndex = javaFindClassIndex(classInfo, "io/cribl/appview/JavaTest");
+    int classIndex = javaFindClassIndex(classInfo, "io/cribl/scope/JavaTest");
     assert_int_equal(classIndex, 4);
 
     uint16_t printNameAndTypeIdx = javaAddNameAndTypeTag(classInfo, "print", "(Ljava/lang/String;)V");
@@ -252,7 +252,7 @@ javaBciAddStringTag(void** state)
     java_class_t *classInfo = javaReadClass(JavaTest_class);
     assert_non_null(classInfo);
 
-    int idx = javaAddStringTag(classInfo, "AppView is DOPE");
+    int idx = javaAddStringTag(classInfo, "AppVW is DOPE");
     
     unsigned char *dest = malloc(classInfo->length);
     javaWriteClass(dest, classInfo);

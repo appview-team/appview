@@ -84,8 +84,8 @@ build/openssl/libssl.a build/openssl/libcrypto.a:
 	@mkdir build/openssl
 	cd build/openssl && ../../openssl/Configure no-engine no-async no-tests no-unit-test no-threads && make -j$(nproc)
 	# Yuck.  Avoids naming conflict between our wrap.c and libssl.a
-	objcopy --redefine-sym SSL_read=SCOPE_SSL_read build/openssl/libssl.a
-	objcopy --redefine-sym SSL_write=SCOPE_SSL_write build/openssl/libssl.a
+	objcopy --redefine-sym SSL_read=APPVIEW_SSL_read build/openssl/libssl.a
+	objcopy --redefine-sym SSL_write=APPVIEW_SSL_write build/openssl/libssl.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libcrypto.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libssl.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
@@ -117,7 +117,7 @@ build/libunwind/src/.libs/libunwind.a:
 	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-weak-backtrace --disable-pthread-api --disable-shared --disable-minidebuginfo --disable-documentation --disable-tests CFLAGS=-fPIC && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/libunwind/src/.libs/libunwind.a
 	if [ "x86_64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym dl_iterate_phdr=SCOPE_DlIteratePhdr build/libunwind/src/.libs/libunwind.a; \
+		objcopy --redefine-sym dl_iterate_phdr=APPVIEW_DlIteratePhdr build/libunwind/src/.libs/libunwind.a; \
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 

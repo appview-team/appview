@@ -11,6 +11,7 @@ RUN apt update \
       python3 \
       vim \
       libbpf0 \
+      curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Tests

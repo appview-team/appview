@@ -6,7 +6,7 @@
 #include "ctl.h"
 #include "dbg.h"
 #include "fn.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "httpstate.h"
 #include "plattime.h"
 #include "test.h"
@@ -26,9 +26,9 @@ freeMsg(struct protocol_info_t** msg_ptr)
     struct http_post_t *post = msg ? (struct http_post_t*) msg->data : NULL;
     char *header = post ? post->hdr : NULL;
 
-    if (header) scope_free(header);
-    if (post) scope_free(post);
-    if (msg) scope_free(msg);
+    if (header) appview_free(header);
+    if (post) appview_free(post);
+    if (msg) appview_free(msg);
     *msg_ptr = NULL;
 }
 

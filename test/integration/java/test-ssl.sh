@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # in some cases, the /etc/profile.d isn't loaded so force this
-export PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
+export PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
 
 DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
 
@@ -47,8 +47,8 @@ endtest(){
     rm $EVT_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 evalPayload(){
     PAYLOADERR=0
@@ -86,7 +86,7 @@ evalPayload(){
 
 evalInternalEvents(){
     echo "Testing that eventsdon't contain internal events for $CURRENT_TEST"
-    # verify that we don't scope event from ourselves
+    # verify that we don't appview event from ourselves
     # periodic -> mtcConnect -> transportConnect -> socketConnectionStart -> getAddressList
     count=$(grep -E '"source":"fs.open".*"file":"/etc/hosts"' $EVT_FILE | wc -l)
     if [ $count -ne 0 ] ; then
@@ -100,7 +100,7 @@ evalInternalEvents(){
 }
 
 starttest Tomcat
-scope -z /opt/tomcat/bin/catalina.sh run &
+appview -z /opt/tomcat/bin/catalina.sh run &
 evaltest
 
 CURL_MAX_RETRY=10
@@ -137,7 +137,7 @@ endtest
 
 starttest SSLSocketClient
 cd /opt/javassl
-scope -z java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
+appview -z java -Djavax.net.ssl.trustStore=/opt/tomcat/certs/tomcat.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=pkcs12 SSLSocketClient > /dev/null
 evaltest
 grep http.req $EVT_FILE > /dev/null
 ERR+=$?
@@ -173,7 +173,7 @@ java SimpleHttpServer 2> /dev/null &
 HTTP_SERVER_PID=$!
 sleep 1
 evaltest
-scope --ldattach ${HTTP_SERVER_PID}
+appview --ldattach ${HTTP_SERVER_PID}
 curl http://localhost:8000/status
 sleep 5
 
@@ -212,7 +212,7 @@ HTTP_SERVER_PID=$!
 sleep 1
 evaltest
 curl http://localhost:8000/status
-scope --ldattach ${HTTP_SERVER_PID}
+appview --ldattach ${HTTP_SERVER_PID}
 curl http://localhost:8000/status
 sleep 5
 
@@ -239,11 +239,11 @@ endtest
 
 # TODO: Java9 fails see issue #630
 # remove if condition below after fixing the issue
-if [[ -z "${SKIP_SCOPE_TEST}" ]]; then
-starttest java_http_scope
+if [[ -z "${SKIP_APPVIEW_TEST}" ]]; then
+starttest java_http_appview
 
 cd /opt/java_http
-scope -z java SimpleHttpServer 2> /dev/null &
+appview -z java SimpleHttpServer 2> /dev/null &
 HTTP_SERVER_PID=$!
 evaltest
 sleep 1
@@ -288,7 +288,7 @@ starttest java_crash_analysis
 cd /opt/java_http
 
 # if we crash java, verify that we capture a backtrace & coredump
-scope run -p --backtrace --coredump -- java SimpleHttpServer 2> /dev/null &
+appview run -p --backtrace --coredump -- java SimpleHttpServer 2> /dev/null &
 HTTP_SERVER_PID=$!
 sleep 1
 
@@ -302,7 +302,7 @@ grep -q '"proc":"java"' $EVT_FILE > /dev/null
 ERR+=$?
 
 # test that the expected files have been produced
-snapshot_dir="/tmp/appscope/$HTTP_SERVER_PID"
+snapshot_dir="/tmp/appview/$HTTP_SERVER_PID"
 ls $snapshot_dir/info* 1>/dev/null
 ERR+=$?
 ls $snapshot_dir/cfg* 1>/dev/null
@@ -337,8 +337,8 @@ ls -al $snapshot_dir
 
 
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

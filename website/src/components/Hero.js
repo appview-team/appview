@@ -46,7 +46,7 @@ export default function Hero() {
           <Col xs={{ span: 12, order: 1 }} md={{ span: 6, order: 2 }}>
             <Img
               fluid={data.file.childImageSharp.fluid}
-              alt="AppScope Processing Machine"
+              alt="AppView Processing Machine"
             />
           </Col>
         </Row>

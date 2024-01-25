@@ -5,10 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/criblio/scope/inspect"
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/ipc"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/inspect"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/ipc"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -20,14 +20,14 @@ var (
 // inspectCmd represents the inspect command
 var inspectCmd = &cobra.Command{
 	Use:   "inspect",
-	Short: "Returns information about scoped process",
-	Long:  `Returns information about scoped process identified by PID.`,
-	Example: `  scope inspect
-  scope inspect 1000
-  scope inspect --all --json
-  scope inspect 1000 --rootdir /path/to/host/root
-  scope inspect --all --rootdir /path/to/host/root
-  scope inspect --all --rootdir /path/to/host/root/proc/<hostpid>/root`,
+	Short: "Returns information about viewed process",
+	Long:  `Returns information about viewed process identified by PID.`,
+	Example: `  appview inspect
+  appview inspect 1000
+  appview inspect --all --json
+  appview inspect 1000 --rootdir /path/to/host/root
+  appview inspect --all --rootdir /path/to/host/root
+  appview inspect --all --rootdir /path/to/host/root/proc/<hostpid>/root`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
@@ -61,7 +61,7 @@ var inspectCmd = &cobra.Command{
 		}
 
 		if len(procs) == 0 {
-			util.ErrAndExit("Inspect failure: %v", errNoScopedProcs)
+			util.ErrAndExit("Inspect failure: %v", errNoViewedProcs)
 		}
 		if len(procs) == 1 {
 			pidCtx.Pid = procs[0].Pid

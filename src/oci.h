@@ -1,8 +1,8 @@
 #ifndef __OCI_H__
 #define __OCI_H__
 
-#include "scopestdlib.h"
-#include "scopetypes.h"
+#include "appviewstdlib.h"
+#include "appviewtypes.h"
 
 /*
  *  API to manage OCI configuration file

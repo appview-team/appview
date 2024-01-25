@@ -3,7 +3,7 @@ allow:
   config:
     cribl:
       enable: false
-    libscope:
+    libappview:
       log:
         level: error
         transport:
@@ -14,7 +14,7 @@ allow:
   config:
     cribl:
       enable: true
-    libscope:
+    libappview:
       log:
         level: info
         transport:

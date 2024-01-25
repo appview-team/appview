@@ -1,12 +1,12 @@
 /*
- * Testing setns CLONE_NEWNET and impact for scope
+ * Testing setns CLONE_NEWNET and impact for appview
  *
  * Start docker 
  * docker run --privileged --name testcont --rm -it ubuntu:22.04 bash
  * In separate terminal
  * Retrieve pid of Docker process via docker top testcont to access docker's network namespace
  * gcc test/manual/namespace/ns_setnstest.c -o setnstest
- * sudo SCOPE_CRIBL_ENABLE=FALSE ldscope -- ./setnstest <docker_pid>
+ * sudo APPVIEW_CRIBL_ENABLE=FALSE ldappview -- ./setnstest <docker_pid>
  */
 #define _GNU_SOURCE
 #include <linux/limits.h>

@@ -1,8 +1,8 @@
 {
-  "name": "appscope",
+  "name": "appview",
   "version": "1.0.0",
   "private": true,
-  "description": "appscope",
+  "description": "appview",
   "author": "Tim Wilson",
   "keywords": [
     "gatsby"

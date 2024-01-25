@@ -27,14 +27,14 @@ echo ""
 echo "Total tests: "$counter" Failed: "$failed" Passed: "$passed
 
 echo ""
-echo "Scoped tests:"
+echo "Viewed tests:"
 
 counter=0
 failed=0
 passed=0
 
 for t in $TESTS; do
-    LD_PRELOAD=/opt/scope/lib/linux/libwrap.so ./$t
+    LD_PRELOAD=/opt/appview/lib/linux/libwrap.so ./$t
 
     if [ $? -eq 0 ]; then
         let passed++

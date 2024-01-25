@@ -7,37 +7,37 @@
 /*
  * Read the OCI configuration into memory
  *
- * Returns the modified data which should be freed with scope_free, in case of failure returns NULL
+ * Returns the modified data which should be freed with appview_free, in case of failure returns NULL
  */
 void *
 ociReadCfgIntoMem(const char *cfgPath) {
     void *buf = NULL;
     struct stat fileStat;
 
-    if (scope_stat(cfgPath, &fileStat) == -1) {
+    if (appview_stat(cfgPath, &fileStat) == -1) {
         return NULL;
     }
 
-    FILE *fp = scope_fopen(cfgPath, "r");
+    FILE *fp = appview_fopen(cfgPath, "r");
     if (!fp) {
         return NULL;
     }
 
-    buf = (char *)scope_malloc(fileStat.st_size);
+    buf = (char *)appview_malloc(fileStat.st_size);
     if (!buf) {
         goto close_file;
     }
 
-    size_t ret = scope_fread(buf, sizeof(char), fileStat.st_size, fp);
+    size_t ret = appview_fread(buf, sizeof(char), fileStat.st_size, fp);
     if (ret != fileStat.st_size ) {
-        scope_free(buf);
+        appview_free(buf);
         buf = NULL;
         goto close_file;
     }
 
 close_file:
 
-    scope_fclose(fp);
+    appview_fclose(fp);
 
     return buf;
 }
@@ -49,23 +49,23 @@ close_file:
  * Refer to the opencontainers Linux runtime-spec for details about the exact JSON struct.
  * The following changes will be performed:
  * - Add a mount point(s)
- *   * `appscope` directory will be mounted from the host "/usr/lib/appscope/" into the container: "/usr/lib/appscope/"
+ *   * `appview` directory will be mounted from the host "/usr/lib/appview/" into the container: "/usr/lib/appview/"
  *   * A UNIX socket directory will be mounted from the host into the container. The path to UNIX socket
  *   will be read from host based on value in the rules file [optionally]
  *
  * - Extend Environment variables
- *   * `LD_PRELOAD` will contain the following entry `/opt/appscope/libscope.so`
- *   * `SCOPE_SETUP_DONE=true` mark that configuration was processed
+ *   * `LD_PRELOAD` will contain the following entry `/opt/appview/libappview.so`
+ *   * `APPVIEW_SETUP_DONE=true` mark that configuration was processed
  *
  * - Add prestart hook
- *   execute a scope extract operation to ensure that the proper library is used in the specific loader context; musl or glibc.
+ *   execute a appview extract operation to ensure that the proper library is used in the specific loader context; musl or glibc.
  * 
- * Returns the modified data which should be freed with scope_free, in case of failure returns NULL
+ * Returns the modified data which should be freed with appview_free, in case of failure returns NULL
  */
 char *
-ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPath) {
+ociModifyCfg(const void *cfgMem, const char *appviewPath, const char *unixSocketPath) {
 
-    if (!cfgMem || !scopePath ) {
+    if (!cfgMem || !appviewPath ) {
         return NULL;
     }
 
@@ -81,8 +81,8 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
          "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
          "HOSTNAME=6735578591bb",
          "TERM=xterm",
-         "LD_PRELOAD=/opt/appscope/libscope.so",
-         "SCOPE_SETUP_DONE=true"
+         "LD_PRELOAD=/opt/appview/libappview.so",
+         "APPVIEW_SETUP_DONE=true"
       ],
     */
     cJSON *procNode = cJSON_GetObjectItemCaseSensitive(json, "process");
@@ -104,34 +104,34 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
             cJSON *item = cJSON_GetArrayItem(envNodeArr, i);
             char *strItem = cJSON_GetStringValue(item);
 
-            if (scope_strncmp("LD_PRELOAD=", strItem, C_STRLEN("LD_PRELOAD=")) == 0) {
-                size_t itemLen = scope_strlen(strItem);
-                size_t newLdprelLen = itemLen + C_STRLEN("/opt/appscope/libscope.so:");
-                char *newLdPreloadLib = scope_calloc(1, newLdprelLen);
+            if (appview_strncmp("LD_PRELOAD=", strItem, C_STRLEN("LD_PRELOAD=")) == 0) {
+                size_t itemLen = appview_strlen(strItem);
+                size_t newLdprelLen = itemLen + C_STRLEN("/opt/appview/libappview.so:");
+                char *newLdPreloadLib = appview_calloc(1, newLdprelLen);
                 if (!newLdPreloadLib) {
                     cJSON_Delete(json);
                     goto exit;
                 }
-                scope_strncpy(newLdPreloadLib, "LD_PRELOAD=/opt/appscope/libscope.so:", C_STRLEN("LD_PRELOAD=/opt/appscope/libscope.so:"));
-                scope_strcat(newLdPreloadLib, strItem + C_STRLEN("LD_PRELOAD="));
+                appview_strncpy(newLdPreloadLib, "LD_PRELOAD=/opt/appview/libappview.so:", C_STRLEN("LD_PRELOAD=/opt/appview/libappview.so:"));
+                appview_strcat(newLdPreloadLib, strItem + C_STRLEN("LD_PRELOAD="));
                 cJSON *newLdPreloadLibObj = cJSON_CreateString(newLdPreloadLib);
                 if (!newLdPreloadLibObj) {
-                    scope_free(newLdPreloadLib);
+                    appview_free(newLdPreloadLib);
                     cJSON_Delete(json);
                     goto exit;
                 }
                 cJSON_ReplaceItemInArray(envNodeArr, i, newLdPreloadLibObj);
-                scope_free(newLdPreloadLib);
+                appview_free(newLdPreloadLib);
 
-                cJSON *scopeEnvNode = cJSON_CreateString("SCOPE_SETUP_DONE=true");
-                if (!scopeEnvNode) {
+                cJSON *appviewEnvNode = cJSON_CreateString("APPVIEW_SETUP_DONE=true");
+                if (!appviewEnvNode) {
                     cJSON_Delete(json);
                     goto exit;
                 }
-                cJSON_AddItemToArray(envNodeArr, scopeEnvNode);
+                cJSON_AddItemToArray(envNodeArr, appviewEnvNode);
                 ldPreloadPresent = TRUE;
                 break;
-            } else if (scope_strncmp("SCOPE_SETUP_DONE=true", strItem, C_STRLEN("SCOPE_SETUP_DONE=true")) == 0) {
+            } else if (appview_strncmp("APPVIEW_SETUP_DONE=true", strItem, C_STRLEN("APPVIEW_SETUP_DONE=true")) == 0) {
                 // we are done here
                 cJSON_Delete(json);
                 goto exit;
@@ -143,23 +143,23 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
         if (ldPreloadPresent == FALSE) {
             const char *const envItems[2] =
             {
-                "LD_PRELOAD=/opt/appscope/libscope.so",
-                "SCOPE_SETUP_DONE=true"
+                "LD_PRELOAD=/opt/appview/libappview.so",
+                "APPVIEW_SETUP_DONE=true"
             };
             for (int i = 0; i < ARRAY_SIZE(envItems) ;++i) {
-                cJSON *scopeEnvNode = cJSON_CreateString(envItems[i]);
-                if (!scopeEnvNode) {
+                cJSON *appviewEnvNode = cJSON_CreateString(envItems[i]);
+                if (!appviewEnvNode) {
                     cJSON_Delete(json);
                     goto exit;
                 }
-                cJSON_AddItemToArray(envNodeArr, scopeEnvNode);
+                cJSON_AddItemToArray(envNodeArr, appviewEnvNode);
             }
         }
     } else {
         const char * envItems[2] =
         {
-            "LD_PRELOAD=/opt/appscope/libscope.so",
-            "SCOPE_SETUP_DONE=true"
+            "LD_PRELOAD=/opt/appview/libappview.so",
+            "APPVIEW_SETUP_DONE=true"
         };
         envNodeArr = cJSON_CreateStringArray(envItems, ARRAY_SIZE(envItems));
         if (!envNodeArr) {
@@ -185,18 +185,18 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
       },
       ...
       {
-         "destination":"/usr/lib/appscope/",
+         "destination":"/usr/lib/appview/",
          "type":"bind",
-         "source":"/usr/lib/appscope/",
+         "source":"/usr/lib/appview/",
          "options":[
             "rbind",
             "rprivate"
          ]
       },
       {
-         "destination":"/var/run/appscope/",
+         "destination":"/var/run/appview/",
          "type":"bind",
-         "source":"/var/run/appscope/",
+         "source":"/var/run/appview/",
          "options":[
             "rbind",
             "rprivate"
@@ -206,7 +206,7 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
 
     const char *mountPath[2] =
     {
-        "/usr/lib/appscope/",
+        "/usr/lib/appview/",
         unixSocketPath
     };
 
@@ -284,12 +284,12 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
       ],
       "startContainer":[
          {
-            "path":"/usr/lib/appscope/<version>/scope"
+            "path":"/usr/lib/appview/<version>/appview"
             "args":[
-               "/usr/lib/appscope/<version>/scope",
+               "/usr/lib/appview/<version>/appview",
                "extract",
                "-p",
-               "/opt/appscope",
+               "/opt/appview",
             ]
          },
        ]
@@ -320,7 +320,7 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
         goto exit;
     }
 
-    if (!cJSON_AddStringToObjLN(startContainerNode, "path",  scopePath)) {
+    if (!cJSON_AddStringToObjLN(startContainerNode, "path",  appviewPath)) {
         cJSON_Delete(startContainerNode);
         cJSON_Delete(json);
         goto exit;
@@ -328,10 +328,10 @@ ociModifyCfg(const void *cfgMem, const char *scopePath, const char *unixSocketPa
 
     const char *argsItems[4] =
     {
-        scopePath,
+        appviewPath,
         "extract",
         "-p",
-        "/opt/appscope"
+        "/opt/appview"
     };
     cJSON *argsNodeArr = cJSON_CreateStringArray(argsItems, ARRAY_SIZE(argsItems));
     if (!argsNodeArr) {
@@ -358,14 +358,14 @@ exit:
  */
 bool
 ociWriteConfig(const char *path, const char *cfg) {
-    FILE *fp = scope_fopen(path, "w");
+    FILE *fp = appview_fopen(path, "w");
     if (fp == NULL) {
         return FALSE;
     }
 
-    scope_fprintf(fp, "%s\n", cfg);
+    appview_fprintf(fp, "%s\n", cfg);
 
-    scope_fclose(fp);
+    appview_fclose(fp);
     return TRUE;
 }
 

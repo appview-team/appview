@@ -4,7 +4,7 @@ title: Analyzing Application Crashes
 
 ## Analyzing Application Crashes
 
-When an application crashes, you can use AppScope together with [eBPF](https://ebpf.io/what-is-ebpf/) to generate useful files and send those files to a network destination, before the environment is torn down.
+When an application crashes, you can use AppView together with [eBPF](https://ebpf.io/what-is-ebpf/) to generate useful files and send those files to a network destination, before the environment is torn down.
 
 In the walkthrough that follows, we'll run Nginx in a Docker container, force Nginx to crash, and send crash data – backtrace, core dump, and snapshot files – through Cribl.Cloud to Amazon S3.
 
@@ -38,46 +38,46 @@ Next, configure the built-in TCP Source:
 
 You now have a Cribl.Cloud Worker listening for TCP data, and configured to send it on to S3.
 
-### Setting Up AppScope and eBPF
+### Setting Up AppView and eBPF
 
-The `scope-ebpf` and AppScope projects are separate and independent, and they operate under different licenses – for that reason, each has its own repo.
+The `appview-ebpf` and AppView projects are separate and independent, and they operate under different licenses – for that reason, each has its own repo.
 
-Download the AppScope binary:
+Download the AppView binary:
 
 ```
 cd ~/Downloads  
-curl -Lo scope https://cdn.cribl.io/dl/scope/1.4.1/linux/$(uname -m)/scope
-curl -Ls https://cdn.cribl.io/dl/scope/1.4.1/linux/$(uname -m)/scope.md5 | md5sum -c 
-chmod +x scope
+curl -Lo appview https://cdn.cribl.io/dl/appview/1.4.1/linux/$(uname -m)/appview
+curl -Ls https://cdn.cribl.io/dl/appview/1.4.1/linux/$(uname -m)/appview.md5 | md5sum -c 
+chmod +x appview
 ```
 
-Download and build the `scope-ebpf` binary:
+Download and build the `appview-ebpf` binary:
 
 ```
-git clone git@github.com:criblio/scope-ebpf.git
-cd scope-ebpf
+git clone git@github.com:appview-team/appview-ebpf.git
+cd appview-ebpf
 make all
 ```
 
 Deploy the eBPF module to listen for crashing applications:
 
 ```
-sudo ~/Downloads/scope-ebpf/bin/scope-ebpf
+sudo ~/Downloads/appview-ebpf/bin/appview-ebpf
 ```
 Leave this shell running and open another terminal or tab.
 
-Deploy the AppScope daemon, to receive messages from eBPF and send crash files to a network destination:
+Deploy the AppView daemon, to receive messages from eBPF and send crash files to a network destination:
 
 ```
-sudo ~/Downloads/scope daemon --filedest tcp://<path-to-cribl-cloud-tcp>:10060
+sudo ~/Downloads/appview daemon --filedest tcp://<path-to-cribl-cloud-tcp>:10060
 ```
 
-Once you start the daemon, the `scope-ebpf` binary will exit in the other terminal. That's normal.
+Once you start the daemon, the `appview-ebpf` binary will exit in the other terminal. That's normal.
 
 At this point, preparation is complete:
 * The eBPF kernel module should be loaded, listening for application crash signals. 
-* The AppScope Daemon should be running, waiting for the eBPF module to tell it that an application has crashed. 
-* Once eBPF notifies AppScope of a crash, AppScope will look for crash files and send them on to the configured network destination.
+* The AppView Daemon should be running, waiting for the eBPF module to tell it that an application has crashed. 
+* Once eBPF notifies AppView of a crash, AppView will look for crash files and send them on to the configured network destination.
 
 ### Making an Application Crash
 
@@ -87,24 +87,24 @@ Start a daemonized Nginx container:
 docker run --rm -d nginx
 ```
 
-Attach AppScope to the containerized Nginx process, and enable backtrace and core dump on crash:
+Attach AppView to the containerized Nginx process, and enable backtrace and core dump on crash:
 
 ```
-sudo ~/Downloads/scope attach --backtrace --coredump nginx
+sudo ~/Downloads/appview attach --backtrace --coredump nginx
 ```
 
 This command shows the Nginx process with its child processes, in a list. Note the PID of the parent Nginx process.
 
-(Alternatively, you could have used the `scope run` [command](cli-reference#run) or the `scope rules` [command](cli-reference#rules) to tell AppScope to load itself into an application when it starts.)
+(Alternatively, you could have used the `appview run` [command](cli-reference#run) or the `appview rules` [command](cli-reference#rules) to tell AppView to load itself into an application when it starts.)
 
 Force a crash of Nginx by sending the process a `BUS` error signal:
 
 ```
 sudo kill -s SIGBUS <PID_of_nginx>
 ```
-AppScope will respond to any of the usual signals of a crashing process: `SIGBUS`, `SIGINT`, `SIGSEGV`, or `SIGFPE`.
+AppView will respond to any of the usual signals of a crashing process: `SIGBUS`, `SIGINT`, `SIGSEGV`, or `SIGFPE`.
 
-Now look in your S3 bucket – you should see four files: `info`, `backtrace`, `snapshot`, and `cfg`. The same files, plus the core dump, should also be in `/tmp/appscope/<PID_of_nginx>/`.
+Now look in your S3 bucket – you should see four files: `info`, `backtrace`, `snapshot`, and `cfg`. The same files, plus the core dump, should also be in `/tmp/appview/<PID_of_nginx>/`.
 
 ### Investigating the Crash
 
@@ -112,12 +112,12 @@ Here are a few hints about the meaningful insights that the crash files provide.
 
 The backtrace file contains the application stack trace at the time of the crash:
 
-![AppScope crash backtrace](./images/AppScope-Backtrace-screenshot.png)
+![AppView crash backtrace](./images/AppView-Backtrace-screenshot.png)
 
 The snapshot file contains properties of the process:
 
-![AppScope crash snapshot](./images/AppScope-Snapshot-screenshot.png)
+![AppView crash snapshot](./images/AppView-Snapshot-screenshot.png)
 
 The core dump (not shown here) contains a binary snapshot of the application at the time of the crash, for inspection with a debugger like gdb. By default, the daemon does not send this over the network since it's not usually useful outside of its origin environment. The [man page](https://man7.org/linux/man-pages/man5/core.5.html) on core dumps can help you explore this data.
 
-If this topic is of interest to you, and/or if you'd like some help getting the procedure to work, please get in touch – there are a [variety](https://appscope.dev/docs/community/) of ways to do that.
+If this topic is of interest to you, and/or if you'd like some help getting the procedure to work, please get in touch – there are a [variety](https://appview.dev/docs/community/) of ways to do that.

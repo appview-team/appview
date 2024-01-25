@@ -15,12 +15,12 @@
 #include "cfgutils.h"
 #include "dbg.h"
 #include "mtcformat.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "com.h"
 #include "utils.h"
 #include "fn.h"
 #include "state.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 #ifndef NO_YAML
 #include "yaml.h"
@@ -46,7 +46,7 @@
 #define VALIDATE_NODE                    "validateserver"
 #define CACERT_NODE                      "cacertpath"
 
-#define LIBSCOPE_NODE        "libscope"
+#define LIBAPPVIEW_NODE        "libappview"
 #define LOG_NODE                 "log"
 #define LEVEL_NODE                   "level"
 #define TRANSPORT_NODE               "transport"
@@ -100,7 +100,7 @@
 #define ANCESTOR_NODE                "ancestor"
 #define CONFIG_NODE              "config"
 
-#if SCOPE_PROM_SUPPORT != 0
+#if APPVIEW_PROM_SUPPORT != 0
 enum_map_t formatMap[] = {
     {"statsd",                CFG_FMT_STATSD},
     {"ndjson",                CFG_FMT_NDJSON},
@@ -222,49 +222,49 @@ static char *
 cfgPathSearch(const char* cfgname)
 {
     // in priority order:
-    //   1) $SCOPE_HOME/conf/scope.yml
-    //   2) $SCOPE_HOME/scope.yml
-    //   3) /etc/scope/scope.yml
-    //   4) ~/conf/scope.yml
-    //   5) ~/scope.yml
-    //   6) ./conf/scope.yml
-    //   7) ./scope.yml
+    //   1) $APPVIEW_HOME/conf/appview.yml
+    //   2) $APPVIEW_HOME/appview.yml
+    //   3) /etc/appview/appview.yml
+    //   4) ~/conf/appview.yml
+    //   5) ~/appview.yml
+    //   6) ./conf/appview.yml
+    //   7) ./appview.yml
 
     char path[1024]; // Somewhat arbitrary choice for MAX_PATH
 
     const char *homedir = fullGetEnv("HOME");
-    const char *scope_home = fullGetEnv("SCOPE_HOME");
-    if (scope_home &&
-       (scope_snprintf(path, sizeof(path), "%s/conf/%s", scope_home, cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+    const char *appview_home = fullGetEnv("APPVIEW_HOME");
+    if (appview_home &&
+       (appview_snprintf(path, sizeof(path), "%s/conf/%s", appview_home, cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
-    if (scope_home &&
-       (scope_snprintf(path, sizeof(path), "%s/%s", scope_home, cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+    if (appview_home &&
+       (appview_snprintf(path, sizeof(path), "%s/%s", appview_home, cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
-    if ((scope_snprintf(path, sizeof(path), "/etc/scope/%s", cfgname) > 0 ) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
-    }
-    if (homedir &&
-       (scope_snprintf(path, sizeof(path), "%s/conf/%s", homedir, cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+    if ((appview_snprintf(path, sizeof(path), "/etc/appview/%s", cfgname) > 0 ) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
     if (homedir &&
-       (scope_snprintf(path, sizeof(path), "%s/%s", homedir, cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+       (appview_snprintf(path, sizeof(path), "%s/conf/%s", homedir, cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
-    if ((scope_snprintf(path, sizeof(path), "./conf/%s", cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+    if (homedir &&
+       (appview_snprintf(path, sizeof(path), "%s/%s", homedir, cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
-    if ((scope_snprintf(path, sizeof(path), "./%s", cfgname) > 0) &&
-        !scope_access(path, R_OK)) {
-        return scope_realpath(path, NULL);
+    if ((appview_snprintf(path, sizeof(path), "./conf/%s", cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
+    }
+    if ((appview_snprintf(path, sizeof(path), "./%s", cfgname) > 0) &&
+        !appview_access(path, R_OK)) {
+        return appview_realpath(path, NULL);
     }
 
     return NULL;
@@ -273,23 +273,23 @@ cfgPathSearch(const char* cfgname)
 char *
 cfgPath(void)
 {
-    const char* envPath = fullGetEnv("SCOPE_CONF_PATH");
+    const char* envPath = fullGetEnv("APPVIEW_CONF_PATH");
 
-    // If SCOPE_CONF_PATH is set, and the file can be opened, use it.
+    // If APPVIEW_CONF_PATH is set, and the file can be opened, use it.
     char *path;
-    if (envPath && (path = scope_strdup(envPath))) {
+    if (envPath && (path = appview_strdup(envPath))) {
 
-        FILE *fp = scope_fopen(path, "rb");
+        FILE *fp = appview_fopen(path, "rb");
         if (fp) {
-            scope_fclose(fp);
+            appview_fclose(fp);
             return path;
         }
 
         // Couldn't open the file
-        scope_free(path);
+        appview_free(path);
     }
 
-    // Otherwise, search for scope.yml
+    // Otherwise, search for appview.yml
     return cfgPathSearch(CFG_FILE_NAME);
 }
 
@@ -297,12 +297,12 @@ static void
 processCustomTag(config_t* cfg, const char* e, const char* value)
 {
     char name_buf[1024];
-    scope_strncpy(name_buf, e, sizeof(name_buf));
+    appview_strncpy(name_buf, e, sizeof(name_buf));
 
-    char* name = name_buf + C_STRLEN("SCOPE_TAG_");
+    char* name = name_buf + C_STRLEN("APPVIEW_TAG_");
 
     // convert the "=" to a null delimiter for the name
-    char* end = scope_strchr(name, '=');
+    char* end = appview_strchr(name, '=');
     if (end) {
         *end = '\0';
         cfgCustomTagAddFromStr(cfg, name, value);
@@ -315,7 +315,7 @@ envRegex(void)
 {
     if (g_regex) return g_regex;
 
-    if (!(g_regex = scope_calloc(1, sizeof(regex_t)))) {
+    if (!(g_regex = appview_calloc(1, sizeof(regex_t)))) {
         DBG(NULL);
         return g_regex;
     }
@@ -323,7 +323,7 @@ envRegex(void)
     if (regcomp(g_regex, "\\$[a-zA-Z0-9_]+", REG_EXTENDED)) {
         // regcomp failed.
         DBG(NULL);
-        scope_free(g_regex);
+        appview_free(g_regex);
         g_regex = NULL;
     }
     return g_regex;
@@ -336,7 +336,7 @@ envRegexFree(void** state)
 {
     if (!g_regex) return;
     regfree(g_regex);
-    scope_free(g_regex);
+    appview_free(g_regex);
 }
 
 static char*
@@ -347,8 +347,8 @@ doEnvVariableSubstitution(const char* value)
     regex_t* re = envRegex();
     regmatch_t match = {0};
 
-    int out_size = scope_strlen(value) + 1;
-    char* outval = scope_calloc(1, out_size);
+    int out_size = appview_strlen(value) + 1;
+    char* outval = appview_calloc(1, out_size);
     if (!outval) {
         DBG("%s", value);
         return NULL;
@@ -367,9 +367,9 @@ doEnvVariableSubstitution(const char* value)
 
         if (escaped) {
             // copy the part before the match, except the escape char '\'
-            outptr = scope_stpncpy(outptr, inptr, match.rm_so - 1);
+            outptr = appview_stpncpy(outptr, inptr, match.rm_so - 1);
             // copy the matching env variable name
-            outptr = scope_stpncpy(outptr, &inptr[match.rm_so], match_size);
+            outptr = appview_stpncpy(outptr, &inptr[match.rm_so], match_size);
             // move to the next part of the input value
             inptr = &inptr[match.rm_eo];
             continue;
@@ -377,35 +377,35 @@ doEnvVariableSubstitution(const char* value)
 
         // lookup the part that matched to see if we can substitute it
         char env_name[match_size + 1];
-        scope_strncpy(env_name, &inptr[match.rm_so], match_size);
+        appview_strncpy(env_name, &inptr[match.rm_so], match_size);
         env_name[match_size] = '\0';
         char* env_value = fullGetEnv(&env_name[1]); // offset of 1 skips the $
 
         // Grow outval buffer any time env_value is bigger than env_name
-        int size_growth = (!env_value) ? 0 : scope_strlen(env_value) - match_size;
+        int size_growth = (!env_value) ? 0 : appview_strlen(env_value) - match_size;
         if (size_growth > 0) {
-            char* new_outval = scope_realloc(outval, out_size + size_growth);
+            char* new_outval = appview_realloc(outval, out_size + size_growth);
             if (new_outval) {
                 out_size += size_growth;
                 outptr = new_outval + (outptr - outval);
                 outval = new_outval;
             } else {
                 DBG("%s", value);
-                scope_free(outval);
+                appview_free(outval);
                 return NULL;
             }
         }
 
         // copy the part before the match
-        outptr = scope_stpncpy(outptr, inptr, match.rm_so);
+        outptr = appview_stpncpy(outptr, inptr, match.rm_so);
         // either copy in the env value or the variable that wasn't found
-        outptr = scope_stpcpy(outptr, (env_value) ? env_value : env_name);
+        outptr = appview_stpcpy(outptr, (env_value) ? env_value : env_name);
         // move to the next part of the input value
         inptr = &inptr[match.rm_eo];
     }
 
     // copy whatever is left
-    scope_strcpy(outptr, inptr);
+    appview_strcpy(outptr, inptr);
 
     return outval;
 }
@@ -416,9 +416,9 @@ processCmdDebug(const char* path)
     if (!path || !path[0]) return;
 
     FILE* f;
-    if (!(f = scope_fopen(path, "a"))) return;
+    if (!(f = appview_fopen(path, "a"))) return;
     dbgDumpAll(f);
-    scope_fclose(f);
+    appview_fclose(f);
 }
 
 static void
@@ -430,7 +430,7 @@ processReloadConfig(config_t *cfg, const char* value)
     if (enable == TRUE) {
         char *path = cfgPath();
         cfgSetFromFile(cfg, path);
-        if (path) scope_free(path);
+        if (path) appview_free(path);
     } else {
         cfgSetFromFile(cfg, value);
     }
@@ -462,11 +462,11 @@ processAttach(const char* value)
 }
 
 //
-// An example of this format: SCOPE_STATSD_MAXLEN=1024
+// An example of this format: APPVIEW_STATSD_MAXLEN=1024
 //
-// For completeness, scope env vars that are not processed here:
-//    SCOPE_CONF_PATH (only used on startup to specify cfg file)
-//    SCOPE_HOME      (only used on startup for searching for cfg file)
+// For completeness, appview env vars that are not processed here:
+//    APPVIEW_CONF_PATH (only used on startup to specify cfg file)
+//    APPVIEW_HOME      (only used on startup for searching for cfg file)
 static void
 processEnvStyleInput(config_t *cfg, const char *env_line)
 {
@@ -476,179 +476,179 @@ processEnvStyleInput(config_t *cfg, const char *env_line)
     char *env_name = NULL;
     char *value = NULL;
     char *env_ptr;
-    env_name = scope_strdup(env_line);
+    env_name = appview_strdup(env_line);
     if (!env_name) goto cleanup;
-    if (!(env_ptr = scope_strchr(env_name, '='))) goto cleanup;
+    if (!(env_ptr = appview_strchr(env_name, '='))) goto cleanup;
     *env_ptr = '\0'; // Delimiting env_name
     if (!(value = doEnvVariableSubstitution(&env_ptr[1]))) goto cleanup;
 
-    if (!scope_strcmp(env_name, "SCOPE_METRIC_ENABLE")) {
+    if (!appview_strcmp(env_name, "APPVIEW_METRIC_ENABLE")) {
         cfgMtcEnableSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_FORMAT")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_FORMAT")) {
         cfgMtcFormatSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_STATSD_PREFIX")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_STATSD_PREFIX")) {
         cfgMtcStatsDPrefixSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_STATSD_MAXLEN")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_STATSD_MAXLEN")) {
         cfgMtcStatsDMaxLenSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_SUMMARY_PERIOD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_SUMMARY_PERIOD")) {
         cfgMtcPeriodSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_STATSD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_STATSD")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_STATSD);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_FS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_FS")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_FS);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_NET")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_NET")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_NET);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_HTTP")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_HTTP")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_HTTP);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_DNS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_DNS")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_DNS);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_PROC")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_PROC")) {
         cfgMtcWatchEnableSetFromStr(cfg, value, CFG_MTC_PROC);
-    } else if (!scope_strcmp(env_name, "SCOPE_CMD_DIR")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CMD_DIR")) {
         cfgCmdDirSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CONFIG_EVENT")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CONFIG_EVENT")) {
         cfgConfigEventSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_VERBOSITY")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_VERBOSITY")) {
         cfgMtcVerbositySetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_LOG_LEVEL")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_LOG_LEVEL")) {
         cfgLogLevelSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_DEST")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_DEST")) {
         cfgTransportSetFromStr(cfg, CFG_MTC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_TLS_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_TLS_ENABLE")) {
         cfgTransportTlsEnableSetFromStr(cfg, CFG_MTC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_TLS_VALIDATE_SERVER")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_TLS_VALIDATE_SERVER")) {
         cfgTransportTlsValidateServerSetFromStr(cfg, CFG_MTC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_METRIC_TLS_CA_CERT_PATH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_METRIC_TLS_CA_CERT_PATH")) {
         cfgTransportTlsCACertPathSetFromStr(cfg, CFG_MTC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_LOG_DEST")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_LOG_DEST")) {
         cfgTransportSetFromStr(cfg, CFG_LOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_LOG_TLS_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_LOG_TLS_ENABLE")) {
         cfgTransportTlsEnableSetFromStr(cfg, CFG_LOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_LOG_TLS_VALIDATE_SERVER")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_LOG_TLS_VALIDATE_SERVER")) {
         cfgTransportTlsValidateServerSetFromStr(cfg, CFG_LOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_LOG_TLS_CA_CERT_PATH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_LOG_TLS_CA_CERT_PATH")) {
         cfgTransportTlsCACertPathSetFromStr(cfg, CFG_LOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_PAYLOAD_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_PAYLOAD_ENABLE")) {
         cfgPayEnableSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_PAYLOAD_DIR")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_PAYLOAD_DIR")) {
         cfgPayDirSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CMD_DBG_PATH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CMD_DBG_PATH")) {
         processCmdDebug(value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CONF_RELOAD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CONF_RELOAD")) {
         processReloadConfig(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CMD_ATTACH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CMD_ATTACH")) {
         processAttach(value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_DEST")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_DEST")) {
         cfgTransportSetFromStr(cfg, CFG_CTL, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_TLS_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_TLS_ENABLE")) {
         cfgTransportTlsEnableSetFromStr(cfg, CFG_CTL, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_TLS_VALIDATE_SERVER")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_TLS_VALIDATE_SERVER")) {
         cfgTransportTlsValidateServerSetFromStr(cfg, CFG_CTL, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_TLS_CA_CERT_PATH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_TLS_CA_CERT_PATH")) {
         cfgTransportTlsCACertPathSetFromStr(cfg, CFG_CTL, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_ENABLE")) {
         cfgEvtEnableSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_FORMAT")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_FORMAT")) {
         cfgEventFormatSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_MAXEPS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_MAXEPS")) {
         cfgEvtRateLimitSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_ENHANCE_FS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_ENHANCE_FS")) {
         cfgEnhanceFsSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_ALLOW_BINARY_CONSOLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_ALLOW_BINARY_CONSOLE")) {
         cfgAllowBinaryConsoleSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_LOGFILE_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_LOGFILE_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_FILE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_CONSOLE_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_CONSOLE_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_CONSOLE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_SYSLOG_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_SYSLOG_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_SYSLOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_METRIC_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_METRIC_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_METRIC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_HTTP_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_HTTP_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_HTTP, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_HTTP_HEADER")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_HTTP_HEADER")) {
         cfgEvtFormatHeaderSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_NET_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_NET_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_NET, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_FS_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_FS_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_FS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_DNS_NAME")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_DNS_NAME")) {
         cfgEvtFormatNameFilterSetFromStr(cfg, CFG_SRC_DNS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_LOGFILE_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_LOGFILE_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_FILE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_CONSOLE_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_CONSOLE_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_CONSOLE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_SYSLOG_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_SYSLOG_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_SYSLOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_METRIC_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_METRIC_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_METRIC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_HTTP_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_HTTP_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_HTTP, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_NET_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_NET_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_NET, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_FS_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_FS_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_FS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_DNS_FIELD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_DNS_FIELD")) {
         cfgEvtFormatFieldFilterSetFromStr(cfg, CFG_SRC_DNS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_LOGFILE_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_LOGFILE_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_FILE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_CONSOLE_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_CONSOLE_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_CONSOLE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_SYSLOG_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_SYSLOG_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_SYSLOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_METRIC_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_METRIC_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_METRIC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_HTTP_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_HTTP_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_HTTP, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_NET_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_NET_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_NET, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_FS_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_FS_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_FS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_DNS_VALUE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_DNS_VALUE")) {
         cfgEvtFormatValueFilterSetFromStr(cfg, CFG_SRC_DNS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_LOGFILE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_LOGFILE")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_FILE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_CONSOLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_CONSOLE")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_CONSOLE, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_SYSLOG")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_SYSLOG")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_SYSLOG, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_METRIC")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_METRIC")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_METRIC, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_HTTP")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_HTTP")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_HTTP, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_NET")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_NET")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_NET, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_FS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_FS")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_FS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_EVENT_DNS")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_EVENT_DNS")) {
         cfgEvtFormatSourceEnabledSetFromStr(cfg, CFG_SRC_DNS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_ENABLE")) {
         cfgCriblEnableSetFromStr(cfg, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_TLS_ENABLE")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_TLS_ENABLE")) {
         cfgTransportTlsEnableSetFromStr(cfg, CFG_LS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_TLS_VALIDATE_SERVER")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_TLS_VALIDATE_SERVER")) {
         cfgTransportTlsValidateServerSetFromStr(cfg, CFG_LS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_TLS_CA_CERT_PATH")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_TLS_CA_CERT_PATH")) {
         cfgTransportTlsCACertPathSetFromStr(cfg, CFG_LS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_CLOUD")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_CLOUD")) {
         cfgLogStreamCloudSet(cfg, TRUE);
         cfgTransportSetFromStr(cfg, CFG_LS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL")) {
         cfgLogStreamCloudSet(cfg, FALSE);
         cfgTransportSetFromStr(cfg, CFG_LS, value);
-    } else if (!scope_strcmp(env_name, "SCOPE_CRIBL_AUTHTOKEN")) {
+    } else if (!appview_strcmp(env_name, "APPVIEW_CRIBL_AUTHTOKEN")) {
         cfgAuthTokenSetFromStr(cfg, value);
-    } else if (startsWith(env_name, "SCOPE_TAG_")) {
+    } else if (startsWith(env_name, "APPVIEW_TAG_")) {
         processCustomTag(cfg, env_line, value);
-    } else if (startsWith(env_name, "SCOPE_SNAPSHOT_COREDUMP")) {
+    } else if (startsWith(env_name, "APPVIEW_SNAPSHOT_COREDUMP")) {
         cfgSnapShotCoredumpEnableSetFomStr(cfg, value);
-    }  else if (startsWith(env_name, "SCOPE_SNAPSHOT_BACKTRACE")) {
+    }  else if (startsWith(env_name, "APPVIEW_SNAPSHOT_BACKTRACE")) {
         cfgSnapshotBacktraceEnableSetFomStr(cfg, value);
     }
 
 cleanup:
-    if (value) scope_free(value);
-    if (env_name) scope_free(env_name);
+    if (value) appview_free(value);
+    if (env_name) appview_free(env_name);
 }
 
 
@@ -661,15 +661,15 @@ cfgProcessEnvironment(config_t* cfg)
     char* e = NULL;
     int i = 0;
     while ((e = environ[i++])) {
-        // Everything we care about starts with a capital 'S'.  Skip 
+        // Everything we care about starts with a capital 'A'.  Skip
         // everything else for performance.
-        if (e[0] != 'S') continue;
+        if (e[0] != 'A') continue;
 
         // Some things should only be processed as commands, not as
         // environment variables.  Skip them here.
-        if (startsWith(e, "SCOPE_CMD_DBG_PATH")) continue;
-        if (startsWith(e, "SCOPE_CMD_ATTACH")) continue;
-        if (startsWith(e, "SCOPE_CONF_RELOAD")) continue;
+        if (startsWith(e, "APPVIEW_CMD_DBG_PATH")) continue;
+        if (startsWith(e, "APPVIEW_CMD_ATTACH")) continue;
+        if (startsWith(e, "APPVIEW_CONF_RELOAD")) continue;
 
         // Process everything else.
         processEnvStyleInput(cfg, e);
@@ -684,13 +684,13 @@ cfgProcessCommands(config_t* cfg, FILE* file)
     char *line = NULL;
     size_t len = 0;
 
-    while (scope_getline(&line, &len, file) != -1) {
-        line[scope_strcspn(line, "\r\n")] = '\0'; //overwrite first \r or \n with null
+    while (appview_getline(&line, &len, file) != -1) {
+        line[appview_strcspn(line, "\r\n")] = '\0'; //overwrite first \r or \n with null
         processEnvStyleInput(cfg, line);
         line[0] = '\0';
     }
 
-    if (line) scope_free(line);
+    if (line) appview_free(line);
 }
 
 void
@@ -719,10 +719,10 @@ void
 cfgMtcStatsDMaxLenSetFromStr(config_t* cfg, const char* value)
 {
     if (!cfg || !value) return;
-    scope_errno = 0;
+    appview_errno = 0;
     char* endptr = NULL;
-    unsigned long x = scope_strtoul(value, &endptr, 10);
-    if (scope_errno || *endptr) return;
+    unsigned long x = appview_strtoul(value, &endptr, 10);
+    if (appview_errno || *endptr) return;
 
     cfgMtcStatsDMaxLenSet(cfg, x);
 }
@@ -731,10 +731,10 @@ void
 cfgMtcPeriodSetFromStr(config_t* cfg, const char* value)
 {
     if (!cfg || !value) return;
-    scope_errno = 0;
+    appview_errno = 0;
     char* endptr = NULL;
-    unsigned long x = scope_strtoul(value, &endptr, 10);
-    if (scope_errno || *endptr) return;
+    unsigned long x = appview_strtoul(value, &endptr, 10);
+    if (appview_errno || *endptr) return;
 
     cfgMtcPeriodSet(cfg, x);
 }
@@ -780,10 +780,10 @@ void
 cfgEvtRateLimitSetFromStr(config_t* cfg, const char* value)
 {
     if (!cfg || !value) return;
-    scope_errno = 0;
+    appview_errno = 0;
     char* endptr = NULL;
-    unsigned long x = scope_strtoul(value, &endptr, 10);
-    if (scope_errno || *endptr) return;
+    unsigned long x = appview_strtoul(value, &endptr, 10);
+    if (appview_errno || *endptr) return;
 
     cfgEvtRateLimitSet(cfg, x);
 }
@@ -841,10 +841,10 @@ void
 cfgMtcVerbositySetFromStr(config_t* cfg, const char* value)
 {
     if (!cfg || !value) return;
-    scope_errno = 0;
+    appview_errno = 0;
     char* endptr = NULL;
-    unsigned long x = scope_strtoul(value, &endptr, 10);
-    if (scope_errno || *endptr) return;
+    unsigned long x = appview_strtoul(value, &endptr, 10);
+    if (appview_errno || *endptr) return;
 
     cfgMtcVerbositySet(cfg, x);
 }
@@ -855,17 +855,17 @@ cfgTransportSetFromStr(config_t *cfg, which_transport_t t, const char *value)
     if (!cfg || !value) return;
 
     // see if value starts with udp://, tcp://, file://, unix:// or equals edge
-    if (value == scope_strstr(value, "udp://")) {
+    if (value == appview_strstr(value, "udp://")) {
 
         // copied to avoid directly modifying the process's env variable
         char value_cpy[1024];
-        scope_strncpy(value_cpy, value, sizeof(value_cpy));
+        appview_strncpy(value_cpy, value, sizeof(value_cpy));
 
         char *host = value_cpy + C_STRLEN("udp://");
 
         // convert the ':' to a null delimiter for the host
         // and move port past the null
-        char *port = scope_strrchr(host, ':');
+        char *port = appview_strrchr(host, ':');
         if (!port) return;  // port is *required*
         *port = '\0';
         port++;
@@ -874,17 +874,17 @@ cfgTransportSetFromStr(config_t *cfg, which_transport_t t, const char *value)
         cfgTransportHostSet(cfg, t, host);
         cfgTransportPortSet(cfg, t, port);
 
-    } else if (value == scope_strstr(value, "tcp://")) {
+    } else if (value == appview_strstr(value, "tcp://")) {
 
         // copied to avoid directly modifying the process's env variable
         char value_cpy[1024];
-        scope_strncpy(value_cpy, value, sizeof(value_cpy));
+        appview_strncpy(value_cpy, value, sizeof(value_cpy));
 
         char *host = value_cpy + C_STRLEN("tcp://");
 
         // convert the ':' to a null delimiter for the host
         // and move port past the null
-        char *port = scope_strrchr(host, ':');
+        char *port = appview_strrchr(host, ':');
         if (!port) return;  // port is *required*
         *port = '\0';
         port++;
@@ -893,15 +893,15 @@ cfgTransportSetFromStr(config_t *cfg, which_transport_t t, const char *value)
         cfgTransportHostSet(cfg, t, host);
         cfgTransportPortSet(cfg, t, port);
 
-    } else if (value == scope_strstr(value, "file://")) {
+    } else if (value == appview_strstr(value, "file://")) {
         const char *path = value + C_STRLEN("file://");
         cfgTransportTypeSet(cfg, t, CFG_FILE);
         cfgTransportPathSet(cfg, t, path);
-    } else if (value == scope_strstr(value, "unix://")) {
+    } else if (value == appview_strstr(value, "unix://")) {
         const char *path = value + C_STRLEN("unix://");
         cfgTransportTypeSet(cfg, t, CFG_UNIX);
         cfgTransportPathSet(cfg, t, path);
-    } else if (scope_strncmp(value, "edge", C_STRLEN("edge")) == 0) {
+    } else if (appview_strncmp(value, "edge", C_STRLEN("edge")) == 0) {
         cfgTransportTypeSet(cfg, t, CFG_EDGE);
     }
 }
@@ -1021,7 +1021,7 @@ processKeyValuePair(parse_table_t* t, yaml_node_pair_t* pair, config_t* config, 
     int i;
     for (i=0; t[i].type != YAML_NO_NODE; i++) {
         if ((value->type == t[i].type) &&
-            (!scope_strcmp((char*)key->data.scalar.value, t[i].key))) {
+            (!appview_strcmp((char*)key->data.scalar.value, t[i].key))) {
             t[i].fn(config, doc, value);
             break;
         }
@@ -1033,7 +1033,7 @@ processLevel(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgLogLevelSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1042,7 +1042,7 @@ processTransportType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTypeSet(config, c, strToVal(transportTypeMap, value));
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1051,7 +1051,7 @@ processHost(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportHostSet(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1060,7 +1060,7 @@ processPort(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportPortSet(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1069,7 +1069,7 @@ processPath(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportPathSet(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1078,7 +1078,7 @@ processBuf(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportBufSet(config, c, strToVal(bufferMap, value));
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1087,7 +1087,7 @@ processTlsEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsEnableSetFromStr(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1096,7 +1096,7 @@ processTlsValidate(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsValidateServerSetFromStr(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1105,7 +1105,7 @@ processTlsCaCert(config_t *config, yaml_document_t *doc, yaml_node_t *node)
     char* value = stringVal(node);
     which_transport_t c = transport_context;
     cfgTransportTlsCACertPathSetFromStr(config, c, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1190,7 +1190,7 @@ processCoredump(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgSnapShotCoredumpEnableSetFomStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1198,7 +1198,7 @@ processBacktrace(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgSnapshotBacktraceEnableSetFomStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1234,8 +1234,8 @@ processTags(config_t* config, yaml_document_t* doc, yaml_node_t* node)
         char* value_str = stringVal(value);
 
         cfgCustomTagAddFromStr(config, key_str, value_str);
-        if (key_str) scope_free(key_str);
-        if (value_str) scope_free(value_str);
+        if (key_str) appview_free(key_str);
+        if (value_str) appview_free(value_str);
     }
 }
 
@@ -1244,7 +1244,7 @@ processFormatTypeMetric(config_t* config, yaml_document_t* doc, yaml_node_t* nod
 {
     char* value = stringVal(node);
     cfgMtcFormatSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1252,7 +1252,7 @@ processFormatTypeEvent(config_t* config, yaml_document_t* doc, yaml_node_t* node
 {
     char* value = stringVal(node);
     cfgEventFormatSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1260,7 +1260,7 @@ processFormatMaxEps(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEvtRateLimitSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1268,7 +1268,7 @@ processEnhanceFs(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEnhanceFsSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1276,7 +1276,7 @@ processStatsDPrefix(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcStatsDPrefixSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1284,7 +1284,7 @@ processStatsDMaxLen(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcStatsDMaxLenSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1292,7 +1292,7 @@ processVerbosity(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcVerbositySetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1300,7 +1300,7 @@ processMetricEnable(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcEnableSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1331,12 +1331,12 @@ processMtcWatchType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     metric_watch_t category;
     for(category = CFG_MTC_FS; category <= CFG_MTC_STATSD; ++category) {
-        if (!scope_strcmp(value, mtcWatchTypeMap[category].str)) {
+        if (!appview_strcmp(value, mtcWatchTypeMap[category].str)) {
             cfgMtcWatchEnableSet(config, TRUE, category);
         }
     }
 
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1383,7 +1383,7 @@ processSummaryPeriod(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgMtcPeriodSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1391,7 +1391,7 @@ processCommandDir(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgCmdDirSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1399,7 +1399,7 @@ processConfigEvent(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgConfigEventSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1427,7 +1427,7 @@ processEvtEnable(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     char* value = stringVal(node);
     cfgEvtEnableSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1456,7 +1456,7 @@ processEvtWatchType(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* value = stringVal(node);
     watch_context = strToVal(watchTypeMap, value);
     cfgEvtFormatSourceEnabledSet(config, watch_context, 1);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1466,7 +1466,7 @@ processEvtWatchName(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatNameFilterSetFromStr(config, watch_context, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1476,7 +1476,7 @@ processEvtWatchField(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatFieldFilterSetFromStr(config, watch_context, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1486,7 +1486,7 @@ processEvtWatchValue(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 
     char* value = stringVal(node);
     cfgEvtFormatValueFilterSetFromStr(config, watch_context, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1503,7 +1503,7 @@ processEvtWatchHeader(config_t *config, yaml_document_t *doc, yaml_node_t *node)
         yaml_node_t *node = yaml_document_get_node(doc, *item);
         char *value = stringVal(node);
         cfgEvtFormatHeaderSet(config, value);
-        if (value) scope_free(value);
+        if (value) appview_free(value);
     }
 }
 
@@ -1514,7 +1514,7 @@ processEvtWatchBinary(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 
     char* value = stringVal(node);
     cfgAllowBinaryConsoleSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static int
@@ -1522,7 +1522,7 @@ isWatchType(yaml_document_t* doc, yaml_node_pair_t* pair)
 {
     yaml_node_t* key = yaml_document_get_node(doc, pair->key);
     if (!key || (key->type != YAML_SCALAR_NODE)) return 0;
-    return !scope_strcmp((char*)key->data.scalar.value, TYPE_NODE);
+    return !appview_strcmp((char*)key->data.scalar.value, TYPE_NODE);
 }
 
 static void
@@ -1602,7 +1602,7 @@ processEvent(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 }
 
 static void
-processLibscope(config_t* config, yaml_document_t* doc, yaml_node_t* node)
+processLibappview(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_MAPPING_NODE) return;
 
@@ -1626,7 +1626,7 @@ processPayloadEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgPayEnableSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1634,7 +1634,7 @@ processPayloadDir(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgPayDirSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1659,7 +1659,7 @@ processCriblEnable(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char *value = stringVal(node);
     cfgCriblEnableSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1674,7 +1674,7 @@ processAuthToken(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     char* value = stringVal(node);
     cfgAuthTokenSetFromStr(config, value);
-    if (value) scope_free(value);
+    if (value) appview_free(value);
 }
 
 static void
@@ -1699,7 +1699,7 @@ static void
 processProtocolName(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE || !protocol_context) return;
-    if (protocol_context->protname) scope_free(protocol_context->protname);
+    if (protocol_context->protname) appview_free(protocol_context->protname);
     protocol_context->protname = stringVal(node);
 }
 
@@ -1707,7 +1707,7 @@ static void
 processProtocolRegex(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE || !protocol_context) return;
-    if (protocol_context->regex) scope_free(protocol_context->regex);
+    if (protocol_context->regex) appview_free(protocol_context->regex);
     protocol_context->regex = stringVal(node);
 }
 
@@ -1718,7 +1718,7 @@ processProtocolBinary(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->binary = iVal;
-    if (sVal) scope_free(sVal);
+    if (sVal) appview_free(sVal);
 }
 
 static void
@@ -1727,10 +1727,10 @@ processProtocolLen(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     if (node->type != YAML_SCALAR_NODE || !protocol_context) return;
     char *sVal = stringVal(node);
     char *endInt = NULL;
-    scope_errno = 0;
-    unsigned long iVal = scope_strtoul(sVal, &endInt, 10);
-    if (!scope_errno && !*endInt) protocol_context->len = iVal;
-    if (sVal) scope_free(sVal);
+    appview_errno = 0;
+    unsigned long iVal = appview_strtoul(sVal, &endInt, 10);
+    if (!appview_errno && !*endInt) protocol_context->len = iVal;
+    if (sVal) appview_free(sVal);
 }
 
 static void
@@ -1740,7 +1740,7 @@ processProtocolDetect(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->detect = iVal;
-    if (sVal) scope_free(sVal);
+    if (sVal) appview_free(sVal);
 }
 
 static void
@@ -1750,7 +1750,7 @@ processProtocolPayload(config_t* config, yaml_document_t* doc, yaml_node_t* node
     char* sVal = stringVal(node);
     unsigned iVal = strToVal(boolMap, sVal);
     if (iVal <= 1) protocol_context->payload = iVal;
-    if (sVal) scope_free(sVal);
+    if (sVal) appview_free(sVal);
 }
 
 static void
@@ -1758,7 +1758,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     // protocol entries must be key/value maps
     if (node->type != YAML_MAPPING_NODE) {
-        scopeLogWarn("WARN: ignoring non-map protocol entry\n");
+        appviewLogWarn("WARN: ignoring non-map protocol entry\n");
         return;
     }
 
@@ -1769,7 +1769,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     }
 
     // protocol object to populate
-    protocol_context = scope_calloc(1, sizeof(protocol_def_t));
+    protocol_context = appview_calloc(1, sizeof(protocol_def_t));
     if (!protocol_context) {
         DBG(NULL);
         return;
@@ -1795,7 +1795,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     if (!protocol_context->protname || !protocol_context->regex) {
         destroyProtEntry(protocol_context);
         protocol_context = NULL;
-        scopeLogWarn("WARN: ignoring protocol entry missing name or regex\n");
+        appviewLogWarn("WARN: ignoring protocol entry missing name or regex\n");
         return;
     }
 
@@ -1807,7 +1807,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
             PCRE2_ZERO_TERMINATED, 0,
             &errornumber, &erroroffset, NULL);
     if (!protocol_context->re) {
-        scopeLogWarn("WARN: invalid regex for \"%s\" protocol entry; %s\n",
+        appviewLogWarn("WARN: invalid regex for \"%s\" protocol entry; %s\n",
                  protocol_context->protname, protocol_context->regex);
         destroyProtEntry(protocol_context);
         protocol_context = NULL;
@@ -1817,7 +1817,7 @@ processProtocolEntry(config_t* config, yaml_document_t* doc, yaml_node_t* node)
     // replace if name matches existing entry
     for (list_key_t key = 0; key <= g_prot_sequence; ++key) {
         protocol_def_t *found = lstFind(g_protlist, key);
-        if (found && !scope_strcmp(protocol_context->protname, found->protname)) {
+        if (found && !appview_strcmp(protocol_context->protname, found->protname)) {
             protocol_context->type = key;
             if (!lstDelete(g_protlist, key)) {
                 DBG(NULL);
@@ -1859,48 +1859,48 @@ static void
 processCustomFilterProcname(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar procname value\n");
+        appviewLogWarn("WARN: non-scalar procname value\n");
         custom_matched = FALSE;
         return;
     }
 
     char *valueStr = stringVal(node);
-    if (valueStr && !scope_strcmp(valueStr, g_proc.procname)) {
+    if (valueStr && !appview_strcmp(valueStr, g_proc.procname)) {
         ++custom_match_count;
-        scope_free(valueStr);
+        appview_free(valueStr);
         return;
     }
 
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
 processCustomFilterArg(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar arg value\n");
+        appviewLogWarn("WARN: non-scalar arg value\n");
         custom_matched = FALSE;
         return;
     }
 
     char *valueStr = stringVal(node);
-    if (valueStr && scope_strstr(g_proc.cmd, valueStr)) {
+    if (valueStr && appview_strstr(g_proc.cmd, valueStr)) {
         ++custom_match_count;
-        scope_free(valueStr);
+        appview_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
 processCustomFilterHostname(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar hostname value\n");
+        appviewLogWarn("WARN: non-scalar hostname value\n");
         custom_matched = FALSE;
         return;
     }
@@ -1908,77 +1908,77 @@ processCustomFilterHostname(config_t* config, yaml_document_t* doc, yaml_node_t*
     // Note hostname are not case sensitive so unlike other filters, this is a
     // case-insensitive comparison.
     char *valueStr = stringVal(node);
-    if (valueStr && !scope_strcasecmp(valueStr, g_proc.hostname)) {
+    if (valueStr && !appview_strcasecmp(valueStr, g_proc.hostname)) {
         ++custom_match_count;
-        scope_free(valueStr);
+        appview_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
 processCustomFilterUsername(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar username value\n");
+        appviewLogWarn("WARN: non-scalar username value\n");
         custom_matched = FALSE;
         return;
     }
 
     char *valueStr = stringVal(node);
     struct passwd *pw = getpwuid(g_proc.uid);
-    if (valueStr && pw && !scope_strcmp(valueStr, pw->pw_name)) {
+    if (valueStr && pw && !appview_strcmp(valueStr, pw->pw_name)) {
         ++custom_match_count;
-        scope_free(valueStr);
+        appview_free(valueStr);
         return;
     }
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
 processCustomFilterEnv(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar env value\n");
+        appviewLogWarn("WARN: non-scalar env value\n");
         custom_matched = FALSE;
         return;
     }
 
     char *valueStr = stringVal(node);
     if (valueStr) {
-        char *equal = scope_strchr(valueStr, '=');
+        char *equal = appview_strchr(valueStr, '=');
         if (equal) *equal = '\0';
         char *envName = valueStr;
         char *envVal = equal ? equal+1 : NULL;
         char *env = fullGetEnv(envName);
         if (env) {
             if (envVal) {
-                if (!scope_strcmp(env, envVal)) {
+                if (!appview_strcmp(env, envVal)) {
                     ++custom_match_count;
-                    scope_free(valueStr);
+                    appview_free(valueStr);
                     return;
                 }
             } else {
                 ++custom_match_count;
-                scope_free(valueStr);
+                appview_free(valueStr);
                 return;
             }
         }
     }
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
 processCustomFilterAncestor(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     if (node->type != YAML_SCALAR_NODE) {
-        scopeLogWarn("WARN: non-scalar ancestor value\n");
+        appviewLogWarn("WARN: non-scalar ancestor value\n");
         custom_matched = FALSE;
         return;
     }
@@ -1988,13 +1988,13 @@ processCustomFilterAncestor(config_t* config, yaml_document_t* doc, yaml_node_t*
         pid_t ppid = g_proc.ppid;
         while (ppid > 1) {
             char buf[PATH_MAX];
-            if (scope_snprintf(buf, sizeof(buf), "/proc/%d/exe", ppid) < 0) {
+            if (appview_snprintf(buf, sizeof(buf), "/proc/%d/exe", ppid) < 0) {
                 DBG(NULL);
                 break;
             }
 
             char exe[PATH_MAX];
-            ssize_t exeLen = scope_readlink(buf, exe, sizeof(exe));
+            ssize_t exeLen = appview_readlink(buf, exe, sizeof(exe));
             if (exeLen <= 0) {
                 DBG(NULL);
                 break;
@@ -2002,37 +2002,37 @@ processCustomFilterAncestor(config_t* config, yaml_document_t* doc, yaml_node_t*
             exe[exeLen] = '\0';
 
             char* name = exe;
-            name = scope_basename(exe);
-            if (!scope_strcmp(valueStr, name)) {
+            name = appview_basename(exe);
+            if (!appview_strcmp(valueStr, name)) {
                 ++custom_match_count;
-                scope_free(valueStr);
+                appview_free(valueStr);
                 return;
             }
 
-            if (scope_snprintf(buf, sizeof(buf), "/proc/%d/stat", ppid) < 0) {
+            if (appview_snprintf(buf, sizeof(buf), "/proc/%d/stat", ppid) < 0) {
                 DBG(NULL);
                 break;
             }
-            int fd = scope_open(buf, O_RDONLY);
+            int fd = appview_open(buf, O_RDONLY);
             if (fd == -1) {
                 DBG(NULL);
                 break;
             }
-            if (scope_read(fd, buf, sizeof(buf)) <= 0) { 
+            if (appview_read(fd, buf, sizeof(buf)) <= 0) { 
                 DBG(NULL);
-                scope_close(fd);
+                appview_close(fd);
                 break;
             }
-            scope_strtok(buf,  " ");              // (1) pid   %d
-            scope_strtok(NULL, " ");              // (2) comm  %s
-            scope_strtok(NULL, " ");              // (3) state %s
-            ppid = scope_atoi(scope_strtok(NULL, " ")); // (4) ppid  %d
-            scope_close(fd);
+            appview_strtok(buf,  " ");              // (1) pid   %d
+            appview_strtok(NULL, " ");              // (2) comm  %s
+            appview_strtok(NULL, " ");              // (3) state %s
+            ppid = appview_atoi(appview_strtok(NULL, " ")); // (4) ppid  %d
+            appview_close(fd);
         }
     }
 
     custom_matched = FALSE;
-    if (valueStr) scope_free(valueStr);
+    if (valueStr) appview_free(valueStr);
 }
 
 static void
@@ -2063,7 +2063,7 @@ processCustomConfig(config_t* config, yaml_document_t* doc, yaml_node_t* node)
 {
     // All filters have to match and there must be more than one filter
     if (!custom_matched || !custom_match_count) {
-        scopeLogInfo("INFO: skipping custom config\n");
+        appviewLogInfo("INFO: skipping custom config\n");
         return;
     }
 
@@ -2077,7 +2077,7 @@ processCustomEntry(config_t* config, yaml_document_t* doc, yaml_node_pair_t* pai
     yaml_node_t* node = yaml_document_get_node(doc, pair->value);
 
     if (node->type != YAML_MAPPING_NODE) {
-        scopeLogWarn("WARN: ignoring non-map custom entry\n");
+        appviewLogWarn("WARN: ignoring non-map custom entry\n");
         return;
     }
 
@@ -2113,7 +2113,7 @@ processRoot(config_t *config, yaml_document_t *doc, yaml_node_t *node)
 {
     parse_table_t t[] = {
         {YAML_MAPPING_NODE,  METRIC_NODE,   processMetric},
-        {YAML_MAPPING_NODE,  LIBSCOPE_NODE, processLibscope},
+        {YAML_MAPPING_NODE,  LIBAPPVIEW_NODE, processLibappview},
         {YAML_MAPPING_NODE,  PAYLOAD_NODE,  processPayload},
         {YAML_MAPPING_NODE,  EVENT_NODE,    processEvent},
         {YAML_MAPPING_NODE,  CRIBL_NODE,    processCribl},
@@ -2159,7 +2159,7 @@ cfgSetFromFile(config_t *config, const char* path)
 
     if (!config) goto cleanup;
     if (!path) goto cleanup;
-    fp = scope_fopen(path, "rb");
+    fp = appview_fopen(path, "rb");
     if (!fp) goto cleanup;
 
     parser_successful = yaml_parser_initialize(&parser);
@@ -2176,7 +2176,7 @@ cfgSetFromFile(config_t *config, const char* path)
 cleanup:
     if (doc_successful) yaml_document_delete(&doc);
     if (parser_successful) yaml_parser_delete(&parser);
-    if (fp) scope_fclose(fp);
+    if (fp) appview_fclose(fp);
 }
 
 config_t *
@@ -2196,7 +2196,7 @@ cfgFromString(const char* string)
     parser_successful = yaml_parser_initialize(&parser);
     if (!parser_successful) goto cleanup;
 
-    yaml_parser_set_input_string(&parser, (unsigned char*)string, scope_strlen(string));
+    yaml_parser_set_input_string(&parser, (unsigned char*)string, appview_strlen(string));
 
     doc_successful = yaml_parser_load(&parser, &doc);
     if (!doc_successful) goto cleanup;
@@ -2570,7 +2570,7 @@ err:
 }
 
 static cJSON*
-createLibscopeJson(config_t* cfg)
+createLibappviewJson(config_t* cfg)
 {
     cJSON *root = NULL;
     cJSON *log;
@@ -2672,15 +2672,15 @@ cJSON*
 jsonObjectFromCfg(config_t* cfg)
 {
     cJSON *json_root = NULL;
-    cJSON *metric, *libscope, *event, *payload, *tags, *protocol, *cribl;
+    cJSON *metric, *libappview, *event, *payload, *tags, *protocol, *cribl;
 
     if (!(json_root = cJSON_CreateObject())) goto err;
 
     if (!(metric = createMetricJson(cfg))) goto err;
     cJSON_AddItemToObjectCS(json_root, METRIC_NODE, metric);
 
-    if (!(libscope = createLibscopeJson(cfg))) goto err;
-    cJSON_AddItemToObjectCS(json_root, LIBSCOPE_NODE, libscope);
+    if (!(libappview = createLibappviewJson(cfg))) goto err;
+    cJSON_AddItemToObjectCS(json_root, LIBAPPVIEW_NODE, libappview);
 
     if (!(event = createEventJson(cfg))) goto err;
     cJSON_AddItemToObjectCS(json_root, EVENT_NODE, event);
@@ -2906,7 +2906,7 @@ initCtl(config_t *cfg)
  * - include the abbreviated json header for payloads
  * - set metrics to use ndjson
  * - increase log level to warning if set to none or error
- * - set configevent (SCOPE_CONFIG_EVENT) to true
+ * - set configevent (APPVIEW_CONFIG_EVENT) to true
  *
  * all else reflects the rules file, config file, and env vars
  */
@@ -2915,7 +2915,7 @@ cfgLogStreamDefault(config_t *cfg)
 {
     if (!cfg || (cfgLogStreamEnable(cfg) == FALSE)) return -1;
 
-    scope_snprintf(g_logmsg, sizeof(g_logmsg), DEFAULT_LOGSTREAM_LOGMSG);
+    appview_snprintf(g_logmsg, sizeof(g_logmsg), DEFAULT_LOGSTREAM_LOGMSG);
 
     cfg_transport_t ls_type = cfgTransportType(cfg, CFG_LS);
 
@@ -2951,17 +2951,17 @@ cfgLogStreamDefault(config_t *cfg)
     cfgTransportTypeSet(cfg, CFG_CTL, type);
 
     if (cfgMtcFormat(cfg) != TRUE) {
-        scope_strncat(g_logmsg, "Metrics format, ", 20);
+        appview_strncat(g_logmsg, "Metrics format, ", 20);
     }
     cfgMtcFormatSet(cfg, CFG_FMT_NDJSON);
 
     if (cfgLogLevel(cfg) > CFG_LOG_WARN ) {
-        scope_strncat(g_logmsg, "Log level, ", 20);
+        appview_strncat(g_logmsg, "Log level, ", 20);
         cfgLogLevelSet(cfg, CFG_LOG_WARN);
     }
 
     if (!cfgSendProcessStartMsg(cfg)) {
-        scope_strncat(g_logmsg, "Send proc start msg, ", 25);
+        appview_strncat(g_logmsg, "Send proc start msg, ", 25);
         cfgSendProcessStartMsgSet(cfg, TRUE);
     }
 
@@ -2975,7 +2975,7 @@ singleChannelSet(ctl_t *ctl, mtc_t *mtc)
 
     // if any logs created during cfg send now
     if (g_logmsg[0] != '\0') {
-        scopeLogWarn("%s", g_logmsg);
+        appviewLogWarn("%s", g_logmsg);
     }
 
     transport_t *trans = ctlTransport(ctl, CFG_CTL);
@@ -2994,9 +2994,9 @@ destroyProtEntry(void *data)
 
     protocol_def_t *pre = data;
     if (pre->re) pcre2_code_free(pre->re);
-    if (pre->regex) scope_free(pre->regex);
-    if (pre->protname) scope_free(pre->protname);
-    scope_free(pre);
+    if (pre->regex) appview_free(pre->regex);
+    if (pre->protname) appview_free(pre->protname);
+    appview_free(pre);
 }
 
 // Rules Configuration
@@ -3004,29 +3004,29 @@ destroyProtEntry(void *data)
 /*
 These rules describe which (if any) rules file is used.
 In order described here, the first true statement wins.
-- If the env variable SCOPE_RULES exists, and it's value is a path to a
+- If the env variable APPVIEW_RULES exists, and it's value is a path to a
     file that can be read
-- If the env variable CRIBL_HOME exists, and $CRIBL_HOME/appscope/scope_rules 
+- If the env variable CRIBL_HOME exists, and $CRIBL_HOME/appview/appview_rules 
     is a path to a file that can be read
-- If the file /usr/lib/appscope/scope_rules exists and can be read
+- If the file /usr/lib/appview/appview_rules exists and can be read
 
 Rules regarding the rules file:
 o) If the rules file exists, but contains any invalid (unparseable) yaml,
-   no processes will be scoped by the rules feature
-o) If the env variable SCOPE_RULES exists with a value of "false",
-   no processes will be scoped by the rules feature
+   no processes will be viewed by the rules feature
+o) If the env variable APPVIEW_RULES exists with a value of "false",
+   no processes will be viewed by the rules feature
 o) If the env variable CRIBL_HOME exists but no rules file is found in
-   $CRIBL_HOME/appscope/scope_rules,
-   no processes will be scoped by the rules feature
+   $CRIBL_HOME/appview/appview_rules,
+   no processes will be viewed by the rules feature
 o) If a rules file is not found,
-   no processes will be scoped by the rules feature
+   no processes will be viewed by the rules feature
 
 Rules regarding some of the content of the rules file:
 o) The allow list and deny list are made of a ordered sequence of rules
 o) For the allow list, each rules has these fields: procname, arg, and config
 o) For the deny list, each rules has a procname and arg field
 o) Extra valid (parseable) yaml is allowed anywhere in the rules file,
-   but will be ignored by AppScope
+   but will be ignored by AppView
 
 Definition of what it means to match a rule:
 o) By “the process matches the rules", we mean that the one or more
@@ -3039,16 +3039,16 @@ o) By “the process matches the rules", we mean that the one or more
   (See "Example of _MatchAll_ syntax" comment below)
 
 When a valid, parseable rules file is found, it controls which processes
-will be scoped:
+will be viewed:
 o) If a process does not match any allow list rules,
-   it will not be scoped by the rules feature
+   it will not be viewed by the rules feature
 o) If a process matches any rules in the deny list,
-   it will not be scoped by the rules feature
+   it will not be viewed by the rules feature
 o) If a process matches any rules in the allow list, and
    does not match any rules in the deny list,
-   it will be scoped by the rules feature.
+   it will be viewed by the rules feature.
 o) For clarity, if a process matches both the allow list and deny list,
-   it will not be scoped by the rules feature.
+   it will not be viewed by the rules feature.
 
 How configuration is determined:
 o) Default values are used for initial values of the configuration
@@ -3070,7 +3070,7 @@ except that log level will be set to error.
 allow:
 - procname: _MatchAll_
   config:
-    libscope:
+    libappview:
       log:
         level: error
 */
@@ -3097,7 +3097,7 @@ typedef struct {
     const char *procName;    // process name which be searched in the rules file
     const char *procCmdLine; // process command line which be searched in the rules file
     proc_status  status;     // status describes the presence of the process on list
-    config_t *cfg;           // configuration for the scope list
+    config_t *cfg;           // configuration for the appview list
     bool rulesMatch;        // flag indicate that cfg should be parsed for the process
 } rules_cfg_t;
 
@@ -3133,7 +3133,7 @@ processKeyValuePairRules(yaml_document_t *doc, yaml_node_pair_t *pair, const par
     */
     for (int i = 0; fEntry[i].type != YAML_NO_NODE; ++i) {
         if ((nodeValue->type == fEntry[i].type) &&
-            (!scope_strcmp((char*)nodeKey->data.scalar.value, fEntry[i].key))) {
+            (!appview_strcmp((char*)nodeKey->data.scalar.value, fEntry[i].key))) {
             fEntry[i].fn(doc, nodeValue, extData);
             break;
         }
@@ -3155,7 +3155,7 @@ processKeyValuePairRulesUnixPathData(yaml_document_t *doc, yaml_node_pair_t *pai
     */
     for (int i = 0; fEntry[i].type != YAML_NO_NODE; ++i) {
         if ((nodeValue->type == fEntry[i].type) &&
-            (!scope_strcmp((char*)nodeKey->data.scalar.value, fEntry[i].key))) {
+            (!appview_strcmp((char*)nodeKey->data.scalar.value, fEntry[i].key))) {
                 fEntry[i].fn(doc, nodeValue, unixPath);
                 break;
         }
@@ -3172,8 +3172,8 @@ processAllowProcNameScalar(yaml_document_t *doc, yaml_node_t *node, void *extDat
     rules_cfg_t *fCfg = (rules_cfg_t *)extData;
 
     const char *procname = (const char *)node->data.scalar.value;
-    if (!scope_strcmp(fCfg->procName, procname) ||
-        !scope_strcmp(MATCH_ALL_VAL, procname)) {
+    if (!appview_strcmp(fCfg->procName, procname) ||
+        !appview_strcmp(MATCH_ALL_VAL, procname)) {
         fCfg->status = PROC_ALLOWED;
         fCfg->rulesMatch = TRUE;
     }
@@ -3188,7 +3188,7 @@ processEntryIsNotEmpty(yaml_document_t *doc, yaml_node_t *node, void *extData) {
 
     const char *value = (const char *)node->data.scalar.value;
     bool *status = (bool *)extData;
-    if (scope_strlen(value) > 0) {
+    if (appview_strlen(value) > 0) {
         *status = TRUE;
     }
 }
@@ -3202,8 +3202,8 @@ processAllowProcCmdLineScalar(yaml_document_t *doc, yaml_node_t *node, void *ext
 
     rules_cfg_t *fCfg = (rules_cfg_t *)extData;
     const char *cmdline = (const char *)node->data.scalar.value;
-    if (scope_strlen(cmdline) > 0) { // an arg is specified in the rules file
-        if (scope_strstr(fCfg->procCmdLine, cmdline) || !scope_strcmp(MATCH_ALL_VAL, cmdline)) {
+    if (appview_strlen(cmdline) > 0) { // an arg is specified in the rules file
+        if (appview_strstr(fCfg->procCmdLine, cmdline) || !appview_strcmp(MATCH_ALL_VAL, cmdline)) {
             fCfg->status = PROC_ALLOWED;
             fCfg->rulesMatch = TRUE;
         } else {
@@ -3300,8 +3300,8 @@ processDenyProcNameScalar(yaml_document_t *doc, yaml_node_t *node, void *extData
     rules_cfg_t *fCfg = (rules_cfg_t *)extData;
 
     const char *procname = (const char *)node->data.scalar.value;
-    if (!scope_strcmp(fCfg->procName, procname) ||
-        !scope_strcmp(MATCH_ALL_VAL, procname)) {
+    if (!appview_strcmp(fCfg->procName, procname) ||
+        !appview_strcmp(MATCH_ALL_VAL, procname)) {
         fCfg->status = PROC_DENIED;
     }
 }
@@ -3316,9 +3316,9 @@ processDenyProcCmdLineScalar(yaml_document_t *doc, yaml_node_t *node, void *extD
     rules_cfg_t *fCfg = (rules_cfg_t *)extData;
 
     const char *cmdline = (const char *)node->data.scalar.value;
-    if ((scope_strlen(cmdline) > 0) &&
-        (scope_strstr(fCfg->procCmdLine, cmdline)
-          || !scope_strcmp(MATCH_ALL_VAL, cmdline))) {
+    if ((appview_strlen(cmdline) > 0) &&
+        (appview_strstr(fCfg->procCmdLine, cmdline)
+          || !appview_strcmp(MATCH_ALL_VAL, cmdline))) {
         fCfg->status = PROC_DENIED;
     }
 }
@@ -3358,8 +3358,8 @@ processUnixSocketPathNode(yaml_document_t* doc, yaml_node_t* node, char **unixPa
 
     const char *unixCfgPath = (const char *)node->data.scalar.value;
 
-    if (scope_strlen(unixCfgPath) > 0) {
-        *unixPath = scope_strdup(unixCfgPath);
+    if (appview_strlen(unixCfgPath) > 0) {
+        *unixPath = appview_strdup(unixCfgPath);
     }
 }
 
@@ -3394,7 +3394,7 @@ processRulesRootNode(yaml_document_t *doc, void *extData) {
 
     yaml_node_pair_t *pair;
     // process allow before deny so deny "overrides" allow
-    // if a process appears in both, it should not be scoped
+    // if a process appears in both, it should not be viewed
     parse_rules_table_t allow[] = {
         {YAML_SEQUENCE_NODE, ALLOW_NODE, processAllowSeq},
         {YAML_NO_NODE,       NULL,       NULL}
@@ -3461,7 +3461,7 @@ processRulesSourceSection(yaml_document_t *doc, char **unixPath) {
 }
 
 /*
- * Parse scope rules file
+ * Parse appview rules file
  *
  * Returns TRUE if rules file was successfully parsed, FALSE otherwise
  */
@@ -3472,7 +3472,7 @@ rulesParseFile(const char* rulesPath, rules_cfg_t *fCfg) {
     yaml_parser_t parser;
     yaml_document_t doc;
 
-    if ((fs = scope_fopen(rulesPath, "rb")) == NULL) {
+    if ((fs = appview_fopen(rulesPath, "rb")) == NULL) {
         return status;
     }
 
@@ -3498,13 +3498,13 @@ cleanup_parser:
     yaml_parser_delete(&parser);
 
 cleanup_rules_file:
-    scope_fclose(fs);
+    appview_fclose(fs);
 
     return status;
 }
 
 /*
- * Verify against rules file if specifc process command should be scoped.
+ * Verify against rules file if specifc process command should be viewed.
  */
 rules_status_t
 cfgRulesStatus(const char *procName, const char *procCmdLine, const char *rulesPath, config_t *cfg)
@@ -3515,10 +3515,10 @@ cfgRulesStatus(const char *procName, const char *procCmdLine, const char *rulesP
     }
 
     /*
-    *  If the rules file is missing (NULL) we scope every process
+    *  If the rules file is missing (NULL) we appview every process
     */
     if (rulesPath == NULL) {
-        return RULES_SCOPED;
+        return RULES_APPVIEWD;
     }
 
     rules_cfg_t fCfg = {.procName = procName,
@@ -3534,9 +3534,9 @@ cfgRulesStatus(const char *procName, const char *procCmdLine, const char *rulesP
     switch (fCfg.status) {
         case PROC_NOT_FOUND:
         case PROC_DENIED:
-            return RULES_NOT_SCOPED;
+            return RULES_NOT_APPVIEWD;
         case PROC_ALLOWED:
-            return RULES_SCOPED_WITH_CFG;
+            return RULES_APPVIEWD_WITH_CFG;
     }
 
     DBG(NULL);
@@ -3547,29 +3547,29 @@ const char *
 cfgRulesFilePath(void)
 {
     char *rulesFilePath = NULL;
-    char *envRulesVal = getenv("SCOPE_RULES");
+    char *envRulesVal = getenv("APPVIEW_RULES");
 //    const char *criblHome = getenv("CRIBL_HOME");
 //    char criblRulesPath[PATH_MAX];
 
     if (envRulesVal) {
-        if (!scope_strcmp(envRulesVal, "false")) {
-            // SCOPE_RULES is false (use of rules file is disabled)
+        if (!appview_strcmp(envRulesVal, "false")) {
+            // APPVIEW_RULES is false (use of rules file is disabled)
             rulesFilePath = NULL;
-        } else if (!scope_access(envRulesVal, R_OK)) {
-            // SCOPE_RULES contains the path to a rules file.
+        } else if (!appview_access(envRulesVal, R_OK)) {
+            // APPVIEW_RULES contains the path to a rules file.
             rulesFilePath = envRulesVal;
         }
 //    } else if (criblHome) {
 //        // If $CRIBL_HOME is set, only look for a rules file there instead
-//        if (scope_snprintf(criblRulesPath, sizeof(criblRulesPath), "%s/appscope/scope_rules", criblHome) == -1) {
-//            scopeLogError("snprintf");
+//        if (appview_snprintf(criblRulesPath, sizeof(criblRulesPath), "%s/appview/appview_rules", criblHome) == -1) {
+//            appviewLogError("snprintf");
 //        }
-//        if (!scope_access(criblRulesPath, R_OK)) {
+//        if (!appview_access(criblRulesPath, R_OK)) {
 //            rulesFilePath = criblRulesPath;
 //        }
-    } else if (!scope_access(SCOPE_RULES_USR_PATH, R_OK)) {
+    } else if (!appview_access(APPVIEW_RULES_USR_PATH, R_OK)) {
         // rules file was at first default location
-        rulesFilePath = SCOPE_RULES_USR_PATH;
+        rulesFilePath = APPVIEW_RULES_USR_PATH;
     }
 
     // check if rules file can actually be used
@@ -3583,14 +3583,14 @@ cfgRulesFilePath(void)
 /*
  * Returns the UNIX socket path defined in the rules file's "source" section.
  * The "source" section is an optional section that contains additional
- * information. AppScope utilizes it to retrieve information about the
+ * information. AppView utilizes it to retrieve information about the
  * UNIX path ("unixSocketPath"), which can be used as the receiver point for
- * AppScope data.
+ * AppView data.
  * One example of an application that generates the rules file with proper
  * "source" data is Edge (https://cribl.io/edge/).
  * 
- * Memory for the UNIX socket path is obtained with scope_strdup and can
- * be freed with scope_free.
+ * Memory for the UNIX socket path is obtained with appview_strdup and can
+ * be freed with appview_free.
 */
 char *
 cfgRulesUnixPath(void) {
@@ -3601,7 +3601,7 @@ cfgRulesUnixPath(void) {
         return unixPath;
     }
 
-    FILE *fp = scope_fopen(rulesPath, "rb");
+    FILE *fp = appview_fopen(rulesPath, "rb");
     if (!fp) {
         return unixPath;
     }
@@ -3624,9 +3624,9 @@ cfgRulesUnixPath(void) {
     * Extract the unixSocketPath from rules file
     *
     "source": {
-      "id": "in_appscope",
+      "id": "in_appview",
       "enableUnixPath": true,
-      "unixSocketPath": "/opt/cribl/state/appscope.sock",
+      "unixSocketPath": "/opt/cribl/state/appview.sock",
       "tls": {
         "disabled": true
       },
@@ -3640,7 +3640,7 @@ cfgRulesUnixPath(void) {
 
     // Do we want a log message if there's an issue here?
     if (unixPath) {
-        unixPath = scope_dirname(unixPath);
+        unixPath = appview_dirname(unixPath);
     }
 
     yaml_document_delete(&doc);
@@ -3649,7 +3649,7 @@ cleanup_parser:
     yaml_parser_delete(&parser);
 
 cleanup_rules_file:
-    scope_fclose(fp);
+    appview_fclose(fp);
 
     return unixPath;
 }
@@ -3666,7 +3666,7 @@ cfgRulesFileIsValid(const char *rulesPath) {
     bool status = FALSE;
     bool res;
 
-    if ((fs = scope_fopen(rulesPath, "rb")) == NULL) {
+    if ((fs = appview_fopen(rulesPath, "rb")) == NULL) {
         return status;
     }
 
@@ -3690,7 +3690,7 @@ cleanup_parser:
     yaml_parser_delete(&parser);
 
 cleanup_rules_file:
-    scope_fclose(fs);
+    appview_fclose(fs);
 
     return status;
 }

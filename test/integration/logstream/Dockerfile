@@ -15,16 +15,16 @@ COPY logstream/cribl/ /opt/cribl/local/cribl/
 
 RUN mkdir -p /opt/test-runner/logs/
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_METRIC_DEST=udp://localhost:8125
-ENV SCOPE_LOG_LEVEL=info
-ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=true
-ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-ENV SCOPE_EVENT_HTTP=true
-#ENV SCOPE_EVENT_DEST=tcp://172.16.198.132:9109
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_METRIC_DEST=udp://localhost:8125
+ENV APPVIEW_LOG_LEVEL=info
+ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=true
+ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+ENV APPVIEW_EVENT_HTTP=true
+#ENV APPVIEW_EVENT_DEST=tcp://172.16.198.132:9109
 
 COPY ./test_runner/requirements.txt /opt/test-runner/requirements.txt
 RUN pip3 install wheel
@@ -35,17 +35,17 @@ COPY ./test_runner/ /opt/test-runner/
 # Switching to Python 3.8 required this hack. Not sure where the kafka packages are coming from.
 RUN sed -i 's/\basync\b/is_async/g' /usr/local/lib/python3.8/dist-packages/kafka/producer/*.py
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY logstream/scope-test /usr/local/scope/scope-test
+COPY logstream/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

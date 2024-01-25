@@ -10,7 +10,7 @@
 #include "cfgutils.h"
 #include "state.h"
 #include "fn.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "test.h"
 
 #define BUFSIZE 500
@@ -190,10 +190,10 @@ ctlParseRxMsgSetCfgWithoutDataObjectReturnsParamErr(void** state)
 
     const char** test;
     for (test=body; *test; test++) {
-        assert_return_code(scope_asprintf(&msg, base, *test), scope_errno);
+        assert_return_code(appview_asprintf(&msg, base, *test), appview_errno);
         //printf("%s\n", msg);
         request_t* req = ctlParseRxMsg(msg);
-        scope_free(msg);
+        appview_free(msg);
         assert_non_null(req);
 
         // body is missing, so expect REQ_PARAM_ERR
@@ -227,7 +227,7 @@ ctlParseRxMsgSetCfg(void** state)
         "  \"metric\": {\n"
         "    \"format\": {\n"
         "      \"type\": \"metricjson\",\n"
-        "      \"statsdprefix\": \"cribl.scope\",\n"
+        "      \"statsdprefix\": \"cribl.appview\",\n"
         "      \"statsdmaxlen\": \"42\",\n"
         "      \"verbosity\": \"0\",\n"
         "      \"tags\": [\n"
@@ -238,7 +238,7 @@ ctlParseRxMsgSetCfg(void** state)
         "    },\n"
         "    \"transport\": {\n"
         "      \"type\": \"file\",\n"
-        "      \"path\": \"/var/log/scope.log\"\n"
+        "      \"path\": \"/var/log/appview.log\"\n"
         "    }\n"
         "  },\n"
         "  \"event\": {\n"
@@ -252,7 +252,7 @@ ctlParseRxMsgSetCfg(void** state)
         "      {\"type\":\"metric\"}\n"
         "    ]\n"
         "  },\n"
-        "  \"libscope\": {\n"
+        "  \"libappview\": {\n"
         "    \"transport\": {\n"
         "      \"type\": \"file\",\n"
         "      \"path\": \"/var/log/event.log\"\n"
@@ -272,10 +272,10 @@ ctlParseRxMsgSetCfg(void** state)
     const char** test;
     int run=1;
     for (test=body; *test; test++) {
-        assert_return_code(scope_asprintf(&msg, base, *test), errno);
+        assert_return_code(appview_asprintf(&msg, base, *test), errno);
         //printf("%s\n", msg);
         request_t* req = ctlParseRxMsg(msg);
-        scope_free(msg);
+        appview_free(msg);
         assert_non_null(req);
 
         // body exists! expect REQ_SET_CFG, and non-null req->cfg
@@ -421,7 +421,7 @@ ctlParseRxMsgSwitch(void** state)
         // if body isn't present, there's nothing to do
         { .req = "{ \"type\": \"req\", \"req\": \"Switch\",\"reqId\": 0}",
           .cmd = REQ_PARAM_ERR, .action = NO_ACTION},
-        // body with these specific strings worked through AppScope v1.1.2
+        // body with these specific strings worked through AppView v1.1.2
         // (for a canned demo) but have since been disabled.
         { .req = "{ \"type\": \"req\", \"req\": \"Switch\",\"reqId\": 1,\"body\":\"redirect-on\"}",
           .cmd = REQ_PARAM_ERR, .action = NO_ACTION},
@@ -503,7 +503,7 @@ ctlCreateTxMsgInfo(void** state)
         "{\"type\":\"info\",\"body\":\"yeah, dude\"}";
     assert_string_equal(msg, expected_msg);
 
-    scope_free(msg);
+    appview_free(msg);
 }
 
 typedef struct {
@@ -602,7 +602,7 @@ ctlCreateTxMsgResp(void** state)
             assert_null(strstr(tx_msg, "\"message\":"));
         }
 
-        scope_free(tx_msg);
+        appview_free(tx_msg);
         destroyReq(&upload.req);
     }
 
@@ -613,7 +613,7 @@ ctlCreateTxMsgResp(void** state)
     //printf("%s\n", tx_msg);
     assert_non_null(tx_msg);
     assert_non_null(strstr(tx_msg, "\"body\":\"Gnarly\""));
-    scope_free(tx_msg);
+    appview_free(tx_msg);
     destroyReq(&upload.req);
 }
 
@@ -638,14 +638,14 @@ ctlCreateTxMsgEvt(void** state)
         "{\"type\":\"evt\",\"_channel\":\"none\",\"body\":\"yeah, dude\"}";
     assert_string_equal(msg, expected_msg);
 
-    scope_free(msg);
+    appview_free(msg);
 }
 
 
 static void
 ctlSendMsgForNullMtcDoesntCrash(void** state)
 {
-    char* msg = scope_strdup("Hey, this is cool!\n");
+    char* msg = appview_strdup("Hey, this is cool!\n");
     ctlSendMsg(NULL, msg);
 }
 
@@ -654,7 +654,7 @@ ctlSendMsgForNullMessageDoesntCrash(void** state)
 {
     ctl_t* ctl = ctlCreate();
     assert_non_null(ctl);
-    transport_t* t = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t = transportCreateUnix("/var/run/appview.sock");
     assert_non_null(t);
     ctlTransportSet(ctl, t, CFG_CTL);
     ctlSendMsg(ctl, NULL);
@@ -668,7 +668,7 @@ ctlTransportSetAndMtcSend(void** state)
     ctl_t* ctl = ctlCreate();
     assert_non_null(ctl);
     transport_t* t1 = transportCreateUdp("127.0.0.1", "12345");
-    transport_t* t2 = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t2 = transportCreateUnix("/var/run/appview.sock");
     transport_t* t3 = transportCreateFile(file_path, CFG_BUFFER_FULLY);
     ctlTransportSet(ctl, t1, CFG_CTL);
     ctlTransportSet(ctl, t2, CFG_CTL);
@@ -677,7 +677,7 @@ ctlTransportSetAndMtcSend(void** state)
     // Test that transport is set by testing side effects of ctlSendMsg
     // affecting the file at file_path when connected to a file transport.
     long file_pos_before = fileEndPosition(file_path);
-    char* msg = scope_strdup("Something to send\n");
+    char* msg = appview_strdup("Something to send\n");
     ctlSendMsg(ctl, msg);
 
     // With CFG_BUFFER_FULLY, this output only happens with the flush
@@ -691,12 +691,12 @@ ctlTransportSetAndMtcSend(void** state)
     // Test that transport is cleared by seeing no side effects.
     ctlTransportSet(ctl, NULL, CFG_CTL);
     file_pos_before = fileEndPosition(file_path);
-    msg = scope_strdup("Something else to send\n");
+    msg = appview_strdup("Something else to send\n");
     ctlSendMsg(ctl, msg);
     file_pos_after = fileEndPosition(file_path);
     assert_int_equal(file_pos_before, file_pos_after);
 
-    if (scope_unlink(file_path))
+    if (appview_unlink(file_path))
         fail_msg("Couldn't delete file %s", file_path);
 
     ctlDestroy(&ctl);
@@ -763,7 +763,7 @@ ctlSendLogConsoleNoneAsciiData(void **state)
 {
     initState();
     const char* console_path = "stdout";
-    char* non_basic_ascii_text = scope_malloc(sizeof(char)*4);
+    char* non_basic_ascii_text = appview_malloc(sizeof(char)*4);
     assert_true(non_basic_ascii_text);
     non_basic_ascii_text[0] = 128;
     non_basic_ascii_text[1] = 157;
@@ -808,7 +808,7 @@ ctlSendLogConsoleNoneAsciiData(void **state)
     assert_string_equal(non_basic_ascii_text, val);
     ctlDestroy(&ctl);
 
-    scope_free(non_basic_ascii_text);
+    appview_free(non_basic_ascii_text);
     allow_copy_buf_data(FALSE);
     destroyState();
 }

@@ -1,9 +1,9 @@
 #
-# AppScope - New Release Workflow
+# AppView - New Release Workflow
 #
 # When a new tag is created:
 # - Create an empty GitHub Release if not already done in the GitHub UI
-# - Build and test AppScope
+# - Build and test AppView
 # - Attach the binaries to the Release
 # - Create a new release in Docker hub
 # - Update the "latest" tag on Docker hub
@@ -165,8 +165,8 @@ jobs:
 #      - name: Login to Dockerhub
 #        uses: docker/login-action@v3
 #        with:
-#          username: scopeci
-#          password: ${{ secrets.SCOPECI_TOKEN }}
+#          username: appviewci
+#          password: ${{ secrets.APPVIEWCI_TOKEN }}
 
       # This installs the `/proc/sys/fs/binfmt` entries that allow the CI host
       # to build for other architectures under QEMU emulation. It's not really
@@ -181,7 +181,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # We'll tell BuildX to `--cache-from` this folder to speed up the build
-      # of our `appscope-builder` image. 
+      # of our `appview-builder` image. 
       - name: Setup Docker Cache
         uses: actions/cache@v3.3.2
         with:
@@ -277,10 +277,10 @@ jobs:
 #      - name: Login to Dockerhub
 #        uses: docker/login-action@v3
 #        with:
-#          username: scopeci
-#          password: ${{ secrets.SCOPECI_TOKEN }}
+#          username: appviewci
+#          password: ${{ secrets.APPVIEWCI_TOKEN }}
 
-      # Build our `appscope-builder` image. This should only end up using the
+      # Build our `appview-builder` image. This should only end up using the
       # cached image but because it needs to transfer the results from the
       # builder container into the local Docker registry, it stills take more
       # time that we'd like.
@@ -292,14 +292,14 @@ jobs:
         run: make builder
 
       # Run `make all` in the builder container to build the core and CLI.
-      - name: Build AppScope
+      - name: Build AppView
         env:
           VERSION: ${{ needs.info.outputs.tag }}
           BUILDER: ${{ steps.buildx.outputs.name }}
         run: make build NOBUILD=1 CMD="make all" CI=${CI}
 
       # Run `make test` in the builder container to unit-test the core and CLI.
-      - name: Unit-Test AppScope
+      - name: Unit-Test AppView
         env:
           VERSION: ${{ needs.info.outputs.tag }}
           BUILDER: ${{ steps.buildx.outputs.name }}
@@ -307,11 +307,11 @@ jobs:
 
       - name: Print size of Binaries
         run: |
-          echo "::group::libscope.so"
-          stat -c %s lib/linux/${{ steps.env.outputs.arch }}/libscope.so
+          echo "::group::libappview.so"
+          stat -c %s lib/linux/${{ steps.env.outputs.arch }}/libappview.so
           echo "::endgroup::"
-          echo "::group::scope"
-          stat -c %s bin/linux/${{ steps.env.outputs.arch }}/scope
+          echo "::group::appview"
+          stat -c %s bin/linux/${{ steps.env.outputs.arch }}/appview
           echo "::endgroup::"
 
       # Upload the built binaries for use by later stages. We specify the same
@@ -322,8 +322,8 @@ jobs:
         with:
           name: binaries
           path: |
-            lib/linux/${{ steps.env.outputs.arch }}/libscope.so
-            bin/linux/${{ steps.env.outputs.arch }}/scope
+            lib/linux/${{ steps.env.outputs.arch }}/libappview.so
+            bin/linux/${{ steps.env.outputs.arch }}/appview
 
       # To prevent the cache from growing uncbounded, we used `--cache-to` a
       # different folder that the `--cache-from`. This moves the results of the
@@ -370,26 +370,26 @@ jobs:
           TMPDIR=${RUNNER_TEMP}
 
           echo "::group::Prep Content"
-          mkdir ${TMPDIR}/scope
+          mkdir ${TMPDIR}/appview
           mkdir ${TMPDIR}/lib
 
-          cp conf/scope.yml ${TMPDIR}/scope
+          cp conf/appview.yml ${TMPDIR}/appview
           for ARCH in x86_64; do
-            cp bin/linux/${ARCH}/scope ${TMPDIR}/scope
-            cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/scope
+            cp bin/linux/${ARCH}/appview ${TMPDIR}/appview
+            cp lib/linux/${ARCH}/libappview.so ${TMPDIR}/appview
             # Create tgz and tgz.md5 of binaries and config (for each arch)
-            (cd ${TMPDIR} && tar cfz scope.tgz scope)
-            (cd ${TMPDIR} && md5sum scope.tgz > scope-${ARCH}.tgz.md5)
-            (cd ${TMPDIR} && mv scope.tgz scope-${ARCH}.tgz)
-            # Copy scope binary and create scope.md5 (for each arch)
-            (cd ${TMPDIR}/scope && md5sum scope > ../scope-${ARCH}.md5)
-            cp ${TMPDIR}/scope/scope ${TMPDIR}/scope-${ARCH}
+            (cd ${TMPDIR} && tar cfz appview.tgz appview)
+            (cd ${TMPDIR} && md5sum appview.tgz > appview-${ARCH}.tgz.md5)
+            (cd ${TMPDIR} && mv appview.tgz appview-${ARCH}.tgz)
+            # Copy appview binary and create appview.md5 (for each arch)
+            (cd ${TMPDIR}/appview && md5sum appview > ../appview-${ARCH}.md5)
+            cp ${TMPDIR}/appview/appview ${TMPDIR}/appview-${ARCH}
           done
 
-          cp conf/scope.yml ${TMPDIR}/lib
+          cp conf/appview.yml ${TMPDIR}/lib
           for ARCH in x86_64; do
-            cp bin/linux/${ARCH}/scope ${TMPDIR}/lib
-            cp lib/linux/${ARCH}/libscope.so ${TMPDIR}/lib
+            cp bin/linux/${ARCH}/appview ${TMPDIR}/lib
+            cp lib/linux/${ARCH}/libappview.so ${TMPDIR}/lib
             # Create zip and zip.md5 of binaries and config (for each arch)
             (cd ${TMPDIR} && zip -r aws-lambda-layer.zip ./lib)
             (cd ${TMPDIR} && md5sum aws-lambda-layer.zip > aws-lambda-layer-${ARCH}.zip.md5)
@@ -399,12 +399,12 @@ jobs:
           echo "::endgroup::"
 
           if [ "unreleased" != "${{ needs.info.outputs.tag }}" -a "next" != "${{ needs.info.outputs.tag }}" ]; then
-            echo "::group::Attach Release Assets to https://github.com/appscope-team/appscope/releases/tag/${{ needs.info.outputs.version }}"
+            echo "::group::Attach Release Assets to https://github.com/appview-team/appview/releases/tag/${{ needs.info.outputs.version }}"
             for ARCH in x86_64; do
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.md5"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.tgz"
-              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/scope-${ARCH}.tgz.md5"
+              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/appview-${ARCH}"
+              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/appview-${ARCH}.md5"
+              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/appview-${ARCH}.tgz"
+              gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/appview-${ARCH}.tgz.md5"
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/aws-lambda-layer-${ARCH}.zip"
               gh release upload ${{ needs.info.outputs.version }} "${TMPDIR}/aws-lambda-layer-${ARCH}.zip.md5"
             done
@@ -434,8 +434,8 @@ jobs:
 #        if: ${{ needs.info.outputs.push == 'true' }}
 #        uses: docker/login-action@v3
 #        with:
-#          username: scopeci
-#          password: ${{ secrets.SCOPECI_TOKEN }}
+#          username: appviewci
+#          password: ${{ secrets.APPVIEWCI_TOKEN }}
 #
 #      - name: Download Binaries
 #        uses: actions/download-artifact@v3
@@ -455,7 +455,7 @@ jobs:
 #        run: |
 #          # TODO only if needs.test-*.results == 'success'
 #          if [ "${PUSH}" ]; then
-#            echo "::group::Build cribl/scope:${VERSION} Image"
+#            echo "::group::Build cribl/appview:${VERSION} Image"
 #            TYPE=registry
 #          else
 #            echo "::group::Build Test Image (no upload after)"
@@ -463,7 +463,7 @@ jobs:
 #          fi
 #          docker buildx build \
 #                --builder ${{ steps.buildx.outputs.name }} \
-#                --tag cribl/scope:${VERSION} \
+#                --tag cribl/appview:${VERSION} \
 #                --platform linux/amd64,linux/arm64/v8 \
 #                --output type=${TYPE} \
 #                --file docker/base/Dockerfile \
@@ -478,21 +478,21 @@ jobs:
 #      - name: Login to Dockerhub
 #        uses: docker/login-action@v2
 #        with:
-#          username: scopeci
-#          password: ${{ secrets.SCOPECI_TOKEN }}
+#          username: appviewci
+#          password: ${{ secrets.APPVIEWCI_TOKEN }}
 #
 #      - name: Setup Crane
 #        uses: imjasonh/setup-crane@v0.3
 #
 #      - name: Update the Latest Tag
 #        run: |
-#          crane tag cribl/scope:${{ needs.info.outputs.tag }} latest
+#          crane tag cribl/appview:${{ needs.info.outputs.tag }} latest
 #
 #      - name: Print Digest/Manifest Information
 #        run: |
-#          echo "digest and manifest for cribl/scope:${{ needs.info.outputs.tag }}"
-#          crane digest cribl/scope:${{ needs.info.outputs.tag }}
-#          crane manifest cribl/scope:${{ needs.info.outputs.tag }} | jq .
-#          echo "digest and manifest for cribl/scope:latest"
-#          crane digest cribl/scope:latest
-#          crane manifest cribl/scope:latest | jq .
+#          echo "digest and manifest for cribl/appview:${{ needs.info.outputs.tag }}"
+#          crane digest cribl/appview:${{ needs.info.outputs.tag }}
+#          crane manifest cribl/appview:${{ needs.info.outputs.tag }} | jq .
+#          echo "digest and manifest for cribl/appview:latest"
+#          crane digest cribl/appview:latest
+#          crane manifest cribl/appview:latest | jq .

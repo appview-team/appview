@@ -57,7 +57,7 @@ typedef struct {
     sighandler_t fn;
 } sigList_t;
 
-// These are the ones which libscope.so is interested in.
+// These are the ones which libappview.so is interested in.
 // So, these are ones we should test for interactions
 sigList_t sigList[] = {
     {.num = SIGILL, .str = "SIGILL", .fn = handleIll},

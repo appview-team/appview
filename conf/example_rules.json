@@ -103,7 +103,7 @@
           "enable": false,
           "dir": "/tmp"
         },
-        "libscope": {
+        "libappview": {
           "configevent": true,
           "summaryperiod": 10,
           "commanddir": "/tmp",
@@ -111,7 +111,7 @@
             "level": "warning",
             "transport": {
               "type": "file",
-              "path": "/tmp/scope.log",
+              "path": "/tmp/appview.log",
               "buffer": "line"
             }
           }
@@ -234,7 +234,7 @@
           "enable": false,
           "dir": "/tmp"
         },
-        "libscope": {
+        "libappview": {
           "configevent": true,
           "summaryperiod": 10,
           "commanddir": "/tmp",
@@ -242,7 +242,7 @@
             "level": "warning",
             "transport": {
               "type": "file",
-              "path": "/tmp/scope2.log",
+              "path": "/tmp/appview2.log",
               "buffer": "line"
             }
           }

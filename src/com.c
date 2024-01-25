@@ -6,7 +6,7 @@
 #include "dbg.h"
 #include "os.h"
 #include "utils.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 unsigned g_sendprocessstart = 0;
 bool g_exitdone = FALSE;
@@ -24,11 +24,11 @@ msgAddNewLine(char *msg)
 {
     if (!msg) return NULL;
 
-    int strsize = scope_strlen(msg);
-    char *temp = scope_realloc(msg, strsize + 2); // room for "\n\0"
+    int strsize = appview_strlen(msg);
+    char *temp = appview_realloc(msg, strsize + 2); // room for "\n\0"
     if (!temp) {
         DBG(NULL);
-        scope_free(msg);
+        appview_free(msg);
         return NULL;
     }
 
@@ -68,8 +68,8 @@ reportProcessStart(ctl_t *ctl, bool init, which_transport_t who)
     // only emit metric and log msgs at init time
     if (init) {
         // 3) Log it at startup, provided the loglevel is set to allow it
-        scopeLogInfo("Constructor (Scope Version: " SCOPE_VER ")");
-        scopeLogInfo("command w/args: %s", g_proc.cmd);
+        appviewLogInfo("Constructor (AppView Version: " APPVIEW_VER ")");
+        appviewLogInfo("command w/args: %s", g_proc.cmd);
 
         msgLogConfig(g_cfg.staticfg);
     }
@@ -155,7 +155,7 @@ jsonProcessObject(proc_id_t *proc)
 
     if (!(root = cJSON_CreateObject())) goto err;
 
-    if (!(cJSON_AddStringToObjLN(root, "libscopever", SCOPE_VER))) goto err;
+    if (!(cJSON_AddStringToObjLN(root, "libappviewver", APPVIEW_VER))) goto err;
 
     if (!(cJSON_AddNumberToObjLN(root, "pid", proc->pid))) goto err;
     if (!(cJSON_AddNumberToObjLN(root, "ppid", proc->ppid))) goto err;
@@ -231,8 +231,8 @@ msgLogConfig(config_t *cfg)
     char *cfg_text = cJSON_PrintUnformatted(json);
 
     if (cfg_text) {
-        scopeLogInfo("%s", cfg_text);
-        scope_free(cfg_text);
+        appviewLogInfo("%s", cfg_text);
+        appview_free(cfg_text);
     }
 
     cJSON_Delete(json);
@@ -252,10 +252,10 @@ msgStart(proc_id_t *proc, config_t *cfg, which_transport_t who)
     }
 
     if (who == CFG_LS) {
-        if (!cJSON_AddStringToObjLN(json_root, "format", "scope")) goto err;
+        if (!cJSON_AddStringToObjLN(json_root, "format", "appview")) goto err;
     } else {
         if (!cJSON_AddStringToObjLN(json_root, "format", "ndjson")) goto err;
-        if (checkEnv("SCOPE_CRIBL_NO_BREAKER", "true")) {
+        if (checkEnv("APPVIEW_CRIBL_NO_BREAKER", "true")) {
                 if (!cJSON_AddStringToObjLN(json_root, "breaker",
                                     "Cribl - Do Not Break Ruleset")) goto err;
         }
@@ -329,13 +329,13 @@ get_stack(void)
             if (entry->addr) return entry->addr;
 
             // We have a spot, but we need to allocate a stack here.
-            entry->addr = scope_malloc(PCRE_STACK_SIZE);
+            entry->addr = appview_malloc(PCRE_STACK_SIZE);
             if (entry->addr) return entry->addr;
 
             // We got a spot, but our malloc failed. Put the spot back
             // into the unused pool. Stop looping if this happens.
             if (!atomicCasU64(&entry->used, (uint64_t)TRUE, (uint64_t)FALSE)) {
-                 scopeLogError("get_stack failed to set used to FALSE");
+                 appviewLogError("get_stack failed to set used to FALSE");
             }
             break;
         }
@@ -344,7 +344,7 @@ get_stack(void)
     // Our attempt to use the pool failed.
     // All pool entries were probably in use.
     // As a fall-back, do an allocation that's not from the pool
-    return scope_malloc(PCRE_STACK_SIZE);
+    return appview_malloc(PCRE_STACK_SIZE);
 }
 
 static void
@@ -359,7 +359,7 @@ free_stack(char *addr)
             // Addr is in the pool. Don't free addr, but set used to false
             // to allow reuse.
             if (!atomicCasU64(&entry->used, (uint64_t)TRUE, (uint64_t)FALSE)) {
-                 scopeLogError("free_stack failed to set used to FALSE");
+                 appviewLogError("free_stack failed to set used to FALSE");
             }
             return;
         }
@@ -367,7 +367,7 @@ free_stack(char *addr)
 
     // We didn't find this addr in the pool.
     // It must not be from the pool.  Free it.
-    scope_free(addr);
+    appview_free(addr);
 }
 
 
@@ -379,7 +379,7 @@ pcre2_match_wrapper(pcre2_code *re, PCRE2_SPTR data, PCRE2_SIZE size,
     int rc;
     char *pcre_stack = NULL, *tstack = NULL, *gstack = NULL;
     if ((pcre_stack = get_stack()) == NULL) {
-        scopeLogError("ERROR; pcre2_match_wrapper: get_stack");
+        appviewLogError("ERROR; pcre2_match_wrapper: get_stack");
         return -1;
     }
 
@@ -446,7 +446,7 @@ regexec_wrapper(const regex_t *preg, const char *string, size_t nmatch,
     char *pcre_stack = NULL, *tstack = NULL, *gstack = NULL;
 
      if ((pcre_stack = get_stack()) == NULL) {
-        scopeLogError("ERROR; regexec_wrapper: get_stack");
+        appviewLogError("ERROR; regexec_wrapper: get_stack");
         return -1;
     }
 

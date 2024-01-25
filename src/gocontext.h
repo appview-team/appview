@@ -1,6 +1,6 @@
 #ifndef __GOTCONTEXT_H__
 #define __GOTCONTEXT_H__
-#include "scopeelf.h"
+#include "appviewelf.h"
 
 #define EXPORTON __attribute__((visibility("default")))
 
@@ -83,7 +83,7 @@ typedef struct {
     // These are constants at build time
     enum tap_id id;    // tap id
     char *   func_name;    // name of go function
-    void *   assembly_fn;  // scope handler function (in assembly)
+    void *   assembly_fn;  // appview handler function (in assembly)
     // These are set at runtime.
     void *   return_addr;  // addr of where in go to resume after patch
     uint32_t frame_size;   // size of go stack frame

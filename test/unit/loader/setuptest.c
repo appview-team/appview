@@ -15,8 +15,8 @@
  * Define the extern offset for integration test compilation 
  * See details in libdir.c
  */
-unsigned char _binary_libscope_so_start;
-unsigned char _binary_libscope_so_end;
+unsigned char _binary_libappview_so_start;
+unsigned char _binary_libappview_so_end;
 
 static int
 create_file(const char *file_path, const char* file_contents) {
@@ -45,7 +45,7 @@ create_file(const char *file_path, const char* file_contents) {
  * File size does not change
  */
 static void
-removeScopeCfgFile0Changes(void **state) {
+removeAppViewCfgFile0Changes(void **state) {
     int res;
     struct stat st;
     int orig_file_size;
@@ -59,7 +59,7 @@ removeScopeCfgFile0Changes(void **state) {
     stat(file_path, &st);
     orig_file_size = st.st_size;
 
-    res = removeScopeCfgFile(file_path);
+    res = removeAppViewCfgFile(file_path);
     assert_int_equal(res, 0);
 
     stat(file_path, &st);
@@ -75,15 +75,15 @@ removeScopeCfgFile0Changes(void **state) {
  * Function does not return an error
  * Function returns 1 (1 change made)
  * File size decreases by correct amount
- * "/libscope.so" cannot be found in the file
+ * "/libappview.so" cannot be found in the file
  */
 static void
-removeScopeCfgFile1Change(void **state) {
+removeAppViewCfgFile1Change(void **state) {
     int res;
     struct stat st;
     int orig_file_size;
     char *file_path = "/tmp/example_cfg_file";
-    const char *file_contents = "LD_PRELOAD=/usr/lib/appscope/libscope.so\nContents of line 2\nContents of line 3\nContents of line 4";
+    const char *file_contents = "LD_PRELOAD=/usr/lib/appview/libappview.so\nContents of line 2\nContents of line 3\nContents of line 4";
 
     if (create_file(file_path, file_contents)) {
         fail_msg("Couldn't create file %s", file_path);
@@ -92,15 +92,15 @@ removeScopeCfgFile1Change(void **state) {
     stat(file_path, &st);
     orig_file_size = st.st_size;
 
-    res = removeScopeCfgFile(file_path);
+    res = removeAppViewCfgFile(file_path);
     assert_int_equal(res, 1);
 
-    // Check for presence of "/libscope.so"
+    // Check for presence of "/libappview.so"
     res = isCfgFileConfigured(file_path);
     assert_int_equal(res, 0);
 
     stat(file_path, &st);
-    assert_int_equal(orig_file_size - 41, st.st_size);
+    assert_int_equal(orig_file_size - 42, st.st_size);
 
     if (remove(file_path)) {
         fail_msg("Couldn't remove file %s", file_path);
@@ -112,15 +112,15 @@ removeScopeCfgFile1Change(void **state) {
  * Function does not return an error
  * Function returns 2 (2 changes made)
  * File size decreases by correct amount
- * "/libscope.so" cannot be found in the file
+ * "/libappview.so" cannot be found in the file
  */
 static void
-removeScopeCfgFile2Changes(void **state) {
+removeAppViewCfgFile2Changes(void **state) {
     int res;
     struct stat st;
     int orig_file_size;
     char *file_path = "/tmp/example_cfg_file";
-    const char *file_contents = "LD_PRELOAD=/usr/lib/appscope/libscope.so\nContents of line 2\n\nContents of line 3\nLD_PRELOAD=/usr/lib/appscope/libscope.so\n";
+    const char *file_contents = "LD_PRELOAD=/usr/lib/appview/libappview.so\nContents of line 2\n\nContents of line 3\nLD_PRELOAD=/usr/lib/appview/libappview.so\n";
 
     if (create_file(file_path, file_contents)) {
         fail_msg("Couldn't create file %s", file_path);
@@ -129,15 +129,15 @@ removeScopeCfgFile2Changes(void **state) {
     stat(file_path, &st);
     orig_file_size = st.st_size;
 
-    res = removeScopeCfgFile(file_path);
+    res = removeAppViewCfgFile(file_path);
     assert_int_equal(res, 2);
 
-    // Check for presence of "/libscope.so"
+    // Check for presence of "/libappview.so"
     res = isCfgFileConfigured(file_path);
     assert_int_equal(res, 0);
 
     stat(file_path, &st);
-    assert_int_equal(orig_file_size - 82, st.st_size);
+    assert_int_equal(orig_file_size - 84, st.st_size);
 
     if (remove(file_path)) {
         fail_msg("Couldn't remove file %s", file_path);
@@ -149,9 +149,9 @@ main(int argc, char* argv[]) {
     printf("running %s\n", argv[0]);
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(removeScopeCfgFile0Changes),
-        cmocka_unit_test(removeScopeCfgFile1Change),
-        cmocka_unit_test(removeScopeCfgFile2Changes),
+        cmocka_unit_test(removeAppViewCfgFile0Changes),
+        cmocka_unit_test(removeAppViewCfgFile1Change),
+        cmocka_unit_test(removeAppViewCfgFile2Changes),
     };
     return cmocka_run_group_tests(tests, groupSetup, groupTeardown);
 }

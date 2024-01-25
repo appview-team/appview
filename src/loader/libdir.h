@@ -1,19 +1,19 @@
-#ifndef _SCOPE_LIBDIR_H
-#define _SCOPE_LIBDIR_H 1
+#ifndef _APPVIEW_LIBDIR_H
+#define _APPVIEW_LIBDIR_H 1
 
 #include <linux/limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/stat.h>
 
-extern unsigned long g_libscopesz;
-extern unsigned long g_scopedynsz;
+extern unsigned long g_libappviewsz;
+extern unsigned long g_appviewdynsz;
 
 // File types
 typedef enum {
-    LIBRARY_FILE,       // libscope.so
-    LOADER_FILE,        // scopedyn
-    STATIC_LOADER_FILE  // scope
+    LIBRARY_FILE,       // libappview.so
+    LOADER_FILE,        // appviewdyn
+    STATIC_LOADER_FILE  // appview
 } libdirfile_t;
 
 typedef enum {
@@ -34,4 +34,4 @@ size_t getAsset(libdirfile_t, unsigned char **);
 // Unit Test helper
 int libdirInitTest(const char *, const char *, const char *); // Override defaults
 
-#endif // _SCOPE_LIBDIR_H
+#endif // _APPVIEW_LIBDIR_H

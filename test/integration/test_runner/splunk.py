@@ -22,14 +22,14 @@ config = dotdict({
 
 class SplunkAppController(AppController):
 
-    def __init__(self, scope_path):
+    def __init__(self, appview_path):
         super().__init__("splunk")
-        self.scope_path = scope_path
+        self.appview_path = appview_path
         self.proc = None
 
-    def start(self, scoped):
-        logging.info(f"Starting app {self.name} in {'scoped' if scoped else 'unscoped'} mode.")
-        self.__update_launch_conf(scoped)
+    def start(self, viewed):
+        logging.info(f"Starting app {self.name} in {'viewed' if viewed else 'unviewd'} mode.")
+        self.__update_launch_conf(viewed)
         start_command = "/opt/splunk/bin/splunk start --accept-license --answer-yes --seed-passwd cribldemo"
 
         logging.debug(f"Command is {start_command}.")
@@ -49,23 +49,23 @@ class SplunkAppController(AppController):
         err_messages = [m['title'] for m in messages if m['content']['severity'] == 'error']
         assert len(err_messages) == 0, f"Error messages found {err_messages}"
 
-    def __update_launch_conf(self, scoped):
+    def __update_launch_conf(self, viewed):
         splunk_home = os.environ["SPLUNK_HOME"]
-        scope_env_var = f"LD_PRELOAD={self.scope_path}"
+        appview_env_var = f"LD_PRELOAD={self.appview_path}"
         path_to_conf = os.path.join(splunk_home, "etc/splunk-launch.conf")
         logging.debug(
-            f"Modifying splunk launch conf at {path_to_conf}. {'adding' if scoped else 'removing'} {scope_env_var}")
+            f"Modifying splunk launch conf at {path_to_conf}. {'adding' if viewed else 'removing'} {appview_env_var}")
 
         with open(path_to_conf, "r") as f:
             lines = f.readlines()
 
         with open(path_to_conf, "w") as f:
             for line in lines:
-                if scope_env_var not in line:
+                if appview_env_var not in line:
                     f.write(line)
 
-            if scoped:
-                f.write(f"\n{scope_env_var}\n")
+            if viewed:
+                f.write(f"\n{appview_env_var}\n")
 
 
 class SplunkDirectIndexingTest(ApplicationTest):
@@ -74,7 +74,7 @@ class SplunkDirectIndexingTest(ApplicationTest):
     def name(self):
         return "splunk direct indexing"
 
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         logging.info(f"Connecting to Splunk. User {config.username}, Password {config.password}")
 
         service = client.connect(username=config.username, password=config.password)
@@ -120,7 +120,7 @@ class SplunkDirectIndexingTest(ApplicationTest):
 
 class SplunkKVStoreTest(ApplicationTest):
 
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         logging.info(f"Connecting to Splunk. User {config.username}, Password {config.password}")
 
         service = client.connect(username=config.username, password=config.password)
@@ -156,5 +156,5 @@ class SplunkKVStoreTest(ApplicationTest):
 
 
 def configure(runner: Runner, config):
-    app_controller = SplunkAppController(config.scope_path)
+    app_controller = SplunkAppController(config.appview_path)
     runner.add_tests([SplunkDirectIndexingTest(app_controller), SplunkKVStoreTest(app_controller)])

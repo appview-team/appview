@@ -6,13 +6,13 @@
 #include <time.h>
 #include <sys/types.h>
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "utils.h"
 #include "fn.h"
 #include "dbg.h"
 #include "runtimecfg.h"
 #include "plattime.h"
-#include "scopeelf.h"
+#include "appviewelf.h"
 
 #define SYSPRINT_CONSOLE 0
 #define PRINT_BUF_SIZE 1024
@@ -42,16 +42,16 @@ sysprint(const char* fmt, ...)
     if (fmt) {
         va_list args;
         va_start(args, fmt);
-        int rv = scope_vsnprintf(str, PRINT_BUF_SIZE, fmt, args);
+        int rv = appview_vsnprintf(str, PRINT_BUF_SIZE, fmt, args);
         va_end(args);
         if (rv == -1) return;
     }
 
     // Output the string
 #if SYSPRINT_CONSOLE > 0
-    scope_printf("%s", str);
+    appview_printf("%s", str);
 #endif
-    scopeLog(CFG_LOG_DEBUG, "%s", str);
+    appviewLog(CFG_LOG_DEBUG, "%s", str);
 }
 
 unsigned int
@@ -59,7 +59,7 @@ strToVal(enum_map_t map[], const char *str)
 {
     enum_map_t *m;
     for (m=map; m->str; m++) {
-        if (!scope_strcmp(str, m->str)) return m->val;
+        if (!appview_strcmp(str, m->str)) return m->val;
     }
     return -1;
 }
@@ -79,7 +79,7 @@ checkEnv(char *env, char *val)
 {
     char *estr;
     if (((estr = fullGetEnv(env)) != NULL) &&
-       (scope_strncmp(estr, val, scope_strlen(estr)) == 0)) {
+       (appview_strncmp(estr, val, appview_strlen(estr)) == 0)) {
         return TRUE;
     }
     return FALSE;
@@ -95,10 +95,10 @@ extern char** environ;
  */
 char *
 fullGetEnv(char *name) {
-    size_t l = scope_strchrnul(name, '=') - name;
+    size_t l = appview_strchrnul(name, '=') - name;
     if (l && !name[l] && environ)
         for (char **e = environ; *e; e++)
-            if (!scope_strncmp(name, *e, l) && l[*e] == '=')
+            if (!appview_strncmp(name, *e, l) && l[*e] == '=')
                 return *e + l+1;
     return NULL;
 }
@@ -126,14 +126,14 @@ void
 setPidEnv(int pid)
 {
     char val[32];
-    int returnval = scope_snprintf(val, sizeof(val), "%d", pid);
+    int returnval = appview_snprintf(val, sizeof(val), "%d", pid);
     if (returnval >= sizeof(val) || returnval == -1) {
         DBG("returnval = %d", returnval);
         return;
     }
 
-    if (fullSetenv(SCOPE_PID_ENV, val, 1) == -1) {
-        scopeLog(CFG_LOG_DEBUG, "setPidEnv: %s:%s", SCOPE_PID_ENV, val);
+    if (fullSetenv(APPVIEW_PID_ENV, val, 1) == -1) {
+        appviewLog(CFG_LOG_DEBUG, "setPidEnv: %s:%s", APPVIEW_PID_ENV, val);
     }
 }
 
@@ -161,61 +161,61 @@ getpath(const char *cmd)
     // an absolute path was specified for cmd.
     if (cmd[0] == '/') {
         //  If we can resolve it, use it.
-        if (!scope_stat(cmd, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
-            ret_val = scope_strdup(cmd);
+        if (!appview_stat(cmd, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
+            ret_val = appview_strdup(cmd);
         }
         goto out;
     }
 
     // a relative path was specified for cmd.
-    if (scope_strchr(cmd, '/')) {
-        char *cur_dir = scope_get_current_dir_name();
+    if (appview_strchr(cmd, '/')) {
+        char *cur_dir = appview_get_current_dir_name();
         if (!cur_dir) goto out;
 
         char *path = NULL;
-        if (scope_asprintf(&path, "%s/%s", cur_dir, cmd) > 0) {
+        if (appview_asprintf(&path, "%s/%s", cur_dir, cmd) > 0) {
             // If we can resolve it, use it
-            if (!scope_stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
+            if (!appview_stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
                 ret_val = path;
             } else {
-                scope_free(path);
+                appview_free(path);
             }
         }
-        scope_free(cur_dir);
+        appview_free(cur_dir);
         goto out;
     }
 
     // try the current dir
     char *path = NULL;
-    if (scope_asprintf(&path, "./%s", cmd) > 0) {
-        if (!scope_stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
+    if (appview_asprintf(&path, "./%s", cmd) > 0) {
+        if (!appview_stat(path, &buf) && S_ISREG(buf.st_mode) && (buf.st_mode & 0111)) {
             ret_val = path;
             goto out;
         } else {
-            scope_free(path);
+            appview_free(path);
         }
     }
 
     // try to resolve the cmd from PATH env variable
     char *path_env_ptr = fullGetEnv("PATH");
     if (!path_env_ptr) goto out;
-    path_env = scope_strdup(path_env_ptr); // create a copy for strtok below
+    path_env = appview_strdup(path_env_ptr); // create a copy for strtok below
     if (!path_env) goto out;
 
     char *saveptr = NULL;
-    char *strtok_path = scope_strtok_r(path_env, ":", &saveptr);
+    char *strtok_path = appview_strtok_r(path_env, ":", &saveptr);
     if (!strtok_path) goto out;
 
     do {
         char *path = NULL;
-        if (scope_asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
+        if (appview_asprintf(&path, "%s/%s", strtok_path, cmd) < 0) {
             break;
         }
-        if ((scope_stat(path, &buf) == -1) ||    // path doesn't exist
+        if ((appview_stat(path, &buf) == -1) ||    // path doesn't exist
             (!S_ISREG(buf.st_mode)) ||     // path isn't a file
             ((buf.st_mode & 0111) == 0)) { // path isn't executable
 
-            scope_free(path);
+            appview_free(path);
             continue;
         }
 
@@ -223,10 +223,10 @@ getpath(const char *cmd)
         ret_val = path;
         break;
 
-    } while ((strtok_path = scope_strtok_r(NULL, ":", &saveptr)));
+    } while ((strtok_path = appview_strtok_r(NULL, ":", &saveptr)));
 
 out:
-    if (path_env) scope_free(path_env);
+    if (path_env) appview_free(path_env);
     return ret_val;
 }
 #endif //__APPLE__
@@ -236,7 +236,7 @@ int
 startsWith(const char *string, const char *substring)
 {
     if (!string || !substring) return FALSE;
-    return (scope_strncmp(string, substring, scope_strlen(substring)) == 0);
+    return (appview_strncmp(string, substring, appview_strlen(substring)) == 0);
 }
 
 bool
@@ -244,10 +244,10 @@ endsWith(const char *string, const char *substring) {
     if (!string || !substring) {
         return FALSE;
     }
-    int stringlen = scope_strlen(string);
-    int sublen = scope_strlen(substring);
+    int stringlen = appview_strlen(string);
+    int sublen = appview_strlen(substring);
     if ((sublen <= stringlen) &&
-       ((scope_strncmp(&string[stringlen-sublen], substring, sublen)) == 0)) {
+       ((appview_strncmp(&string[stringlen-sublen], substring, sublen)) == 0)) {
         return TRUE;
     }
     return FALSE;
@@ -263,7 +263,7 @@ sigSafeNanosleep(const struct timespec *req)
 
     // If we're interrupted, sleep again for whatever time remains
     do {
-        rv = scope_nanosleep(&time, &time);
+        rv = appview_nanosleep(&time, &time);
         elapsed = getDuration(ctime);
     } while (rv && (elapsed < req->tv_nsec));
 
@@ -275,7 +275,7 @@ void
 setUUID(char *string)
 {
    if (string == NULL) {
-       scopeLogError("ERROR: setUUIDv4: Null string");
+       appviewLogError("ERROR: setUUIDv4: Null string");
        return;
    }
 
@@ -283,18 +283,18 @@ setUUID(char *string)
     static bool seeded = FALSE;
 
     if (!seeded) {
-        scope_srand((unsigned int)scope_time(NULL));
+        appview_srand((unsigned int)appview_time(NULL));
         seeded = TRUE;
     }
 
     for (int i = 0; i < 16; i++) {
-        key[i] = (unsigned char)scope_rand() % 255;
+        key[i] = (unsigned char)appview_rand() % 255;
     }
 
     key[6] = 0x40 | (key[6] & 0xf); // Set version to 4
     key[8] = 0x80 | (key[8] & 0x3f); // Set variant to 8
 
-    scope_snprintf(string, UUID_LEN + 1,
+    appview_snprintf(string, UUID_LEN + 1,
         "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
         key[0], key[1], key[2], key[3],
         key[4], key[5], key[6], key[7], 
@@ -307,31 +307,31 @@ void
 setMachineID(char *string)
 {
     if (string == NULL) {
-        scopeLogError("ERROR: setMachineID: Null string");
+        appviewLogError("ERROR: setMachineID: Null string");
         return;
     }
-    scope_strncpy(string, ZERO_MACHINE_ID, MACHINE_ID_LEN + 1);
+    appview_strncpy(string, ZERO_MACHINE_ID, MACHINE_ID_LEN + 1);
 
     char buf[MACHINE_ID_LEN + 1] = {0};
     FILE *fp;
 
     // Try to get a machine id from /etc
-    if ((fp = scope_fopen("/etc/machine-id", "r")) != NULL) {
-        if (scope_fgets(buf, sizeof(buf), fp) == NULL) {
-            scopeLogInfo("INFO: setMachineID: Could not read Machine ID from file /etc/machine-id");
+    if ((fp = appview_fopen("/etc/machine-id", "r")) != NULL) {
+        if (appview_fgets(buf, sizeof(buf), fp) == NULL) {
+            appviewLogInfo("INFO: setMachineID: Could not read Machine ID from file /etc/machine-id");
         }
-        scope_fclose(fp);
+        appview_fclose(fp);
     }
 
-    if (scope_strlen(buf) != MACHINE_ID_LEN) {
-        scopeLogInfo("INFO: setMachineID: Machine ID not found or unexpected length. Creating one.");
+    if (appview_strlen(buf) != MACHINE_ID_LEN) {
+        appviewLogInfo("INFO: setMachineID: Machine ID not found or unexpected length. Creating one.");
         if (createMachineID(buf)) {
-            scopeLogError("ERROR: setMachineID: Error creating Machine ID");
+            appviewLogError("ERROR: setMachineID: Error creating Machine ID");
             return;
         }
     }
 
-    scope_strncpy(string, buf, MACHINE_ID_LEN + 1);
+    appview_strncpy(string, buf, MACHINE_ID_LEN + 1);
 }
 
 // Create a Machine ID from a mac address
@@ -342,11 +342,11 @@ createMachineID(char *string)
 
     char mac_addr[MAC_ADDR_LEN];
     if (getMacAddr(mac_addr)) {
-        scopeLogError("ERROR: createMachineID: getMacAddr");
+        appviewLogError("ERROR: createMachineID: getMacAddr");
         return 1;
     }
 
-    scope_snprintf(string, MACHINE_ID_LEN + 1, 
+    appview_snprintf(string, MACHINE_ID_LEN + 1, 
         "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
         mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3],
         mac_addr[4], mac_addr[5], mac_addr[6], mac_addr[7], 
@@ -368,52 +368,52 @@ getMacAddr(char *string)
     char addr_path[256];
     bool found = FALSE;
     
-    d = scope_opendir("/sys/class/net/");
+    d = appview_opendir("/sys/class/net/");
     if (!d) return 1;
 
     // Check if interface eth exists
     // Otherwise find an interface that does not contain "virtual" in the soft link
-    while ((dir = scope_readdir(d)) != NULL) {
-        scope_sprintf(dir_path, "/sys/class/net/%s", dir->d_name);
+    while ((dir = appview_readdir(d)) != NULL) {
+        appview_sprintf(dir_path, "/sys/class/net/%s", dir->d_name);
 
-        if (scope_strstr(dir->d_name, "eth") != 0) {
+        if (appview_strstr(dir->d_name, "eth") != 0) {
             found = TRUE;
             break;
         }
     
-        if (scope_lstat(dir_path, &buf) != 0) {
+        if (appview_lstat(dir_path, &buf) != 0) {
             break;
         }
         if (S_ISLNK(buf.st_mode)) {
-            (void)scope_readlink(dir_path, link_path, sizeof(link_path));
-            if (scope_strstr(link_path, "virtual") == NULL) {
+            (void)appview_readlink(dir_path, link_path, sizeof(link_path));
+            if (appview_strstr(link_path, "virtual") == NULL) {
                 found = TRUE;
                 break;
             }
         }
     }
-    scope_closedir(d);
+    appview_closedir(d);
 
     if (!found) {
-        scopeLogError("Error: getMacAddr: No physical interface found");
+        appviewLogError("Error: getMacAddr: No physical interface found");
         return 1;
     }
 
-    scope_sprintf(addr_path, "%s/address", dir_path);
+    appview_sprintf(addr_path, "%s/address", dir_path);
 
     FILE *fp;
-    if ((fp = scope_fopen(addr_path, "r")) == NULL) {
-        scopeLogError("Error: getMacAddr: No address file found");
+    if ((fp = appview_fopen(addr_path, "r")) == NULL) {
+        appviewLogError("Error: getMacAddr: No address file found");
         return 1;
     }
-    if (scope_fgets(mac_buf, sizeof(mac_buf), fp) == NULL) {
-        scopeLogError("Error: getMacAddr: No address found in file");
-        scope_fclose(fp);
+    if (appview_fgets(mac_buf, sizeof(mac_buf), fp) == NULL) {
+        appviewLogError("Error: getMacAddr: No address found in file");
+        appview_fclose(fp);
         return 1;
     }
-    scope_fclose(fp);
+    appview_fclose(fp);
 
-    scope_strncpy(string, mac_buf, MAC_ADDR_LEN + 1);
+    appview_strncpy(string, mac_buf, MAC_ADDR_LEN + 1);
     return 0;
 }
 
@@ -454,7 +454,7 @@ sigSafeUtoa(unsigned long val, char *buf, int base, int *len) {
 static internal_mkdir_status_t
 sigSafeCheckIfDirExists(const char *absDirPath, uid_t uid, gid_t gid) {
     struct stat st = {0};
-    if (!scope_stat(absDirPath, &st)) {
+    if (!appview_stat(absDirPath, &st)) {
         if (S_ISDIR(st.st_mode)) {      
             // Check for file creation abilities in directory
             if (((st.st_uid == uid) && (st.st_mode & S_IWUSR)) ||
@@ -489,25 +489,25 @@ sigSafeMkdirRecursive(const char *dirPath) {
     if (res != INT_MKDIR_STATUS_ERR_OTHER) {
         return TRUE;
     }
-    scope_strcpy(tempPath, dirPath);
+    appview_strcpy(tempPath, dirPath);
 
     /* traverse the full path */
     for (char *p = tempPath + 1; *p; p++) {
         if (*p == '/') {
             /* Temporarily truncate */
             *p = '\0';
-            scope_errno = 0;
+            appview_errno = 0;
 
             struct stat st = {0};
-            if (scope_stat(tempPath, &st)) {
-                mkdirRes = scope_mkdir(tempPath, 0755);
+            if (appview_stat(tempPath, &st)) {
+                mkdirRes = appview_mkdir(tempPath, 0755);
                 if (!mkdirRes) {
                     /* We ensure that we setup correct mode regarding umask settings */
-                    if (scope_chmod(tempPath, 0755)) {
+                    if (appview_chmod(tempPath, 0755)) {
                         return FALSE;
                     }
                 } else {
-                    /* scope_mkdir fails */
+                    /* appview_mkdir fails */
                    return FALSE;
                 }
             }
@@ -516,16 +516,16 @@ sigSafeMkdirRecursive(const char *dirPath) {
         }
     }
     struct stat st = {0};
-    if (scope_stat(tempPath, &st)) {
+    if (appview_stat(tempPath, &st)) {
         /* if last element was not created in the loop above */
-        mkdirRes = scope_mkdir(tempPath, 0755);
+        mkdirRes = appview_mkdir(tempPath, 0755);
         if (mkdirRes) {
             return FALSE;
         }
     }
 
     /* We ensure that we setup correct mode regarding umask settings */
-    return (scope_chmod(tempPath, 0755) == 0) ? TRUE : FALSE;
+    return (appview_chmod(tempPath, 0755) == 0) ? TRUE : FALSE;
 }
 
 /*
@@ -537,7 +537,7 @@ sigSafeWriteNumber(int fd, long val, int base) {
     char buf[32] = {0};
     int msgLen = 0;
     sigSafeUtoa(val, buf, base, &msgLen);
-    return scope_write(fd, buf ,msgLen);
+    return appview_write(fd, buf ,msgLen);
 }
 
 /*
@@ -554,18 +554,18 @@ libVersion(const char *version) {
     }
 
     ++version;
-    size_t versionSize = scope_strlen(version);
+    size_t versionSize = appview_strlen(version);
 
     for (int i = 0; i < versionSize; ++i) {
         // Only digit and "." are accepted
-        if ((scope_isdigit(version[i]) == 0) && version[i] != '.' &&
+        if ((appview_isdigit(version[i]) == 0) && version[i] != '.' &&
             version[i] != '-' && version[i] != 't' && version[i] != 'c' &&
             version[i] != 'r') {
             return "dev";
         }
         if (i == 0 || i == versionSize) {
             // First and last character must be number
-            if (scope_isdigit(version[i]) == 0) {
+            if (appview_isdigit(version[i]) == 0) {
                 return "dev";
             }
         }
@@ -573,33 +573,33 @@ libVersion(const char *version) {
     return version;
 }
 
-#define EDGE_PATH_DOCKER "/var/run/appscope/appscope.sock"
-#define EDGE_PATH_DEFAULT "/opt/cribl/state/appscope.sock"
+#define EDGE_PATH_DOCKER "/var/run/appview/appview.sock"
+#define EDGE_PATH_DEFAULT "/opt/cribl/state/appview.sock"
 #define READ_AND_WRITE (R_OK|W_OK)
 
 char *
 edgePath(void) {
     // 1) If EDGE_PATH_DOCKER can be accessed, return that.
-    if (scope_access(EDGE_PATH_DOCKER, READ_AND_WRITE) == 0) {
-        return scope_strdup(EDGE_PATH_DOCKER);
+    if (appview_access(EDGE_PATH_DOCKER, READ_AND_WRITE) == 0) {
+        return appview_strdup(EDGE_PATH_DOCKER);
     }
 
     // 2) If CRIBL_HOME is defined and can be accessed,
-    //    return $CRIBL_HOME/state/appscope.sock
+    //    return $CRIBL_HOME/state/appview.sock
     const char *cribl_home = getenv("CRIBL_HOME");
     if (cribl_home) {
         char *new_path = NULL;
-        if (scope_asprintf(&new_path, "%s/%s", cribl_home, "state/appscope.sock") > 0) {
-            if (scope_access(new_path, READ_AND_WRITE) == 0) {
+        if (appview_asprintf(&new_path, "%s/%s", cribl_home, "state/appview.sock") > 0) {
+            if (appview_access(new_path, READ_AND_WRITE) == 0) {
                 return new_path;
             }
-            scope_free(new_path);
+            appview_free(new_path);
         }
     }
 
     // 3) If EDGE_PATH_DEFAULT can be accessed, return it
-    if (scope_access(EDGE_PATH_DEFAULT, READ_AND_WRITE) == 0) {
-        return scope_strdup(EDGE_PATH_DEFAULT);
+    if (appview_access(EDGE_PATH_DEFAULT, READ_AND_WRITE) == 0) {
+        return appview_strdup(EDGE_PATH_DEFAULT);
     }
 
     return NULL;

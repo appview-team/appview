@@ -1,6 +1,6 @@
 # You can find a list of all icons available at https://fontawesome.com/icons?d=gallery&s=solid
 
-- title: Scope Any Linux Command
+- title: AppView Any Linux Command
   description: Use Iconography & Description for High Level Features. 
   items: 
     - title: Instrument
@@ -9,9 +9,9 @@
       order: 1
     - title: Collect
       icon: digital-tachograph
-      shortDescription: AppScope collects StatsD-style metrics about applications and structured, wide events events for file access, DNS, and network activity. AppScope even looks inside encrypted payloads for service mesh-like visibility into applications without proxying traffic. 
+      shortDescription: AppView collects StatsD-style metrics about applications and structured, wide events events for file access, DNS, and network activity. AppView even looks inside encrypted payloads for service mesh-like visibility into applications without proxying traffic. 
       order: 2
     - title: Observe
-      icon: microscope
+      icon: microappview
       shortDescription: Send application information, wire and log data, and performance metrics to existing log analytics and metrics tooling. For quick results, visualize with our terminal dashboard.
       order: 1

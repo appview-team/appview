@@ -23,10 +23,10 @@ body:
     label: Environment
     description: |
       Examples:
-        - **AppScope**: v0.8.0
-          To retrieve information about AppScope version:
+        - **AppView**: v0.8.0
+          To retrieve information about AppView version:
           ```
-          scope version
+          appview version
           ```
         - **OS**: Ubuntu 18.04/Alpine3.15
           To retrieve information about Operating System:
@@ -44,7 +44,7 @@ body:
           uname -r
           ```
     value: |
-        - AppScope:
+        - AppView:
         - OS:
         - Architecture:
         - Kernel:

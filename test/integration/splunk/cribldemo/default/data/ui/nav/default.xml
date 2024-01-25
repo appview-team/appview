@@ -27,7 +27,7 @@
   	<view name="search" />
     <view name="troubleshooting" label="Troubleshooting" />
   </collection>
-  <collection label="AppScope Monitoring">
+  <collection label="AppView Monitoring">
    <view name="s_processes" />
    <!-- <view name="s_network" /> -->
    <view name="s_file_system" />

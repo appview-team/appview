@@ -5,23 +5,23 @@ The extract.sh script is used to grab 1 sample of each event type from 3 sources
 Create the sources, then run the extract script to create a single file with a sample of each event.
 
 ## Create the sources
-edit appscope/test/integration/syscalls/Dockerfile
+edit appview/test/integration/syscalls/Dockerfile
 to the list of ENV settings, add the line:
-ENV SCOPE_EVENT_DEST=file:///opt/appscope/test/manual/schema/syscalls.evt
+ENV APPVIEW_EVENT_DEST=file:///opt/appview/test/manual/schema/syscalls.evt
 
 ### Get the syscall events
 
 
-$ cd appscope/test/integration
+$ cd appview/test/integration
 
 $ make syscalls
 
 ### Get http client events
 
 
-$ scope run -- curl wttr.in
+$ appview run -- curl wttr.in
 
-$ cp ~/.scope/history/curl_XXX/events.json appscope/test/manual/schema/http_client.evt
+$ cp ~/.appview/history/curl_XXX/events.json appview/test/manual/schema/http_client.evt
 
 ### Get http server events
 
@@ -32,11 +32,11 @@ $ sudo nginx -s stop
 
 $ sudo bash
 
-$ scope run -- nginx
+$ appview run -- nginx
 
-$ scope run -- curl localhost
+$ appview run -- curl localhost
 
-$ cp ~/.scope/history/curl_XXX/events.json appscope/test/manual/schema/http_server.evt
+$ cp ~/.appview/history/curl_XXX/events.json appview/test/manual/schema/http_server.evt
 
 $ nginx -s stop
 
@@ -45,7 +45,7 @@ $ exit
 ### Extract the sources
 
 
-$ appscope/test/manual/schema/extract.sh
+$ appview/test/manual/schema/extract.sh
 
 you have a sample.evt file with an example of each event.
 

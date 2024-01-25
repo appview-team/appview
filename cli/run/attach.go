@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/util"
 	"github.com/syndtr/gocapability/capability"
 )
 
@@ -15,8 +15,8 @@ var (
 	errGetLinuxCap       = errors.New("unable to get linux capabilities for current process")
 	errLoadLinuxCap      = errors.New("unable to load linux capabilities for current process")
 	errMissingPtrace     = errors.New("missing PTRACE capabilities to attach to a process")
-	errMissingScopedProc = errors.New("no scoped process found matching that name")
-	errNotScoped         = errors.New("detach failed. This process is not being scoped")
+	errMissingViewedProc = errors.New("no viewed process found matching that name")
+	errNotViewed         = errors.New("detach failed. This process is not being viewed")
 	errLibraryNotExist   = errors.New("library Path does not exist")
 )
 
@@ -28,7 +28,7 @@ func (rc *Config) Attach(pid int, setupWorkDir bool) (bool, error) {
 
 	reattach := false
 
-	status, err := util.PidScopeStatus(rc.Rootdir, pid)
+	status, err := util.PidAppViewStatus(rc.Rootdir, pid)
 	if err != nil {
 		return false, err
 	}
@@ -60,21 +60,21 @@ func (rc *Config) Attach(pid int, setupWorkDir bool) (bool, error) {
 		args = append(args, []string{"--rootdir", rc.Rootdir}...)
 	}
 
-	// Disable detection of a scope rules file with this command
-	env = append(env, "SCOPE_RULES=false")
+	// Disable detection of a appview rules file with this command
+	env = append(env, "APPVIEW_RULES=false")
 
 	// Disable cribl event breaker with this command
 	if rc.NoBreaker {
-		env = append(env, "SCOPE_CRIBL_NO_BREAKER=true")
+		env = append(env, "APPVIEW_CRIBL_NO_BREAKER=true")
 	}
 
 	// Normal operational, create a directory for this run.
-	// Directory contains scope.yml which is configured to output to that
+	// Directory contains appview.yml which is configured to output to that
 	// directory and has a command directory configured in that directory.
 	if setupWorkDir {
 		rc.setupWorkDir(args, true)
 	}
-	env = append(env, "SCOPE_CONF_PATH="+filepath.Join(rc.WorkDir, "scope.yml"))
+	env = append(env, "APPVIEW_CONF_PATH="+filepath.Join(rc.WorkDir, "appview.yml"))
 
 	// Check the attached process mnt namespace.
 	// If it is different from the CLI mnt namespace:
@@ -83,7 +83,7 @@ func (rc *Config) Attach(pid int, setupWorkDir bool) (bool, error) {
 	//   link to working directory created in previous step
 	refNsPid := util.PidGetRefPidForMntNamespace(rc.Rootdir, pid)
 	if refNsPid != -1 {
-		env = append(env, "SCOPE_HOST_WORKDIR_PATH="+rc.WorkDir)
+		env = append(env, "APPVIEW_HOST_WORKDIR_PATH="+rc.WorkDir)
 	}
 
 	// Handle custom library path
@@ -95,7 +95,7 @@ func (rc *Config) Attach(pid int, setupWorkDir bool) (bool, error) {
 	}
 
 	if reattach {
-		env = append(env, "SCOPE_CONF_RELOAD="+filepath.Join(rc.WorkDir, "scope.yml"))
+		env = append(env, "APPVIEW_CONF_RELOAD="+filepath.Join(rc.WorkDir, "appview.yml"))
 	}
 
 	stdoutStderr, err := ld.AttachSubProc(args, env)
@@ -110,7 +110,7 @@ func (rc *Config) Attach(pid int, setupWorkDir bool) (bool, error) {
 	if setupWorkDir {
 		eventsFilePath := filepath.Join(rc.WorkDir, "events.json")
 		metricsFilePath := filepath.Join(rc.WorkDir, "metrics.json")
-		logsFilePath := filepath.Join(rc.WorkDir, "libscope.log")
+		logsFilePath := filepath.Join(rc.WorkDir, "libappview.log")
 		payloadsDirPath := filepath.Join(rc.WorkDir, "payloads")
 
 		if rc.Rootdir != "" {
@@ -145,12 +145,12 @@ func (rc *Config) Detach(pid int) error {
 	env := os.Environ()
 	ld := loader.New()
 
-	status, err := util.PidScopeStatus(rc.Rootdir, pid)
+	status, err := util.PidAppViewStatus(rc.Rootdir, pid)
 	if err != nil {
 		return err
 	}
 	if status != util.Active {
-		return errNotScoped
+		return errNotViewed
 	}
 
 	args := []string{fmt.Sprint(pid)}

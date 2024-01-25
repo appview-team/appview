@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/criblio/scope/internal"
+	"github.com/appview-team/appview/internal"
 	"github.com/rs/zerolog/log"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,14 +43,14 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 
 	shouldModify := true
 
-	if _, ok := pod.ObjectMeta.Annotations["appscope.dev/disable"]; ok {
+	if _, ok := pod.ObjectMeta.Annotations["appview.dev/disable"]; ok {
 		shouldModify = false
 	}
 
-	// Use scope-pod-init to see if the pod is already mutated
+	// Use appview-pod-init to see if the pod is already mutated
 	// if so, don't double-mutate it
 	for i := 0; i < len(pod.Spec.InitContainers); i++ {
-		if pod.Spec.InitContainers[i].Name == "scope-pod-init" {
+		if pod.Spec.InitContainers[i].Name == "appview-pod-init" {
 			shouldModify = false
 		}
 	}
@@ -84,15 +84,15 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			// Get reference configmap in scope's namespace
-			cm, err := clientset.CoreV1().ConfigMaps(string(namespace)).Get(context.TODO(), "scope", metav1.GetOptions{})
+			// Get reference configmap in appview's namespace
+			cm, err := clientset.CoreV1().ConfigMaps(string(namespace)).Get(context.TODO(), "appview", metav1.GetOptions{})
 			if err != nil {
 				app.HandleError(w, r, err)
 				return
 			}
 
-			// If the scope configmap does exists in our namespace, create it from template in scope namespace
-			if cmlocal, err := clientset.CoreV1().ConfigMaps(admissionReview.Request.Namespace).Get(context.TODO(), "scope", metav1.GetOptions{}); errors.IsNotFound(err) {
+			// If the appview configmap does exists in our namespace, create it from template in appview namespace
+			if cmlocal, err := clientset.CoreV1().ConfigMaps(admissionReview.Request.Namespace).Get(context.TODO(), "appview", metav1.GetOptions{}); errors.IsNotFound(err) {
 				log.Debug().Interface("cm", cm).Str("namespace", admissionReview.Request.Namespace).Msgf("creating configmap")
 				cm.SetResourceVersion("")
 				cm.SetNamespace(admissionReview.Request.Namespace)
@@ -102,7 +102,7 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 			} else {
-				// We do exist, so update the data with current configuration from our scope namespace configmap
+				// We do exist, so update the data with current configuration from our appview namespace configmap
 				cmlocal.Data = cm.Data
 				log.Debug().Interface("cm", cm).Str("namespace", admissionReview.Request.Namespace).Msgf("updating configmap")
 				_, err := clientset.CoreV1().ConfigMaps(admissionReview.Request.Namespace).Update(context.TODO(), cmlocal, metav1.UpdateOptions{})
@@ -113,35 +113,35 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// InitContainer are splitted by 2 phases (scope-pod-init, scope-pod-extract)
-		// scope-pod-init: copy scope from cribl:/scope to shared volume /scope/scope
-		// scope-pod-extract: create extraction directory (/scope/scope/<id>/) and perform
+		// InitContainer are splitted by 2 phases (appview-pod-init, appview-pod-extract)
+		// appview-pod-init: copy appview from cribl:/appview to shared volume /appview/appview
+		// appview-pod-extract: create extraction directory (/appview/appview/<id>/) and perform
 		// extract operation there
 		//
-		// Note: scope-pod-extract is performed in context of application container
+		// Note: appview-pod-extract is performed in context of application container
 		// therefore we are able to detect proper loader used in application container
 
-		// scope-pod-init container will copy the scope binary
+		// appview-pod-init container will copy the appview binary
 		pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-			Name:    "scope-pod-init",
-			Image:   fmt.Sprintf("cribl/scope:%s", ver),
-			Command: []string{"cp", "/usr/local/bin/scope", "/scope/scope"},
+			Name:    "appview-pod-init",
+			Image:   fmt.Sprintf("cribl/appview:%s", ver),
+			Command: []string{"cp", "/usr/local/bin/appview", "/appview/appview"},
 			VolumeMounts: []corev1.VolumeMount{{
-				Name:      "scope",
-				MountPath: "/scope",
+				Name:      "appview",
+				MountPath: "/appview",
 			}},
 		})
 
-		// Create scope-conf volume
+		// Create appview-conf volume
 		// assumed to be emptyDir
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
-			Name: "scope",
+			Name: "appview",
 		}, corev1.Volume{
-			Name: "scope-conf",
+			Name: "appview-conf",
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "scope",
+						Name: "appview",
 					},
 				},
 			},
@@ -149,10 +149,10 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 
 		// add volume mount to all containers in the pod
 		for i := 0; i < len(pod.Spec.Containers); i++ {
-			// scope-pod-extract container(s) will extract the scope files (library and config files)
-			scopeDirPath := fmt.Sprintf("/scope/%d", i)
+			// appview-pod-extract container(s) will extract the appview files (library and config files)
+			appviewDirPath := fmt.Sprintf("/appview/%d", i)
 			cmd := []string{
-				"/scope/scope",
+				"/appview/appview",
 				"excrete",
 				"--parents",
 			}
@@ -174,52 +174,52 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 				)
 			}
 
-			cmd = append(cmd, scopeDirPath)
+			cmd = append(cmd, appviewDirPath)
 			pod.Spec.InitContainers = append(pod.Spec.InitContainers, corev1.Container{
-				Name:            fmt.Sprintf("scope-pod-extract-%d", i),
+				Name:            fmt.Sprintf("appview-pod-extract-%d", i),
 				Image:           pod.Spec.Containers[i].Image,
 				ImagePullPolicy: pod.Spec.Containers[i].ImagePullPolicy,
 				Command:         cmd,
 				VolumeMounts: []corev1.VolumeMount{{
-					Name:      "scope",
-					MountPath: "/scope",
+					Name:      "appview",
+					MountPath: "/appview",
 				}},
 			})
 
 			pod.Spec.Containers[i].VolumeMounts = append(pod.Spec.Containers[i].VolumeMounts, corev1.VolumeMount{
-				Name:      "scope",
-				MountPath: "/scope",
+				Name:      "appview",
+				MountPath: "/appview",
 			}, corev1.VolumeMount{
-				Name:      "scope-conf",
-				MountPath: "/scope/scope.yml",
-				SubPath:   "scope.yml",
+				Name:      "appview-conf",
+				MountPath: "/appview/appview.yml",
+				SubPath:   "appview.yml",
 			})
 			if len(app.CriblDest) > 0 {
 				pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-					Name:  "SCOPE_CRIBL",
+					Name:  "APPVIEW_CRIBL",
 					Value: app.CriblDest,
 				})
 			}
-			// Add environment variables to configure scope
+			// Add environment variables to configure appview
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
 				Name:  "LD_PRELOAD",
-				Value: fmt.Sprintf("%s/libscope.so", scopeDirPath),
+				Value: fmt.Sprintf("%s/libappview.so", appviewDirPath),
 			})
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-				Name:  "SCOPE_CONF_PATH",
-				Value: fmt.Sprintf("%s/scope.yml", scopeDirPath),
+				Name:  "APPVIEW_CONF_PATH",
+				Value: fmt.Sprintf("%s/appview.yml", appviewDirPath),
 			})
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-				Name:  "SCOPE_EXEC_PATH",
-				Value: "/scope/scope",
+				Name:  "APPVIEW_EXEC_PATH",
+				Value: "/appview/appview",
 			})
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
 				Name:  "LD_LIBRARY_PATH",
-				Value: fmt.Sprintf("/tmp/appscope/%s/", ver),
+				Value: fmt.Sprintf("/tmp/appview/%s/", ver),
 			})
-			// Get some metadata pushed into scope from the K8S downward API
+			// Get some metadata pushed into appview from the K8S downward API
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-				Name: "SCOPE_TAG_node_name",
+				Name: "APPVIEW_TAG_node_name",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "spec.nodeName",
@@ -227,7 +227,7 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 				},
 			})
 			pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-				Name: "SCOPE_TAG_namespace",
+				Name: "APPVIEW_TAG_namespace",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
 						FieldPath: "metadata.namespace",
@@ -240,7 +240,7 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 					parts := strings.Split(k, "/")
 					if len(parts) > 1 {
 						pod.Spec.Containers[i].Env = append(pod.Spec.Containers[i].Env, corev1.EnvVar{
-							Name:  fmt.Sprintf("SCOPE_TAG_%s", strings.ToLower(parts[1])),
+							Name:  fmt.Sprintf("APPVIEW_TAG_%s", strings.ToLower(parts[1])),
 							Value: v,
 						})
 					}
@@ -249,10 +249,10 @@ func (app *App) HandleMutate(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if pod.ObjectMeta.Labels != nil {
-			pod.ObjectMeta.Labels["appscope.dev/scope"] = "true"
+			pod.ObjectMeta.Labels["appview.dev/appview"] = "true"
 		} else {
 			pod.ObjectMeta.Labels = map[string]string{
-				"appscope.dev/scope": "true",
+				"appview.dev/appview": "true",
 			}
 		}
 

@@ -32,7 +32,7 @@ struct sym_status {
     bool present;
 };
 
-// List of the functions used by the AppScope
+// List of the functions used by the AppView
 static struct sym_status sym_table[] = {
   {.name = "syscall.Syscall"},
   {.name = "syscall.RawSyscall"},

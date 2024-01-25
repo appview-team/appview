@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/metric_proc_cpu.schema.json",
+  "$id": "https://appview.dev/docs/schemas/metric_proc_cpu.schema.json",
   "type": "object",
-  "title": "AppScope `proc.cpu` Metric",
+  "title": "AppView `proc.cpu` Metric",
   "description": "Structure of the `proc.cpu` metric",
   "examples":[{"type":"metric","body":{"_metric":"proc.cpu","_metric_type":"counter","_value":2107,"proc":"accept01","pid":1946,"host":"7cb66c7f77dd","unit":"microsecond","_time":1643749566.0302949}}],
   "required": [

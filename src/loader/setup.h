@@ -3,11 +3,11 @@
 
 #include <unistd.h>
 
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 char *setupLoadFileIntoMem(size_t *, const char *);
 bool isCfgFileConfigured(const char *);
-int removeScopeCfgFile(const char *);
+int removeAppViewCfgFile(const char *);
 service_status_t setupService(const char *, uid_t, gid_t);
 service_status_t setupUnservice(void);
 bool setupMount(pid_t, const char *, uid_t, gid_t);

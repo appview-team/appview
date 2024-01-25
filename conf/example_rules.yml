@@ -66,7 +66,7 @@ allow:
     payload:
       dir: /tmp
       enable: false
-    libscope:
+    libappview:
       configevent: true
       summaryperiod: 10
       commanddir: /tmp
@@ -74,7 +74,7 @@ allow:
         level: warning
         transport:
           buffer: line
-          path: /tmp/scope.log
+          path: /tmp/appview.log
           type: file
     cribl:
       enable: true
@@ -153,7 +153,7 @@ allow:
     payload:
       dir: /tmp
       enable: false
-    libscope:
+    libappview:
       configevent: true
       summaryperiod: 10
       commanddir: /tmp
@@ -161,7 +161,7 @@ allow:
         level: warning
         transport:
           buffer: line
-          path: /tmp/scope2.log
+          path: /tmp/appview2.log
           type: file
     cribl:
       enable: true

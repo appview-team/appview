@@ -8,17 +8,17 @@ volumes:
 
 services:
   fluentbit:
-    image: scopeci/scope-fluentbit
+    image: appviewci/appview-fluentbit
     networks:
       - fluentbit-net
     build:
       cache_from:
-        - scopeci/scope-fluentbit
+        - appviewci/appview-fluentbit
       context: .
       dockerfile: ./Dockerfile
     working_dir: /opt/test/fluentbit
     volumes:
-      - ../../..:/opt/appscope
+      - ../../..:/opt/appview
       - /var/run/docker.sock:/var/run/docker.sock
       - test_output:/test_output
     privileged: true
@@ -38,15 +38,15 @@ services:
     volumes:
       - test_output:/test_output
     environment:
-      - SCOPE_HOME=/test_configs/scope/
-      - SCOPE_LOG_LEVEL=debug
+      - APPVIEW_HOME=/test_configs/appview/
+      - APPVIEW_LOG_LEVEL=debug
     ports:
       - "8000:80"
     entrypoint: ["/bin/sh","-c"]
     command:
       - |
         chmod 666 /test_output/abstest
-        ldscope nginx ${NGINX_ARGS}
+        ldappview nginx ${NGINX_ARGS}
   _service-logstream:
     build: services/logstream/
     networks:

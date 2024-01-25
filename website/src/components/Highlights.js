@@ -22,14 +22,14 @@ export default function Highlights() {
         }
       }
       metricsAndEvents: file(
-        relativePath: { eq: "scope-metrics-and-events.mp4" }
+        relativePath: { eq: "appview-metrics-and-events.mp4" }
       ) {
         publicURL
       }
-      http: file(relativePath: { eq: "scope-http.mp4" }) {
+      http: file(relativePath: { eq: "appview-http.mp4" }) {
         publicURL
       }
-      dash: file(relativePath: { eq: "scope-dash.mp4" }) {
+      dash: file(relativePath: { eq: "appview-dash.mp4" }) {
         publicURL
       }
     }
@@ -42,7 +42,7 @@ export default function Highlights() {
     data.dash.publicURL,
   ];
 
-  //const alt = ["Scope Metrics & Events", "Scope HTTP", "Scope Dashboard"];
+  //const alt = ["AppView Metrics & Events", "AppView HTTP", "AppView Dashboard"];
 
   return (
     <Container className="highlights">

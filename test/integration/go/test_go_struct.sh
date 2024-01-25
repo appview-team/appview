@@ -92,11 +92,11 @@ function check_expected_file_args() {
       exit 1
   fi
 
-  SCOPE_STRUCT_FILE=$1
+  APPVIEW_STRUCT_FILE=$1
 
-  if [ ! -f "$SCOPE_STRUCT_FILE" ]; then
-      echo "test_go_struct.sh cannot access $SCOPE_STRUCT_FILE"
-      echo "Example contents of $SCOPE_STRUCT_FILE:"
+  if [ ! -f "$APPVIEW_STRUCT_FILE" ]; then
+      echo "test_go_struct.sh cannot access $APPVIEW_STRUCT_FILE"
+      echo "Example contents of $APPVIEW_STRUCT_FILE:"
       echo " runtime.g|m=48"
       echo " runtime.m|tls=96"
       echo " net/http.connReader|conn=0"
@@ -126,7 +126,7 @@ function check_expected_file_args() {
 
 
 function test_each_line() {
-  echo "  Using $SCOPE_STRUCT_FILE as the list of what structure offsets scope uses"
+  echo "  Using $APPVIEW_STRUCT_FILE as the list of what structure offsets appview uses"
   echo "  Using $APP_STRUCT_FILE from $GO_APP as the source of truth"
   echo "  Skipping lines that have an optional tag, unless it matches '$TAG_FILTER'"
 
@@ -139,7 +139,7 @@ function test_each_line() {
       TAGS=$(echo $LINE | cut -d= -f2 | cut -d'|' -f2)
 
       test_structure $STRUCT_NAME $FIELD_NAME $FIELD_OFFSET $TAGS
-  done <$SCOPE_STRUCT_FILE
+  done <$APPVIEW_STRUCT_FILE
 }
 
 

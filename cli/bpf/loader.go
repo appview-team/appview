@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/cilium/ebpf"
-	"github.com/criblio/scope/pidfd"
+	"github.com/appview-team/appview/pidfd"
 	"golang.org/x/sys/unix"
 )
 
@@ -75,16 +75,16 @@ func (bl BpfLoader) Terminate() error {
 	return bl.pidFd.SendSignal(unix.SIGUSR1)
 }
 
-type validEbpfScope struct {
+type validEbpfAppView struct {
 	ebpfProgName string
 	ebpfProgType ebpf.ProgramType
 	ebpfLinkType linkType
 	ebpfMapType  ebpf.MapType
 }
 
-// validBPfProgram verifies if the eBPF objects are supported in AppScope
+// validBPfProgram verifies if the eBPF objects are supported in AppView
 func validBPfProgram(linkInfo LinkInformation, progInfo *ebpf.ProgramInfo, mapInfo *ebpf.MapInfo) bool {
-	expected := validEbpfScope{
+	expected := validEbpfAppView{
 		ebpfProgName: "sig_deliver",
 		ebpfProgType: ebpf.TracePoint,
 		ebpfLinkType: BPF_LINK_TYPE_PERF_EVENT,

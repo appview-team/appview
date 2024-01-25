@@ -10,33 +10,33 @@ RUN apk update && apk add \
 RUN wget https://api.gogen.io/linux/gogen --no-check-certificate
 RUN chmod 755 ./gogen
 
-# tcpserver is an app built from git@bitbucket.org:cribl/scope.git
+# tcpserver is an app built from git@bitbucket.org:cribl/appview.git
 # gcc -g test/manual/tcpserver.c -lpthread -o tcpserver
 COPY gogen/tcpserver /usr/bin/tcpserver
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=error
-ENV SCOPE_METRIC_VERBOSITY=4
-#ENV SCOPE_EVENT_LOGFILE=true
-#ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-#ENV SCOPE_EVENT_METRIC_NAME=net\.tx
-ENV SCOPE_SUMMARY_PERIOD=1
-#ENV SCOPE_EVENT_HTTP=true
-ENV SCOPE_EVENT_DEST=file:///gogen/events.log
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=error
+ENV APPVIEW_METRIC_VERBOSITY=4
+#ENV APPVIEW_EVENT_LOGFILE=true
+#ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+#ENV APPVIEW_EVENT_METRIC_NAME=net\.tx
+ENV APPVIEW_SUMMARY_PERIOD=1
+#ENV APPVIEW_EVENT_HTTP=true
+ENV APPVIEW_EVENT_DEST=file:///gogen/events.log
 
-#ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-RUN echo "export PATH=/usr/local/scope:/usr/local/scope/bin:${PATH}" >/etc/profile.d/path.sh
-COPY scope-profile.sh /etc/profile.d/scope.sh
+#ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+RUN echo "export PATH=/usr/local/appview:/usr/local/appview/bin:${PATH}" >/etc/profile.d/path.sh
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY gogen/scope-test /usr/local/scope/scope-test
+COPY gogen/appview-test /usr/local/appview/appview-test
 COPY gogen/weblog.yml /gogen/weblog.yml
 
 COPY docker-entrypoint.sh /

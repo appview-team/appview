@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/util"
 )
 
 // Metric represents a metric sample

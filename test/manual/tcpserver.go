@@ -1,5 +1,5 @@
 //
-// Debug TCP Server that Mimics LogStream's AppScope Source/Input
+// Debug TCP Server that Mimics LogStream's AppView Source/Input
 //
 // `go run tcpserver.go | egrep -e ^ -e '"(type|src|protocol)":"[^"]*"'`
 //

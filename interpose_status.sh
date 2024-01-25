@@ -1,6 +1,6 @@
 #!/bin/bash
 
-LIB_NAME=libscope.so
+LIB_NAME=libappview.so
 
 
 # Setup some things based on platform
@@ -18,18 +18,18 @@ else
 fi
 
 
-# We need to resolve the scope library to see what it interposes.
+# We need to resolve the appview library to see what it interposes.
 # In priority order, use:
 #  1) LD_PRELOAD / DYLD_INSERT_LIBRARIES env variables
-#  2) SCOPE_HOME if defined
+#  2) APPVIEW_HOME if defined
 #  3) find from current directory
 if [[ ${LD_PRELOAD} == *"$LIB_NAME"* ]]; then
     LIB_PATH=${LD_PRELOAD}
 elif [[ ${DYLD_INSERT_LIBRARIES} == *"$LIB_NAME"* ]]; then
     LIB_PATH=${DYLD_INSERT_LIBRARIES}
-elif [ ! -z "$SCOPE_HOME" ]; then
-    if [ -f "${SCOPE_HOME}/${REL_PATH}" ]; then
-        LIB_PATH="${SCOPE_HOME}/${REL_PATH}"
+elif [ ! -z "$APPVIEW_HOME" ]; then
+    if [ -f "${APPVIEW_HOME}/${REL_PATH}" ]; then
+        LIB_PATH="${APPVIEW_HOME}/${REL_PATH}"
     fi
 else
     LIB_FIND=`find . -type f -name "$LIB_NAME" | grep -v dSYM | head -n1`
@@ -43,7 +43,7 @@ if [ -z $LIB_PATH ]; then
     echo "Couldn't find $LIB_NAME which is required for $0 to give helpful feedback." >&2
     echo "Please rerun with one of the following changes:" >&2
     echo " o) set ${PRELOAD} env variable with path to $LIB_NAME" >&2
-    echo " o) set SCOPE_HOME env variable to a directory which could resolve ${REL_PATH}" >&2
+    echo " o) set APPVIEW_HOME env variable to a directory which could resolve ${REL_PATH}" >&2
     echo " o) run this script from a directory which contains or is a parent of $LIB_NAME" >&2
     exit 1
 fi
@@ -68,7 +68,7 @@ fi
 
 
 # We should be good to go!
-echo "Processing ${CMD} with scope library ${LIB_PATH}"
+echo "Processing ${CMD} with appview library ${LIB_PATH}"
 
 
 INTERPOSED_FNS=`nm ${NM_OPTS} ${LIB_PATH} | grep " T " | cut -c20-100 | grep -vE "(_init)|(_fini)"`
@@ -77,19 +77,19 @@ INTERPOSED_FNS=`nm ${NM_OPTS} ${LIB_PATH} | grep " T " | cut -c20-100 | grep -vE
 nm ${NM_OPTS} $CMD | grep -E " [WU] " | cut -c20-100 > ./nm.out
 NM_FUNCTIONS_NUM=`cat ./nm.out | wc -l`
 
-SCOPE_NUM=0
-SCOPE_ARRAY=()
+APPVIEW_NUM=0
+APPVIEW_ARRAY=()
 for FN in ${INTERPOSED_FNS[*]}; do
     GREP_RESULT=`grep "^${FN}$" ./nm.out`
     if [ $? == 0 ]; then
-        SCOPE_ARRAY+="${GREP_RESULT}\n"
-        ((SCOPE_NUM+=1))
+        APPVIEW_ARRAY+="${GREP_RESULT}\n"
+        ((APPVIEW_NUM+=1))
     fi
 done
 
 
 echo "Found $NM_FUNCTIONS_NUM dynamically linked functions in $CMD"
-echo "Of these scope will interpose these $SCOPE_NUM functions:"
-echo -e "$SCOPE_ARRAY" | sort | tail -n +2 | sed 's/^/    /'
+echo "Of these appview will interpose these $APPVIEW_NUM functions:"
+echo -e "$APPVIEW_ARRAY" | sort | tail -n +2 | sed 's/^/    /'
 
 rm ./nm.out

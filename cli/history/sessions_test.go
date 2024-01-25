@@ -24,10 +24,10 @@ func waitSessions(expected int) (SessionList, error) {
 
 	go func() {
 		for {
-			lastHome := os.Getenv("SCOPE_HOME")
-			os.Setenv("SCOPE_HOME", ".test")
+			lastHome := os.Getenv("APPVIEW_HOME")
+			os.Setenv("APPVIEW_HOME", ".test")
 			sessions = GetSessions()
-			os.Setenv("SCOPE_HOME", lastHome)
+			os.Setenv("APPVIEW_HOME", lastHome)
 			if len(sessions) >= expected {
 				c <- 1
 				break
@@ -50,7 +50,7 @@ func runThree(t *testing.T) []int {
 	pids := []int{}
 	for i := 0; i < 3; i++ {
 		cmd := exec.Command(os.Args[0])
-		cmd.Env = append(os.Environ(), "TEST_MAIN=run", "SCOPE_HOME=.test")
+		cmd.Env = append(os.Environ(), "TEST_MAIN=run", "APPVIEW_HOME=.test")
 		err := cmd.Run()
 		assert.NoError(t, err)
 		pids = append(pids, cmd.Process.Pid)
@@ -63,7 +63,7 @@ func TestGetSessions(t *testing.T) {
 	defer os.RemoveAll(".test")
 
 	cmd := exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "SCOPE_HOME=.test", "SCOPE_TEST=true")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "APPVIEW_HOME=.test", "APPVIEW_TEST=true")
 	err := cmd.Run()
 	assert.NoError(t, err)
 	files, err := ioutil.ReadDir(".test/history")
@@ -88,10 +88,10 @@ func TestGetSessions(t *testing.T) {
 
 	time.Sleep(5000 * time.Millisecond)
 
-	lastHome := os.Getenv("SCOPE_HOME")
-	os.Setenv("SCOPE_HOME", ".test")
+	lastHome := os.Getenv("APPVIEW_HOME")
+	os.Setenv("APPVIEW_HOME", ".test")
 	sessions := GetSessions()
-	os.Setenv("SCOPE_HOME", lastHome)
+	os.Setenv("APPVIEW_HOME", lastHome)
 	assert.Len(t, sessions, 1)
 	assert.Equal(t, "echo", sessions[0].Cmd)
 	assert.Equal(t, 1, sessions[0].ID)
@@ -107,10 +107,10 @@ func TestGetSessionLast(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	lastHome := os.Getenv("SCOPE_HOME")
-	os.Setenv("SCOPE_HOME", ".test")
+	lastHome := os.Getenv("APPVIEW_HOME")
+	os.Setenv("APPVIEW_HOME", ".test")
 	sessions := GetSessions()
-	os.Setenv("SCOPE_HOME", lastHome)
+	os.Setenv("APPVIEW_HOME", lastHome)
 	assert.Len(t, sessions, 3)
 
 	l1 := sessions.Last(1)
@@ -130,10 +130,10 @@ func TestGetSessionFirst(t *testing.T) {
 
 	time.Sleep(100 * time.Millisecond)
 
-	lastHome := os.Getenv("SCOPE_HOME")
-	os.Setenv("SCOPE_HOME", ".test")
+	lastHome := os.Getenv("APPVIEW_HOME")
+	os.Setenv("APPVIEW_HOME", ".test")
 	sessions := GetSessions()
-	os.Setenv("SCOPE_HOME", lastHome)
+	os.Setenv("APPVIEW_HOME", lastHome)
 	assert.Len(t, sessions, 3)
 
 	l1 := sessions.First(1)
@@ -152,10 +152,10 @@ func TestSessionRemove(t *testing.T) {
 	_ = runThree(t)
 	time.Sleep(100 * time.Millisecond)
 
-	lastHome := os.Getenv("SCOPE_HOME")
-	os.Setenv("SCOPE_HOME", ".test")
+	lastHome := os.Getenv("APPVIEW_HOME")
+	os.Setenv("APPVIEW_HOME", ".test")
 	sessions := GetSessions()
-	os.Setenv("SCOPE_HOME", lastHome)
+	os.Setenv("APPVIEW_HOME", lastHome)
 	assert.Len(t, sessions, 3)
 
 	sessionsBak := append(SessionList{}, sessions...)
@@ -173,12 +173,12 @@ func TestGetSessionRun(t *testing.T) {
 	defer os.RemoveAll(".test")
 
 	cmd := exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "SCOPE_HOME=.test")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "APPVIEW_HOME=.test")
 	err := cmd.Run()
 	assert.NoError(t, err)
 
 	cmd = exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=slow", "SCOPE_HOME=.test")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=slow", "APPVIEW_HOME=.test")
 	err = cmd.Start()
 	assert.NoError(t, err)
 
@@ -195,16 +195,16 @@ func TestSessionArgs(t *testing.T) {
 	defer os.RemoveAll(".test")
 
 	cmd := exec.Command(os.Args[0])
-	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "SCOPE_HOME=.test")
+	cmd.Env = append(os.Environ(), "TEST_MAIN=run", "APPVIEW_HOME=.test")
 	err := cmd.Run()
 	assert.NoError(t, err)
 
 	time.Sleep(100 * time.Millisecond)
 
-	lastHome := os.Getenv("SCOPE_HOME")
-	os.Setenv("SCOPE_HOME", ".test")
+	lastHome := os.Getenv("APPVIEW_HOME")
+	os.Setenv("APPVIEW_HOME", ".test")
 	sessions := GetSessions()
-	os.Setenv("SCOPE_HOME", lastHome)
+	os.Setenv("APPVIEW_HOME", lastHome)
 	assert.Len(t, sessions, 1)
 
 	r := sessions.Args()

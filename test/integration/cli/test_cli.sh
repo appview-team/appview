@@ -1,5 +1,5 @@
 #! /bin/bash
-export SCOPE_EVENT_DEST=file:///opt/test/logs/events.log
+export APPVIEW_EVENT_DEST=file:///opt/test/logs/events.log
 
 DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
 FAILED_TEST_LIST=""
@@ -84,8 +84,8 @@ returns() {
     fi
 }
 
-scopedProcessNumber() {
-    local procFound=$(($(scope ps | wc -l) - 1 ))
+viewedProcessNumber() {
+    local procFound=$(($(appview ps | wc -l) - 1 ))
 
     echo $procFound
 }
@@ -104,21 +104,21 @@ wordPresentInFile() {
 }
 
 # wait maximum 30 seconds
-waitForCmdscopedProcessNumber() {
-    local expScoped=$1
+waitForCmdviewedProcessNumber() {
+    local expViewed=$1
     local retry=0
     local maxRetry=30
     local delay=1
     until [ "$retry" -ge "$maxRetry" ]
     do
-        count=$(scopedProcessNumber)
-        if [ "$count" -eq "$expScoped" ] ; then
+        count=$(viewedProcessNumber)
+        if [ "$count" -eq "$expViewed" ] ; then
             return
         fi
         retry=$((retry+1)) 
         sleep "$delay"
     done
-    echo "FAIL: waiting for the number $expScoped scoped process $count"
+    echo "FAIL: waiting for the number $expViewed viewed process $count"
     ERR+=1
 }
 
@@ -136,53 +136,53 @@ sleep_pid=$!
 sleep 1
 
 # Attach to sleep process
-run scope attach $sleep_pid
+run appview attach $sleep_pid
 dbgOutput
 returns 0
 
 # Wait for attach to execute
-waitForCmdscopedProcessNumber 1
+waitForCmdviewedProcessNumber 1
 
 # Detach to sleep process by PID
-run scope detach $sleep_pid
+run appview detach $sleep_pid
 dbgOutput
 outputs "Detaching from pid ${sleep_pid}"
 returns 0
 
 # Wait for detach to execute
-waitForCmdscopedProcessNumber 0
+waitForCmdviewedProcessNumber 0
 
 # Reattach to sleep process by PID
-run scope attach $sleep_pid
+run appview attach $sleep_pid
 dbgOutput
 outputs "Reattaching to pid ${sleep_pid}"
 returns 0
 
 # Wait for reattach to execute
-waitForCmdscopedProcessNumber 1
+waitForCmdviewedProcessNumber 1
 
 # End sleep process
 kill $sleep_pid
 
-# Assert .scope directory exists
-is_dir /root/.scope
+# Assert .appview directory exists
+is_dir /root/.appview
 
 # Assert sleep session directory exists (in /tmp)
 is_dir /tmp/sleep_*${sleep_pid}*
 
 # Assert sleep config file exists
-is_file /tmp/sleep_*${sleep_pid}*/scope.yml
+is_file /tmp/sleep_*${sleep_pid}*/appview.yml
 
 # Compare sleep config.yml files (attach and reattach) with expected.yml
-for scopedirpath in /tmp/sleep_*${sleep_pid}_*; do
-    scopedir=$(basename "$scopedirpath")
-    cat $scopedirpath/scope.yml | sed -e "s/$scopedir/SESSIONPATH/" | diff - /expected.yml
+for viewedirpath in /tmp/sleep_*${sleep_pid}_*; do
+    viewedir=$(basename "$viewedirpath")
+    cat $viewedirpath/appview.yml | sed -e "s/$viewedir/SESSIONPATH/" | diff - /expected.yml
     if [ $? -eq 0 ]; then
-        echo "PASS: Scope sleep config as expected"
+        echo "PASS: AppView sleep config as expected"
     else
         echo "Configuration file"
-        cat $scopedirpath/scope.yml
-        echo "FAIL: Scope sleep config not as expected"
+        cat $viewedirpath/appview.yml
+        echo "FAIL: AppView sleep config not as expected"
         ERR+=1
     fi
 done
@@ -200,7 +200,7 @@ sleep 1000 &
 sleep_pid=$!
 
 # Attach to sleep process
-run scope attach sleep
+run appview attach sleep
 outputs "Attaching to process ${sleep_pid}"
 returns 0
 
@@ -208,15 +208,15 @@ endtest
 
 
 #
-# Scope ps
+# AppView ps
 #
-starttest "Scope ps"
+starttest "AppView ps"
 
 # Wait for attach to execute
-waitForCmdscopedProcessNumber 1
+waitForCmdviewedProcessNumber 1
 
-# Scope ps
-run scope ps
+# AppView ps
+run appview ps
 outputs "ID	PID	USER	COMMAND
 1	${sleep_pid} 	root	sleep 1000"
 returns 0
@@ -225,23 +225,23 @@ endtest
 
 
 #
-# Scope start
+# AppView start
 #
-starttest "Scope start"
+starttest "AppView start"
 
-# Scope start
-run scope start
+# AppView start
+run appview start
 returns 0
 
 endtest
 
 
 #
-# Scope detach by name
+# AppView detach by name
 #
-starttest "Scope detach by name"
+starttest "AppView detach by name"
 
-echo "1" | scope detach sleep
+echo "1" | appview detach sleep
 RET=$?
 returns 0
 
@@ -252,12 +252,12 @@ timeout 4s tail -f /dev/null
 
 
 #
-# Scope reattach by name
+# AppView reattach by name
 #
-starttest "Scope reattach by name"
+starttest "AppView reattach by name"
 
 # reattach by name
-run scope attach sleep
+run appview attach sleep
 outputs "Reattaching to pid ${sleep_pid}"
 returns 0
 
@@ -268,9 +268,9 @@ endtest
 
 
 #
-# Scope detach all
+# AppView detach all
 #
-starttest "Scope detach all"
+starttest "AppView detach all"
 
 # Run sleep
 sleep 1000 & 
@@ -281,16 +281,16 @@ sleep 1000 &
 sleep_pid2=$!
 
 # Attach to sleep processes
-run scope attach $sleep_pid1
+run appview attach $sleep_pid1
 returns 0
-run scope attach $sleep_pid2
+run appview attach $sleep_pid2
 returns 0
 
 # Wait for attach to execute
-waitForCmdscopedProcessNumber 2
+waitForCmdviewedProcessNumber 2
 
 # Detach from sleep processes
-yes | scope detach --all 2>&1
+yes | appview detach --all 2>&1
 RET=$?
 returns 0
 
@@ -298,16 +298,16 @@ endtest
 
 
 ##
-## Scope daemon
+## AppView daemon
 ##
-#starttest "Scope daemon"
+#starttest "AppView daemon"
 #
 ## Start a netcat listener
 #nc -l -p 9109 > crash.out &
 #sleep 1
 #
-## Start the scope daemon
-#run scope daemon --filedest localhost:9109 &
+## Start the appview daemon
+#run appview daemon --filedest localhost:9109 &
 #daemon_pid=$!
 #sleep 2
 #
@@ -317,7 +317,7 @@ endtest
 #sleep 1
 #
 ## Attach to top
-#run scope attach --backtrace --coredump $top_pid
+#run appview attach --backtrace --coredump $top_pid
 #sleep 1
 #
 ## Crash top
@@ -325,11 +325,11 @@ endtest
 #sleep 5
 #
 ## Check crash and snapshot files exist
-#is_file /tmp/appscope/${top_pid}/snapshot_*
-#is_file /tmp/appscope/${top_pid}/info_*
-#is_file /tmp/appscope/${top_pid}/core_*
-#is_file /tmp/appscope/${top_pid}/cfg_*
-#is_file /tmp/appscope/${top_pid}/backtrace_*
+#is_file /tmp/appview/${top_pid}/snapshot_*
+#is_file /tmp/appview/${top_pid}/info_*
+#is_file /tmp/appview/${top_pid}/core_*
+#is_file /tmp/appview/${top_pid}/cfg_*
+#is_file /tmp/appview/${top_pid}/backtrace_*
 #
 ## Check files were received by listener
 #wordPresentInFile "snapshot_" "crash.out"
@@ -337,55 +337,55 @@ endtest
 #wordPresentInFile "cfg_" "crash.out"
 #wordPresentInFile "backtrace_" "crash.out"
 #
-## Kill scope daemon process
+## Kill appview daemon process
 #kill $daemon_pid
 #
 #endtest
 
 
 ##
-## Scope snapshot (same namespace)
+## AppView snapshot (same namespace)
 ##
-#starttest "Scope snapshot"
+#starttest "AppView snapshot"
 #
 #top -b -d 1 > /dev/null &
 #top_pid=$!
 #sleep 2
 #
-#SCOPE_SNAPSHOT_COREDUMP=true SCOPE_SNAPSHOT_BACKTRACE=true scope --ldattach $top_pid
+#APPVIEW_SNAPSHOT_COREDUMP=true APPVIEW_SNAPSHOT_BACKTRACE=true appview --ldattach $top_pid
 #returns 0
 #sleep 2
 #
 #kill -s SIGSEGV $top_pid
 #sleep 2
 #
-#run scope snapshot $top_pid
+#run appview snapshot $top_pid
 #returns 0
 #sleep 2
 #
-#is_file /tmp/appscope/${top_pid}/snapshot_*
-#is_file /tmp/appscope/${top_pid}/info_*
-#is_file /tmp/appscope/${top_pid}/core_*
-#is_file /tmp/appscope/${top_pid}/cfg_*
-#is_file /tmp/appscope/${top_pid}/backtrace_*
+#is_file /tmp/appview/${top_pid}/snapshot_*
+#is_file /tmp/appview/${top_pid}/info_*
+#is_file /tmp/appview/${top_pid}/core_*
+#is_file /tmp/appview/${top_pid}/cfg_*
+#is_file /tmp/appview/${top_pid}/backtrace_*
 #
 #endtest
 
 
 #
-# Scope Update from stdin (same namespace)
+# AppView Update from stdin (same namespace)
 #
-starttest "Scope update from stdin"
+starttest "AppView update from stdin"
 
 top -b -d 1 > /dev/null &
 top_pid=$!
 sleep 2
 
-scope --ldattach $top_pid
+appview --ldattach $top_pid
 returns 0
 sleep 2
 
-scope update $top_pid < /opt/test/bin/update_log_dest.yml
+appview update $top_pid < /opt/test/bin/update_log_dest.yml
 returns 0
 sleep 3
 
@@ -398,19 +398,19 @@ endtest
 
 
 #
-# Scope Update from file path (same namespace)
+# AppView Update from file path (same namespace)
 #
-starttest "Scope update from file path"
+starttest "AppView update from file path"
 
 top -b -d 1 > /dev/null &
 top_pid=$!
 sleep 2
 
-scope --ldattach $top_pid
+appview --ldattach $top_pid
 returns 0
 sleep 2
 
-scope update $top_pid --config /opt/test/bin/update_log_dest.yml
+appview update $top_pid --config /opt/test/bin/update_log_dest.yml
 returns 0
 sleep 3
 
@@ -423,23 +423,23 @@ endtest
 
 
 #
-# Scope Report
+# AppView Report
 #
-starttest "Scope report"
+starttest "AppView report"
 
-unset SCOPE_EVENT_DEST
+unset APPVIEW_EVENT_DEST
 
-scope run -- curl -Lso /dev/null https://wttr.in
+appview run -- curl -Lso /dev/null https://wttr.in
 sleep 1
 
-run scope report
+run appview report
 outputs "wttr.in"
 outputs "/usr/lib/ssl/openssl.cnf"
 outputs "/etc/ssl/certs/ca-certificates.crt"
 outputs "/dev/null"
 
 endtest
-export SCOPE_EVENT_DEST=file:///opt/test/logs/events.log
+export APPVIEW_EVENT_DEST=file:///opt/test/logs/events.log
 
 
 ################# END TESTS ################# 

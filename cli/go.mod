@@ -1,4 +1,4 @@
-module github.com/criblio/scope
+module github.com/appview-team/appview
 
 go 1.21.4
 

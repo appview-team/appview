@@ -2,10 +2,10 @@
 
 rm -f /tmp/influx*
 #nohup ./myscript 0<&- &> my.admin.log.file &
-#SCOPE_EVENT_DEST=file:///tmp/influxd.event nohup scope /go/influxd_stat &
+#APPVIEW_EVENT_DEST=file:///tmp/influxd.event nohup appview /go/influxd_stat &
 ./iserver.sh stat
-SCOPE_EVENT_DEST=file:///tmp/influxc.event scope ./influx_stress_stat
-pkill -f scope
+APPVIEW_EVENT_DEST=file:///tmp/influxc.event appview ./influx_stress_stat
+pkill -f appview
 
 cnt=`grep -c http.req /tmp/influxd.event`
 #echo "$cnt"

@@ -10,15 +10,15 @@ RUN apt update \
       procps \
     && rm -rf /var/lib/apt/lists/*
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
      mkdir -p /opt/test-runner/logs/ && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY postgres/scope-test /usr/local/scope/scope-test
-ENV PATH="/usr/local/scope:/usr/local/scope/bin/:/usr/lib/postgresql/14/bin:${PATH}"
+COPY postgres/appview-test /usr/local/appview/appview-test
+ENV PATH="/usr/local/appview:/usr/local/appview/bin/:/usr/lib/postgresql/14/bin:${PATH}"
 RUN echo "export PATH=${PATH}" >> /etc/profile.d/path.sh
 
 USER postgres

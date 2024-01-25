@@ -17,10 +17,10 @@
 //
 // If you're reading this, please consider whether this new dependency
 // can be avoided rather than just bumping up the LATEST_LIBC_VER_NEEDED
-// It's about the portability/usability of libscope.so.
+// It's about the portability/usability of libappview.so.
 //
 // Dependencies on GLIBC versions can be observed by:
-//     nm lib/linux/libscope.so | grep GLIBC_ | fgrep -v "2.2.5"
+//     nm lib/linux/libappview.so | grep GLIBC_ | fgrep -v "2.2.5"
 //
 // Which yields output in this format:
 //     "                 U memmove@@GLIBC_2.2.5\n",
@@ -168,9 +168,9 @@ static void
 testEachLineInStreamWithActualLibraryData(void** state)
 {
 #if defined(__x86_64__)
-    FILE* f_in = popen("nm ./lib/linux/x86_64/libscope.so", "r");
+    FILE* f_in = popen("nm ./lib/linux/x86_64/libappview.so", "r");
 #elif defined(__aarch64__)
-    FILE* f_in = popen("nm ./lib/linux/aarch64/libscope.so", "r");
+    FILE* f_in = popen("nm ./lib/linux/aarch64/libappview.so", "r");
 #else
 #error Unknown architecture!
 #endif

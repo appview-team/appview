@@ -8,7 +8,7 @@ export default function MarkDownBlock({ data }) {
   const post = data.markdownRemark;
   return (
     <>
-      <Helmet title={post.frontmatter.title+ " | AppScope Docs"} />
+      <Helmet title={post.frontmatter.title+ " | AppView Docs"} />
       <Layout>
         <div
           className="code-container"

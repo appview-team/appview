@@ -7,10 +7,10 @@
 gcc -g test/manual/seqpacket/server.c -o seq_server
 gcc -g test/manual/seqpacket/client.c -o seq_client
 
-SCOPE_EVENT_METRIC=true scope run -- ./seq_server &
+APPVIEW_EVENT_METRIC=true appview run -- ./seq_server &
 ./seq_client 3 4
 ./seq_client DOWN
-grep -m 1 "net.other" ~/.scope/history/seq_server_xxx/events.json > appscope/test/manual/schema/net.other.evt
+grep -m 1 "net.other" ~/.appview/history/seq_server_xxx/events.json > appview/test/manual/schema/net.other.evt
 
 ```
 ## `net.other` metric (based on seqpacket tests)
@@ -20,11 +20,11 @@ grep -m 1 "net.other" ~/.scope/history/seq_server_xxx/events.json > appscope/tes
 gcc -g test/manual/seqpacket/server.c -o seq_server
 gcc -g test/manual/seqpacket/client.c -o seq_client
 
-SCOPE_METRIC_VERBOSITY=9 scope run -- ./seq_server &
+APPVIEW_METRIC_VERBOSITY=9 appview run -- ./seq_server &
 ./seq_client 3 4
 ./seq_client 5 12
 ./seq_client DOWN
-grep -m 1 net.other  ~/.scope/history/seq_server_xxx/metrics.json  > appscope/test/manual/schema/mt_net.other.evt
+grep -m 1 net.other  ~/.appview/history/seq_server_xxx/metrics.json  > appview/test/manual/schema/mt_net.other.evt
 
 ```
 
@@ -32,8 +32,8 @@ grep -m 1 net.other  ~/.scope/history/seq_server_xxx/metrics.json  > appscope/te
 
 ```
 
-scope run -- curl -X POST https://reqbin.com/echo/post/json -H "Content-Type: application/json" -d '{"productId": 123456, "quantity": 100}'
-grep -m 1 content_length  ~/.scope/history/curl_xxx/metrics.json > appscope/test/manual/schema/mt_content_length
+appview run -- curl -X POST https://reqbin.com/echo/post/json -H "Content-Type: application/json" -d '{"productId": 123456, "quantity": 100}'
+grep -m 1 content_length  ~/.appview/history/curl_xxx/metrics.json > appview/test/manual/schema/mt_content_length
 
 ```
 
@@ -80,7 +80,7 @@ to
 
 ```
 
-scope run -- curl wttr.in
-grep -m 1 notice  ~/.scope/history/curl_xxx/events.json > appscope/test/manual/schema/notice.evt
+appview run -- curl wttr.in
+grep -m 1 notice  ~/.appview/history/curl_xxx/events.json > appview/test/manual/schema/notice.evt
 
 ```

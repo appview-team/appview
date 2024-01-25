@@ -2,23 +2,23 @@
 title: Overview
 ---
 
-## What Is AppScope?
+## What Is AppView?
 
-AppScope is a tool that unlocks 100% application observability with near-zero overhead, including for applications and processes whose data is otherwise hard to obtain.
+AppView is a tool that unlocks 100% application observability with near-zero overhead, including for applications and processes whose data is otherwise hard to obtain.
 
-AppScope is an open source, runtime-agnostic instrumentation utility for any Linux command or application. It helps users explore, understand, and gain visibility into any process running in any Linux host or container with **no code modification**. 
+AppView is an open source, runtime-agnostic instrumentation utility for any Linux command or application. It helps users explore, understand, and gain visibility into any process running in any Linux host or container with **no code modification**. 
 
-AppScope provides the fine-grained observability of a proxy/service mesh, without the latency of a sidecar. It emits APM-like metric and event data, in open formats, to existing log and metric tools.
+AppView provides the fine-grained observability of a proxy/service mesh, without the latency of a sidecar. It emits APM-like metric and event data, in open formats, to existing log and metric tools.
 
-It’s like [strace](https://strace.io/) meets [tcpdump](https://www.tcpdump.org/) – but with consumable output for events like file access, DNS, and network activity, and StatsD-style metrics for applications. AppScope can also look inside encrypted payloads, offering [WAF](https://en.wikipedia.org/wiki/Web_application_firewall)-like visibility without proxying traffic. 
+It’s like [strace](https://strace.io/) meets [tcpdump](https://www.tcpdump.org/) – but with consumable output for events like file access, DNS, and network activity, and StatsD-style metrics for applications. AppView can also look inside encrypted payloads, offering [WAF](https://en.wikipedia.org/wiki/Web_application_firewall)-like visibility without proxying traffic. 
 </br>
 </br>
 
-![AppScope in-terminal monitoring](./images/AppScope-GUI-screenshot.png)
+![AppView in-terminal monitoring](./images/AppView-GUI-screenshot.png)
 
-## Instrument, Collect, and Observe with AppScope
+## Instrument, Collect, and Observe with AppView
 
-AppScope is runtime-agnostic, has no dependencies, and requires no code development. You can use AppScope to:
+AppView is runtime-agnostic, has no dependencies, and requires no code development. You can use AppView to:
 
 - Instrument both static and dynamic executables.
 - Attach to processes *while they are running* or start when the process does.

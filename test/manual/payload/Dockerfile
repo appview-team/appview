@@ -11,21 +11,21 @@ RUN apt update && apt install -y \
 && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /opt/test && \
-    mkdir /usr/local/scope && \
-    mkdir /usr/local/scope/bin && \
-    mkdir /usr/local/scope/lib
+    mkdir /usr/local/appview && \
+    mkdir /usr/local/appview/bin && \
+    mkdir /usr/local/appview/lib
 
 COPY conf_1 /opt/test/conf_1
 COPY conf_2 /opt/test/conf_2
 COPY conf_3 /opt/test/conf_3
 COPY tcpserver /usr/bin/tcpserver
-COPY scope-test /usr/local/scope/
+COPY appview-test /usr/local/appview/
 
-RUN  ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/ldscope /usr/local/scope/bin/ldscope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/ldappview /usr/local/appview/bin/ldappview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

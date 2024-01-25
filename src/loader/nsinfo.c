@@ -9,7 +9,7 @@
 #include <unistd.h>
 
 #include "nsinfo.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 
 /*

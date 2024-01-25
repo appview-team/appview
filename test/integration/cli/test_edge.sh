@@ -4,10 +4,10 @@ DEBUG=0  # set this to 1 to capture the DEST_FILE for each test
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 DEST_FILE="/tmp/output_dest_file"
-CRIBL_SOCKET="/opt/cribl/state/appscope.sock"
+CRIBL_SOCKET="/opt/cribl/state/appview.sock"
 CRIBL_HOME_PATH="/opt/cribl/home"
-CRIBL_HOME_SOCKET="/opt/cribl/home/state/appscope.sock"
-VAR_RUN_SOCKET="/var/run/appscope/appscope.sock"
+CRIBL_HOME_SOCKET="/opt/cribl/home/state/appview.sock"
+VAR_RUN_SOCKET="/var/run/appview/appview.sock"
 
 starttest(){
     CURRENT_TEST=$1
@@ -43,14 +43,14 @@ endtest(){
     rm -f $DEST_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 ### change current directory
 cd /opt/test-runner
 
 #
-# scope event destination edge
+# appview event destination edge
 #
 
 starttest event_edge
@@ -58,7 +58,7 @@ starttest event_edge
 nc -lU $CRIBL_SOCKET > $DEST_FILE &
 ERR+=$?
 
-scope run --eventdest=edge ls
+appview run --eventdest=edge ls
 ERR+=$?
 
 count=$(grep '"type":"evt"' $DEST_FILE | wc -l)
@@ -69,7 +69,7 @@ fi
 endtest
 
 #
-# scope event destination edge
+# appview event destination edge
 #
 
 starttest event_edge_cribl_home
@@ -77,7 +77,7 @@ starttest event_edge_cribl_home
 nc -lU $CRIBL_HOME_SOCKET > $DEST_FILE &
 ERR+=$?
 
-CRIBL_HOME=$CRIBL_HOME_PATH scope run --eventdest=edge ls
+CRIBL_HOME=$CRIBL_HOME_PATH appview run --eventdest=edge ls
 ERR+=$?
 
 count=$(grep '"type":"evt"' $DEST_FILE | wc -l)
@@ -89,7 +89,7 @@ endtest
 
 
 #
-# scope event destination edge
+# appview event destination edge
 #
 
 starttest event_edge_var_run
@@ -97,7 +97,7 @@ starttest event_edge_var_run
 nc -lU $VAR_RUN_SOCKET > $DEST_FILE &
 ERR+=$?
 
-scope run --eventdest=edge ls
+appview run --eventdest=edge ls
 ERR+=$?
 
 count=$(grep '"type":"evt"' $DEST_FILE | wc -l)
@@ -112,7 +112,7 @@ rm -f $VAR_RUN_SOCKET
 
 
 #
-# scope cribl destination edge
+# appview cribl destination edge
 #
 
 starttest cribl_edge_cribl_home
@@ -120,13 +120,13 @@ starttest cribl_edge_cribl_home
 nc -lU $CRIBL_HOME_SOCKET > $DEST_FILE &
 ERR+=$?
 
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
 
-CRIBL_HOME=$CRIBL_HOME_PATH scope run --cribldest=edge ls
+CRIBL_HOME=$CRIBL_HOME_PATH appview run --cribldest=edge ls
 ERR+=$?
 
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 
 count=$(grep '"type":"evt"' $DEST_FILE | wc -l)
 if [ $count -eq 0 ] ; then
@@ -140,8 +140,8 @@ fi
 
 endtest
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

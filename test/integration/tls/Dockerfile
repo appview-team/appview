@@ -55,29 +55,29 @@ COPY ./tls/php/sslclient.php /opt/test-runner/php
 COPY ./tls/alias /root/.alias
 COPY ./tls/gdbinit /root/.gdbinit
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=info
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=false
-ENV SCOPE_EVENT_CONSOLE=false
-ENV SCOPE_EVENT_METRIC=false
-ENV SCOPE_EVENT_HTTP=true
-ENV SCOPE_EVENT_DEST=file:///opt/test-runner/logs/events.log
-ENV SCOPE_METRIC_DEST=udp://localhost:8125
-ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
-#ENV LD_PRELOAD=/usr/local/scope/lib/libscope.so
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=info
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=false
+ENV APPVIEW_EVENT_CONSOLE=false
+ENV APPVIEW_EVENT_METRIC=false
+ENV APPVIEW_EVENT_HTTP=true
+ENV APPVIEW_EVENT_DEST=file:///opt/test-runner/logs/events.log
+ENV APPVIEW_METRIC_DEST=udp://localhost:8125
+ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
+#ENV LD_PRELOAD=/usr/local/appview/lib/libappview.so
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN mkdir /usr/local/scope && \
-    mkdir /usr/local/scope/bin && \
-    mkdir /usr/local/scope/lib && \
-    ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-    ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN mkdir /usr/local/appview && \
+    mkdir /usr/local/appview/bin && \
+    mkdir /usr/local/appview/lib && \
+    ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+    ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY tls/scope-test /usr/local/scope/scope-test
+COPY tls/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

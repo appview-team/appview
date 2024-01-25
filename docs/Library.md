@@ -1,15 +1,15 @@
 OVERVIEW:
-The Scope library supports extraction of data from within applications.
+The AppView library supports extraction of data from within applications.
 As a general rule, applications consist of one or more processes.
-The Scope library can be loaded into any process as the
+The AppView library can be loaded into any process as the
 process starts.
-The primary way to define which processes include the Scope library
+The primary way to define which processes include the AppView library
 is by exporting the environment variable LD_PRELOAD, which is set to point
-to the path name of the Scope library. E.g.: 
-export LD_PRELOAD=./libscope.so
+to the path name of the AppView library. E.g.: 
+export LD_PRELOAD=./libappview.so
 
-Scope emits data as metrics and/or events.
-Scope is fully configurable by means of a configuration file (scope.yml)
+AppView emits data as metrics and/or events.
+AppView is fully configurable by means of a configuration file (appview.yml)
 and/or environment variables.
 
 Metrics are emitted in StatsD format, over a configurable link. By default,
@@ -18,65 +18,65 @@ metrics are sent over a UDP socket using localhost and port 8125.
 Events are emitted in JSON format over a configurable link. By default,
 events are sent over a TCP socket using localhost and port 9109.
 
-Scope logs to a configurable destination, at a configurable
+AppView logs to a configurable destination, at a configurable
 verbosity level. The default verbosity setting is level 4, and the
-default destination is the file `/tmp/scope.log`.
+default destination is the file `/tmp/appview.log`.
 
 ```
 CONFIGURATION:
 Configuration File:
-    A YAML config file (named scope.yml) enables control of all available
+    A YAML config file (named appview.yml) enables control of all available
     settings. The config file is optional. Environment variables take
     precedence over settings in a config file.
 
 Config File Resolution
-    If the SCOPE_CONF_PATH env variable is defined, and points to a
+    If the APPVIEW_CONF_PATH env variable is defined, and points to a
     file that can be opened, it will use this as the config file.
-    Otherwise, AppScope searches for the config file in this priority
+    Otherwise, AppView searches for the config file in this priority
     order, using the first one it finds:
 
-        $SCOPE_HOME/conf/scope.yml
-        $SCOPE_HOME/scope.yml
-        /etc/scope/scope.yml
-        ~/conf/scope.yml
-        ~/scope.yml
-        ./conf/scope.yml
-        ./scope.yml
+        $APPVIEW_HOME/conf/appview.yml
+        $APPVIEW_HOME/appview.yml
+        /etc/appview/appview.yml
+        ~/conf/appview.yml
+        ~/appview.yml
+        ./conf/appview.yml
+        ./appview.yml
 
 Environment Variables:
-    SCOPE_CONF_PATH
+    APPVIEW_CONF_PATH
         Directly specify config file's location and name.
         Used only at start time.
-    SCOPE_HOME
-        Specify a directory from which conf/scope.yml or ./scope.yml can
-        be found. Used only at start time, and only if SCOPE_CONF_PATH
+    APPVIEW_HOME
+        Specify a directory from which conf/appview.yml or ./appview.yml can
+        be found. Used only at start time, and only if APPVIEW_CONF_PATH
         does not exist. For more info, see Config File Resolution below.
-    SCOPE_METRIC_ENABLE
+    APPVIEW_METRIC_ENABLE
         Single flag to make it possible to disable all metric output.
         true,false  Default is true.
-    SCOPE_METRIC_VERBOSITY
+    APPVIEW_METRIC_VERBOSITY
         0-9 are valid values. Default is 4.
         For more info, see Metric Verbosity below.
-    SCOPE_METRIC_FS
+    APPVIEW_METRIC_FS
         Create metrics describing file connectivity.
         true, false  Default is true.
-    SCOPE_METRIC_NET
+    APPVIEW_METRIC_NET
         Create metrics describing network connectivity.
         true, false  Default is true.
-    SCOPE_METRIC_HTTP
+    APPVIEW_METRIC_HTTP
         Create metrics describing HTTP communication.
         true, false  Default is true.
-    SCOPE_METRIC_DNS
+    APPVIEW_METRIC_DNS
         Create metrics describing DNS activity.
         true, false  Default is true.
-    SCOPE_METRIC_PROC
+    APPVIEW_METRIC_PROC
         Create metrics describing process.
         true, false  Default is true.
-    SCOPE_METRIC_STATSD
+    APPVIEW_METRIC_STATSD
         When true, statsd metrics sent or received by this application
-        will be handled as appscope-native metrics.
+        will be handled as appview-native metrics.
         true, false  Default is true.
-    SCOPE_METRIC_DEST
+    APPVIEW_METRIC_DEST
         Default is udp://localhost:8125
         Format is one of:
             file:///tmp/output.log
@@ -90,177 +90,177 @@ Environment Variables:
                 Output to a unix domain server using TCP.
                 Use unix://@abstractname, unix:///var/run/mysock for
                 abstract address or filesystem address.
-    SCOPE_METRIC_TLS_ENABLE
+    APPVIEW_METRIC_TLS_ENABLE
         Flag to enable Transport Layer Security (TLS). Only affects
         tcp:// destinations. true,false  Default is false.
-    SCOPE_METRIC_TLS_VALIDATE_SERVER
+    APPVIEW_METRIC_TLS_VALIDATE_SERVER
         false allows insecure (untrusted) TLS connections, true uses
         certificate validation to ensure the server is trusted.
         Default is true.
-    SCOPE_METRIC_TLS_CA_CERT_PATH
+    APPVIEW_METRIC_TLS_CA_CERT_PATH
         Path on the local filesystem which contains CA certificates in
         PEM format. Default is an empty string. For a description of what
         this means, see Certificate Authority Resolution below.
-    SCOPE_METRIC_FORMAT
+    APPVIEW_METRIC_FORMAT
         statsd, ndjson
         Default is statsd.
-    SCOPE_STATSD_PREFIX
-        Specify a string to be prepended to every scope metric.
-    SCOPE_STATSD_MAXLEN
+    APPVIEW_STATSD_PREFIX
+        Specify a string to be prepended to every appview metric.
+    APPVIEW_STATSD_MAXLEN
         Default is 512.
-    SCOPE_SUMMARY_PERIOD
+    APPVIEW_SUMMARY_PERIOD
         Number of seconds between output summarizations. Default is 10.
-    SCOPE_EVENT_ENABLE
+    APPVIEW_EVENT_ENABLE
         Single flag to make it possible to disable all event output.
         true,false  Default is true.
-    SCOPE_EVENT_DEST
-        Same format as SCOPE_METRIC_DEST above.
+    APPVIEW_EVENT_DEST
+        Same format as APPVIEW_METRIC_DEST above.
         Default is tcp://localhost:9109
-    SCOPE_EVENT_TLS_ENABLE
+    APPVIEW_EVENT_TLS_ENABLE
         Flag to enable Transport Layer Security (TLS). Only affects
         tcp:// destinations. true,false  Default is false.
-    SCOPE_EVENT_TLS_VALIDATE_SERVER
+    APPVIEW_EVENT_TLS_VALIDATE_SERVER
         false allows insecure (untrusted) TLS connections, true uses
         certificate validation to ensure the server is trusted.
         Default is true.
-    SCOPE_EVENT_TLS_CA_CERT_PATH
+    APPVIEW_EVENT_TLS_CA_CERT_PATH
         Path on the local filesystem which contains CA certificates in
         PEM format. Default is an empty string. For a description of what
         this means, see Certificate Authority Resolution below.
-    SCOPE_EVENT_FORMAT
+    APPVIEW_EVENT_FORMAT
         ndjson
         Default is ndjson.
-    SCOPE_EVENT_LOGFILE
+    APPVIEW_EVENT_LOGFILE
         Create events from writes to log files.
         true,false  Default is false.
-    SCOPE_EVENT_LOGFILE_NAME
+    APPVIEW_EVENT_LOGFILE_NAME
         An extended regex to filter log file events by file name.
-        Used only if SCOPE_EVENT_LOGFILE is true. Default is .*log.*
-    SCOPE_EVENT_LOGFILE_VALUE
+        Used only if APPVIEW_EVENT_LOGFILE is true. Default is .*log.*
+    APPVIEW_EVENT_LOGFILE_VALUE
         An extended regex to filter log file events by field value.
-        Used only if SCOPE_EVENT_LOGFILE is true. Default is .*
-    SCOPE_EVENT_CONSOLE
+        Used only if APPVIEW_EVENT_LOGFILE is true. Default is .*
+    APPVIEW_EVENT_CONSOLE
         Create events from writes to stdout, stderr.
         true,false  Default is false.
-    SCOPE_EVENT_CONSOLE_NAME
+    APPVIEW_EVENT_CONSOLE_NAME
         An extended regex to filter console events by event name.
-        Used only if SCOPE_EVENT_CONSOLE is true. Default is .*
-    SCOPE_EVENT_CONSOLE_VALUE
+        Used only if APPVIEW_EVENT_CONSOLE is true. Default is .*
+    APPVIEW_EVENT_CONSOLE_VALUE
         An extended regex to filter console events by field value.
-        Used only if SCOPE_EVENT_CONSOLE is true. Default is .*
-    SCOPE_EVENT_METRIC
+        Used only if APPVIEW_EVENT_CONSOLE is true. Default is .*
+    APPVIEW_EVENT_METRIC
         Create events from metrics.
         true,false  Default is false.
-    SCOPE_EVENT_METRIC_NAME
+    APPVIEW_EVENT_METRIC_NAME
         An extended regex to filter metric events by event name.
-        Used only if SCOPE_EVENT_METRIC is true. Default is .*
-    SCOPE_EVENT_METRIC_FIELD
+        Used only if APPVIEW_EVENT_METRIC is true. Default is .*
+    APPVIEW_EVENT_METRIC_FIELD
         An extended regex to filter metric events by field name.
-        Used only if SCOPE_EVENT_METRIC is true. Default is .*
-    SCOPE_EVENT_METRIC_VALUE
+        Used only if APPVIEW_EVENT_METRIC is true. Default is .*
+    APPVIEW_EVENT_METRIC_VALUE
         An extended regex to filter metric events by field value.
-        Used only if SCOPE_EVENT_METRIC is true. Default is .*
-    SCOPE_EVENT_HTTP
+        Used only if APPVIEW_EVENT_METRIC is true. Default is .*
+    APPVIEW_EVENT_HTTP
         Create events from HTTP headers.
         true,false  Default is false.
-    SCOPE_EVENT_HTTP_NAME
+    APPVIEW_EVENT_HTTP_NAME
         An extended regex to filter http events by event name.
-        Used only if SCOPE_EVENT_HTTP is true. Default is .*
-    SCOPE_EVENT_HTTP_FIELD
+        Used only if APPVIEW_EVENT_HTTP is true. Default is .*
+    APPVIEW_EVENT_HTTP_FIELD
         An extended regex to filter http events by field name.
-        Used only if SCOPE_EVENT_HTTP is true. Default is .*
-    SCOPE_EVENT_HTTP_VALUE
+        Used only if APPVIEW_EVENT_HTTP is true. Default is .*
+    APPVIEW_EVENT_HTTP_VALUE
         An extended regex to filter http events by field value.
-        Used only if SCOPE_EVENT_HTTP is true. Default is .*
-    SCOPE_EVENT_HTTP_HEADER
+        Used only if APPVIEW_EVENT_HTTP is true. Default is .*
+    APPVIEW_EVENT_HTTP_HEADER
         An extended regex that defines user defined headers
         that will be extracted. Default is NULL
-    SCOPE_EVENT_NET
+    APPVIEW_EVENT_NET
         Create events describing network connectivity.
         true,false  Default is false.
-    SCOPE_EVENT_NET_NAME
+    APPVIEW_EVENT_NET_NAME
         An extended regex to filter network events by event name.
-        Used only if SCOPE_EVENT_NET is true. Default is .*
-    SCOPE_EVENT_NET_FIELD
+        Used only if APPVIEW_EVENT_NET is true. Default is .*
+    APPVIEW_EVENT_NET_FIELD
         An extended regex to filter network events by field name.
-        Used only if SCOPE_EVENT_NET is true. Default is .*
-    SCOPE_EVENT_NET_VALUE
+        Used only if APPVIEW_EVENT_NET is true. Default is .*
+    APPVIEW_EVENT_NET_VALUE
         An extended regex to filter network events by field value.
-        Used only if SCOPE_EVENT_NET is true. Default is .*
-    SCOPE_EVENT_FS
+        Used only if APPVIEW_EVENT_NET is true. Default is .*
+    APPVIEW_EVENT_FS
         Create events describing file connectivity.
         true,false  Default is false.
-    SCOPE_EVENT_FS_NAME
+    APPVIEW_EVENT_FS_NAME
         An extended regex to filter file events by event name.
-        Used only if SCOPE_EVENT_FS is true. Default is .*
-    SCOPE_EVENT_FS_FIELD
+        Used only if APPVIEW_EVENT_FS is true. Default is .*
+    APPVIEW_EVENT_FS_FIELD
         An extended regex to filter file events by field name.
-        Used only if SCOPE_EVENT_FS is true. Default is .*
-    SCOPE_EVENT_FS_VALUE
+        Used only if APPVIEW_EVENT_FS is true. Default is .*
+    APPVIEW_EVENT_FS_VALUE
         An extended regex to filter file events by field value.
-        Used only if SCOPE_EVENT_FS is true. Default is .*
-    SCOPE_EVENT_DNS
+        Used only if APPVIEW_EVENT_FS is true. Default is .*
+    APPVIEW_EVENT_DNS
         Create events describing DNS activity.
         true,false  Default is false.
-    SCOPE_EVENT_DNS_NAME
+    APPVIEW_EVENT_DNS_NAME
         An extended regex to filter dns events by event name.
-        Used only if SCOPE_EVENT_DNS is true. Default is .*
-    SCOPE_EVENT_DNS_FIELD
+        Used only if APPVIEW_EVENT_DNS is true. Default is .*
+    APPVIEW_EVENT_DNS_FIELD
         An extended regex to filter DNS events by field name.
-        Used only if SCOPE_EVENT_DNS is true. Default is .*
-    SCOPE_EVENT_DNS_VALUE
+        Used only if APPVIEW_EVENT_DNS is true. Default is .*
+    APPVIEW_EVENT_DNS_VALUE
         An extended regex to filter dns events by field value.
-        Used only if SCOPE_EVENT_DNS is true. Default is .*
-    SCOPE_EVENT_MAXEPS
+        Used only if APPVIEW_EVENT_DNS is true. Default is .*
+    APPVIEW_EVENT_MAXEPS
         Limits number of events that can be sent in a single second.
         0 is 'no limit'; 10000 is the default.
-    SCOPE_ENHANCE_FS
+    APPVIEW_ENHANCE_FS
         Controls whether uid, gid, and mode are captured for each open.
-        Used only if SCOPE_EVENT_FS is true. true,false Default is true.
-    SCOPE_LOG_LEVEL
+        Used only if APPVIEW_EVENT_FS is true. true,false Default is true.
+    APPVIEW_LOG_LEVEL
         debug, info, warning, error, none. Default is error.
-    SCOPE_LOG_DEST
-        same format as SCOPE_METRIC_DEST above.
-        Default is file:///tmp/scope.log
-    SCOPE_LOG_TLS_ENABLE
+    APPVIEW_LOG_DEST
+        same format as APPVIEW_METRIC_DEST above.
+        Default is file:///tmp/appview.log
+    APPVIEW_LOG_TLS_ENABLE
         Flag to enable Transport Layer Security (TLS). Only affects
         tcp:// destinations. true,false  Default is false.
-    SCOPE_LOG_TLS_VALIDATE_SERVER
+    APPVIEW_LOG_TLS_VALIDATE_SERVER
         false allows insecure (untrusted) TLS connections, true uses
         certificate validation to ensure the server is trusted.
         Default is true.
-    SCOPE_LOG_TLS_CA_CERT_PATH
+    APPVIEW_LOG_TLS_CA_CERT_PATH
         Path on the local filesystem which contains CA certificates in
         PEM format. Default is an empty string. For a description of what
         this means, see Certificate Authority Resolution below.
-    SCOPE_TAG_
+    APPVIEW_TAG_
         Specify a tag to be applied to every metric and event.
         Environment variable expansion is available, 
-        e.g.: SCOPE_TAG_user=$USER
-    SCOPE_CMD_DIR
+        e.g.: APPVIEW_TAG_user=$USER
+    APPVIEW_CMD_DIR
         Specifies a directory to look for dynamic configuration files.
         See Dynamic Configuration below.
         Default is /tmp
-    SCOPE_PAYLOAD_ENABLE
+    APPVIEW_PAYLOAD_ENABLE
         Flag that enables payload capture.  true,false  Default is false.
-    SCOPE_PAYLOAD_DIR
+    APPVIEW_PAYLOAD_DIR
         Specifies a directory where payload capture files can be written.
         Default is /tmp
-    SCOPE_CRIBL_ENABLE
+    APPVIEW_CRIBL_ENABLE
         Single flag to make it possible to disable cribl backend.
         true,false  Default is true.
-    SCOPE_CRIBL_CLOUD
-        Intended as an alternative to SCOPE_CRIBL below. Identical
-        behavior, except that where SCOPE_CRIBL can have TLS settings
-        modified via related SCOPE_CRIBL_TLS_* environment variables,
-        SCOPE_CRIBL_CLOUD hardcodes TLS settings as though these were
+    APPVIEW_CRIBL_CLOUD
+        Intended as an alternative to APPVIEW_CRIBL below. Identical
+        behavior, except that where APPVIEW_CRIBL can have TLS settings
+        modified via related APPVIEW_CRIBL_TLS_* environment variables,
+        APPVIEW_CRIBL_CLOUD hardcodes TLS settings as though these were
         individually specified:
-            SCOPE_CRIBL_TLS_ENABLE=true
-            SCOPE_CRIBL_TLS_VALIDATE_SERVER=true
-            SCOPE_CRIBL_TLS_CA_CERT_PATH=\"\"
+            APPVIEW_CRIBL_TLS_ENABLE=true
+            APPVIEW_CRIBL_TLS_VALIDATE_SERVER=true
+            APPVIEW_CRIBL_TLS_CA_CERT_PATH=\"\"
         As a note, library behavior will be undefined if this variable is
-        set simultaneously with SCOPE_CRIBL, or any of SCOPE_CRIBL_TLS_*.
-    SCOPE_CRIBL
+        set simultaneously with APPVIEW_CRIBL, or any of APPVIEW_CRIBL_TLS_*.
+    APPVIEW_CRIBL
         Defines a connection with Cribl LogStream
         Default is NULL
         Format is one of:
@@ -270,21 +270,21 @@ Environment Variables:
                 Output to a unix domain server using TCP.
                 Use unix://@abstractname, unix:///var/run/mysock for
                 abstract address or filesystem address.
-    SCOPE_CRIBL_AUTHTOKEN
+    APPVIEW_CRIBL_AUTHTOKEN
         Authentication token provided by Cribl.
         Default is an empty string.
-    SCOPE_CRIBL_TLS_ENABLE
+    APPVIEW_CRIBL_TLS_ENABLE
         Flag to enable Transport Layer Security (TLS). Only affects
         tcp:// destinations. true,false  Default is false.
-    SCOPE_CRIBL_TLS_VALIDATE_SERVER
+    APPVIEW_CRIBL_TLS_VALIDATE_SERVER
         false allows insecure (untrusted) TLS connections, true uses
         certificate validation to ensure the server is trusted.
         Default is true.
-    SCOPE_CRIBL_TLS_CA_CERT_PATH
+    APPVIEW_CRIBL_TLS_CA_CERT_PATH
         Path on the local filesystem which contains CA certificates in
         PEM format. Default is an empty string. For a description of what
         this means, see Certificate Authority Resolution below.
-    SCOPE_CONFIG_EVENT
+    APPVIEW_CONFIG_EVENT
         Sends a single process-identifying event, when a transport
         connection is established.  true,false  Default is true.
     CRIBL_HOME
@@ -294,39 +294,39 @@ Environment Variables:
 Dynamic Configuration:
     Dynamic Configuration allows configuration settings to be
     changed on the fly after process start time. At every
-    SCOPE_SUMMARY_PERIOD, the library looks in SCOPE_CMD_DIR to
-    see if a file scope.<pid> exists. If it exists, the library processes
+    APPVIEW_SUMMARY_PERIOD, the library looks in APPVIEW_CMD_DIR to
+    see if a file appview.<pid> exists. If it exists, the library processes
     every line, looking for environment variable–style commands
-    (e.g., SCOPE_CMD_DBG_PATH=/tmp/outfile.txt). The library changes the
+    (e.g., APPVIEW_CMD_DBG_PATH=/tmp/outfile.txt). The library changes the
     configuration to match the new settings, and deletes the
-    scope.<pid> file when it's complete.
+    appview.<pid> file when it's complete.
 
     While every environment variable defined here can be changed via
     Dynamic Configuration, there are a few environment variable-style
     commands that are only accepted during Dynamic Configuration.
     These will be ignored if specified as actual environment variables.
     They are listed here:
-        SCOPE_CMD_ATTACH
+        APPVIEW_CMD_ATTACH
             Flag that controls whether interposed functions are
-            processed by AppScope (true), or not (false).
-        SCOPE_CMD_DBG_PATH
-            Causes AppScope to write debug information to the
+            processed by AppView (true), or not (false).
+        APPVIEW_CMD_DBG_PATH
+            Causes AppView to write debug information to the
             specified file path. Absolute paths are recommended.
-        SCOPE_CONF_RELOAD
-            Causes AppScope to reload its configuration file. If
+        APPVIEW_CONF_RELOAD
+            Causes AppView to reload its configuration file. If
             the value is \"true\", it is reloaded according to the
             Config File Resolution above. If any other value is
-            specified, it is handled like SCOPE_CONF_PATH, but without
+            specified, it is handled like APPVIEW_CONF_PATH, but without
             the \"Used only at start time\" limitation.
 
 Certificate Authority Resolution
-    If SCOPE_*_TLS_ENABLE and SCOPE_*_TLS_VALIDATE_SERVER are true then
-    AppScope performs TLS server validation. For this to be successful
+    If APPVIEW_*_TLS_ENABLE and APPVIEW_*_TLS_VALIDATE_SERVER are true then
+    AppView performs TLS server validation. For this to be successful
     a CA certificate must be found that can authenticate the certificate
     the server provides during the TLS handshake process.
-    If SCOPE_*_TLS_CA_CERT_PATH is set, AppScope will use this file path
+    If APPVIEW_*_TLS_CA_CERT_PATH is set, AppView will use this file path
     which is expected to contain CA certificates in PEM format. If this
-    env variable is an empty string or not set, AppScope searches for a
+    env variable is an empty string or not set, AppView searches for a
     usable root CA file on the local filesystem, using the first one
     found from this list:
 
@@ -382,7 +382,7 @@ manage which field types and field values to include.
     these endpoints will be formatted in JSON and emitted over the event
     channel.
  3) Metrics. Event metrics provide the greatest level of detail from
-    libscope. Events are created for every read, write, send, receive,
+    libappview. Events are created for every read, write, send, receive,
     open, close, and connect. These raw events are configured with regex
     filters to manage which event, which specific fields within an event,
     and which value patterns within a field to include.
@@ -393,7 +393,7 @@ manage which field types and field values to include.
     sequence. A response event includes the corresponding request,
     status and duration fields. An HTTP metric event provides fields
     describing bytes received, requests per second, duration, and status.
-    Any header defined as X-appscope (case insensitive) will be emitted.
+    Any header defined as X-appview (case insensitive) will be emitted.
     User defined headers are extracted by using the headers field.
     The headers field is a regular expression.
  5) File System. Events are formatted in JSON for each file system open,
@@ -413,19 +413,19 @@ manage which field types and field values to include.
     the event provides the duration of the DNS operation.
 
 PROTOCOL DETECTION:
-Scope can detect any defined network protocol. You provide protocol
+AppView can detect any defined network protocol. You provide protocol
 definitions in the \"protocol\" section of the config file. You describe 
 protocol specifics in one or more regex definitions. PCRE2 regular 
-expressions are supported. The stock scope.yml file for examples.
+expressions are supported. The stock appview.yml file for examples.
 
-Scope detects binary and string protocols. Detection events, 
+AppView detects binary and string protocols. Detection events, 
 formatted in JSON, are emitted over the event channel unless the \"detect\"
 property is set to \"false\".
 
 PAYLOAD EXTRACTION:
-When enabled, libscope extracts payload data from network operations.
+When enabled, libappview extracts payload data from network operations.
 Payloads are emitted in binary. No formatting is applied to the data.
 Payloads are emitted to either a local file or the LogStream channel.
-Configuration elements for libscope support defining a path for payload
+Configuration elements for libappview support defining a path for payload
 data.
 ```

@@ -1,7 +1,7 @@
 #ifndef __TRANSPORT_H__
 #define __TRANSPORT_H__
 #include <stdint.h>
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 typedef struct {
     const char *configString;       // Human-readable transport representation

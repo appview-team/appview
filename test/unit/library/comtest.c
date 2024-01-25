@@ -4,7 +4,7 @@
 #include "ctl.h"
 #include "dbg.h"
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "runtimecfg.h"
 
 static void

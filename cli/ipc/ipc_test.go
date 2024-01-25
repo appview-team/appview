@@ -42,28 +42,28 @@ func TestParsingIpcFrameMissingUnique(t *testing.T) {
 	assert.EqualValues(t, *resp.Remain, 28)
 }
 
-func TestParsingIpcFrameScopeMsg(t *testing.T) {
-	testMsg := "{\"status\":200,\"uniq\":1645,\"remain\":28}\x00{\"status\":200,\"scoped\":true}"
-	resp, scopeMsg, err := parseIpcFrame([]byte(testMsg))
+func TestParsingIpcFrameAppViewMsg(t *testing.T) {
+	testMsg := "{\"status\":200,\"uniq\":1645,\"remain\":28}\x00{\"status\":200,\"viewed\":true}"
+	resp, appviewMsg, err := parseIpcFrame([]byte(testMsg))
 	assert.NoError(t, err)
 	assert.EqualValues(t, *resp.Status, 200)
 	assert.EqualValues(t, *resp.Uniq, 1645)
 	assert.EqualValues(t, *resp.Remain, 28)
-	cmd := CmdGetScopeStatus{}
-	err = cmd.UnmarshalResp(scopeMsg)
+	cmd := CmdGetAppViewStatus{}
+	err = cmd.UnmarshalResp(appviewMsg)
 	assert.NoError(t, err)
 	assert.EqualValues(t, *cmd.Response.Status, 200)
-	assert.EqualValues(t, cmd.Response.Scoped, true)
+	assert.EqualValues(t, cmd.Response.Viewed, true)
 }
 
-func TestParsingIpcFrameScopeMsgMissingStatus(t *testing.T) {
-	testMsg := "{\"status\":200,\"uniq\":1645,\"remain\":28}\x00{\"scoped\":true}"
-	resp, scopeMsg, err := parseIpcFrame([]byte(testMsg))
+func TestParsingIpcFrameAppViewMsgMissingStatus(t *testing.T) {
+	testMsg := "{\"status\":200,\"uniq\":1645,\"remain\":28}\x00{\"viewed\":true}"
+	resp, appviewMsg, err := parseIpcFrame([]byte(testMsg))
 	assert.NoError(t, err)
 	assert.EqualValues(t, *resp.Status, 200)
 	assert.EqualValues(t, *resp.Uniq, 1645)
 	assert.EqualValues(t, *resp.Remain, 28)
-	cmd := CmdGetScopeStatus{}
-	err = cmd.UnmarshalResp(scopeMsg)
+	cmd := CmdGetAppViewStatus{}
+	err = cmd.UnmarshalResp(appviewMsg)
 	assert.ErrorIs(t, err, errMissingMandatoryField)
 }

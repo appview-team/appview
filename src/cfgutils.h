@@ -8,8 +8,8 @@
 #include "evtformat.h"
 #include "linklist.h"
 
-// cfgPath returns a pointer to a scope_malloc()'d buffer.
-// The caller is responsible for deallocating with scope_free().
+// cfgPath returns a pointer to a appview_malloc()'d buffer.
+// The caller is responsible for deallocating with appview_free().
 char * cfgPath(void);
 
 // reads cfg from yaml file
@@ -31,9 +31,9 @@ void cfgProcessCommands(config_t *, FILE *);
 
 typedef enum {
     RULES_ERROR,           // error with rules operation
-    RULES_SCOPED,          // process will be scoped
-    RULES_SCOPED_WITH_CFG, // process will be scoped with cfg from the rules file
-    RULES_NOT_SCOPED       // process will not be scoped
+    RULES_APPVIEWD,          // process will be viewed
+    RULES_APPVIEWD_WITH_CFG, // process will be viewed with cfg from the rules file
+    RULES_NOT_APPVIEWD       // process will not be viewed
 } rules_status_t;
 
 // Rules Handling

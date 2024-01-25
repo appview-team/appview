@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/criblio/scope/inspect"
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/ipc"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/inspect"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/ipc"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -32,17 +32,17 @@ import (
 // attachCmd represents the attach command
 var attachCmd = &cobra.Command{
 	Use:   "attach [flags] PID | <process_name>",
-	Short: "Scope a currently-running process",
-	Long: `Scopes a currently-running process identified by PID or <process_name>.
+	Short: "View a currently-running process",
+	Long: `Views a currently-running process identified by PID or <process_name>.
 
-The --*dest flags accept file names like /tmp/scope.log or URLs like file:///tmp/scope.log. They may also
+The --*dest flags accept file names like /tmp/appview.log or URLs like file:///tmp/appview.log. They may also
 be set to sockets with unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
-	Example: `  scope attach 1000
-  scope attach firefox 
-  scope attach top < scope.yml
-  scope attach --rootdir /path/to/host/root firefox 
-  scope attach --rootdir /path/to/host/root/proc/<hostpid>/root 1000
-  scope attach --payloads 2000`,
+	Example: `  appview attach 1000
+  appview attach firefox 
+  appview attach top < appview.yml
+  appview attach --rootdir /path/to/host/root firefox 
+  appview attach --rootdir /path/to/host/root/proc/<hostpid>/root 1000
+  appview attach --payloads 2000`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()

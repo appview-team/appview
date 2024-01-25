@@ -6,9 +6,9 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/run"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/run"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +17,12 @@ var excreteCmd = &cobra.Command{
 	Use:     "extract [flags] <dir>",
 	Aliases: []string{"excrete", "expunge", "extricate", "exorcise"},
 	Short:   "Output instrumentary library files to <dir>",
-	Long: `Outputs libscope.so, and scope.yml to the provided directory. You can configure these files to instrument any application, and to output the data to any existing tool using simple TCP protocols.
+	Long: `Outputs libappview.so, and appview.yml to the provided directory. You can configure these files to instrument any application, and to output the data to any existing tool using simple TCP protocols.
 
-The --*dest flags accept file names like /tmp/scope.log or URLs like file:///tmp/scope.log. They may also
+The --*dest flags accept file names like /tmp/appview.log or URLs like file:///tmp/appview.log. They may also
 be set to sockets with unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
-	Example: `  scope extract /opt/libscope
-  scope extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 .
+	Example: `  appview extract /opt/libappview
+  appview extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 .
 `,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -44,14 +44,14 @@ be set to sockets with unix:///var/run/mysock, tcp://hostname:port, udp://hostna
 		err = run.CreateAll(outPath)
 		util.CheckErrSprintf(err, "error excreting files: %v", err)
 		if rc.MetricsDest != "" || rc.EventsDest != "" || rc.CriblDest != "" {
-			err = os.Rename(path.Join(outPath, "scope.yml"), path.Join(outPath, "scope_example.yml"))
-			util.CheckErrSprintf(err, "error renaming scope.yml: %v", err)
+			err = os.Rename(path.Join(outPath, "appview.yml"), path.Join(outPath, "appview_example.yml"))
+			util.CheckErrSprintf(err, "error renaming appview.yml: %v", err)
 			rc.WorkDir = outPath
-			err = rc.WriteScopeConfig(path.Join(outPath, "scope.yml"), 0644)
-			util.CheckErrSprintf(err, "error writing scope.yml: %v", err)
+			err = rc.WriteAppViewConfig(path.Join(outPath, "appview.yml"), 0644)
+			util.CheckErrSprintf(err, "error writing appview.yml: %v", err)
 		}
 		ld := loader.New()
-		ld.Patch(path.Join(outPath, "libscope.so"))
+		ld.Patch(path.Join(outPath, "libappview.so"))
 		fmt.Printf("Successfully extracted to %s.\n", outPath)
 	},
 }

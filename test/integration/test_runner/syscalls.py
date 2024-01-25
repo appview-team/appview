@@ -19,10 +19,10 @@ class SyscallTest(Test):
     def __init__(self, path):
         self.path = path
 
-    def run(self, scoped) -> Tuple[TestResult, Any]:
+    def run(self, viewed) -> Tuple[TestResult, Any]:
         env = os.environ.copy()
-        if scoped:
-            env["LD_PRELOAD"] = config.scope_path
+        if viewed:
+            env["LD_PRELOAD"] = config.appview_path
 
         logging.debug(f"Command is {self.path}. Environment {env}")
         completed_proc = subprocess.run([self.path], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -86,7 +86,7 @@ def locate_tests(root_path: str, included_tests: List[str], excluded_tests: List
 
 def configure(runner: Runner, app_config):
     config_path = app_config.syscalls_tests_config
-    config.scope_path = app_config.scope_path
+    config.appview_path = app_config.appview_path
 
     logging.info(f"Reading syscalls tests config from file {config_path}")
     with open(config_path, "r") as f:

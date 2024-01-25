@@ -16,22 +16,22 @@ from validation import passed
 
 class KafkaAppController(AppController):
 
-    def __init__(self, scope_path):
+    def __init__(self, appview_path):
         super().__init__("kafka")
-        self.scope_path = scope_path
+        self.appview_path = appview_path
         self.proc = None
 
-    def start(self, scoped):
+    def start(self, viewed):
         env = os.environ.copy()
-        if scoped:
-            env["LD_PRELOAD"] = self.scope_path
+        if viewed:
+            env["LD_PRELOAD"] = self.appview_path
 
         #logging.info("Sockets before start()")
         #os.system('netstat -an | grep -w 9092')
         #logging.info("ps before start()")
         #os.system('ps -ef')
 
-        logging.info(f"Starting app {self.name} in {'scoped' if scoped else 'unscoped'} mode.")
+        logging.info(f"Starting app {self.name} in {'viewed' if viewed else 'unviewd'} mode.")
 
         start_command = "/kafka/bin/zookeeper-server-start.sh /kafka/config/zookeeper.properties"
 
@@ -119,7 +119,7 @@ class KafkaAppController(AppController):
 
 class KafkaMsgTest(ApplicationTest):
 
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         #logging.info("9092 Sockets before do_run()")
         #os.system('netstat -an | grep -w 9092')
         #logging.info("ps before do_run()")
@@ -150,6 +150,6 @@ class KafkaMsgTest(ApplicationTest):
 
 
 def configure(runner: Runner, config):
-    app_controller = KafkaAppController(config.scope_path)
+    app_controller = KafkaAppController(config.appview_path)
 
     runner.add_tests([KafkaMsgTest(app_controller)])

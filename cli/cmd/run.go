@@ -3,8 +3,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/run"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/run"
 	"github.com/spf13/cobra"
 )
 
@@ -30,16 +30,16 @@ var rc *run.Config = &run.Config{}
 // runCmd represents the run command
 var runCmd = &cobra.Command{
 	Use:   "run [flags] [command]",
-	Short: "Executes a scoped command",
-	Long: `Executes a scoped command. By default, calling scope with no subcommands will run the executables you pass as arguments to scope. However, scope allows for additional arguments to be passed to run to capture payloads or to increase metrics' verbosity. Must be called with the -- flag, e.g., 'scope run -- <command>', to prevent AppScope from attempting to parse flags passed to the executed command.
+	Short: "Executes a viewed command",
+	Long: `Executes a viewed command. By default, calling appview with no subcommands will run the executables you pass as arguments to appview. However, appview allows for additional arguments to be passed to run to capture payloads or to increase metrics' verbosity. Must be called with the -- flag, e.g., 'appview run -- <command>', to prevent AppView from attempting to parse flags passed to the executed command.
 
-The --*dest flags accept file names like /tmp/scope.log; URLs like file:///tmp/scope.log; or sockets specified with the pattern unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
-	Example: `  scope run -- /bin/echo "foo"
-  scope run -- perl -e 'print "foo\n"'
-  scope run --payloads -- nc -lp 10001
-  scope run -- curl https://wttr.in/94105
-  scope run -c tcp://127.0.0.1:10091 -- curl https://wttr.in/94105
-  scope run -c edge -- top`,
+The --*dest flags accept file names like /tmp/appview.log; URLs like file:///tmp/appview.log; or sockets specified with the pattern unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
+	Example: `  appview run -- /bin/echo "foo"
+  appview run -- perl -e 'print "foo\n"'
+  appview run --payloads -- nc -lp 10001
+  appview run -- curl https://wttr.in/94105
+  appview run -c tcp://127.0.0.1:10091 -- curl https://wttr.in/94105
+  appview run -c edge -- top`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()

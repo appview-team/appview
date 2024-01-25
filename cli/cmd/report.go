@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/criblio/scope/report"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/report"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -21,11 +21,11 @@ import (
 // reportCmd represents the report command
 var reportCmd = &cobra.Command{
 	Use:   "report [flags]",
-	Short: "Create a report from the scope session",
+	Short: "Create a report from the appview session",
 	Long:  `Using event and metric data from the specified session, this command will create a report on Network and File events.`,
-	Example: `  scope report         # Create and display a report for the last session 
-  scope report --id 2                # Report on a specific session ID
-  scope report --json | jq           # Generate the report in JSON format and render with jq`,
+	Example: `  appview report         # Create and display a report for the last session 
+  appview report --id 2                # Report on a specific session ID
+  appview report --json | jq           # Generate the report in JSON format and render with jq`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetInt("id")

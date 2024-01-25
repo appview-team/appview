@@ -6,7 +6,7 @@
 #define EXPORTON __attribute__((visibility("default")))
 #define EXPORTWEAK __attribute__((weak))
 
-#define DYN_CONFIG_PREFIX "scope"
+#define DYN_CONFIG_PREFIX "appview"
 #define MAXTRIES 10
 #define CONN_LOG_INTERVAL 60
 

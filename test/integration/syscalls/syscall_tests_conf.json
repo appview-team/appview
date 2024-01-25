@@ -135,7 +135,7 @@
       "exclude_x86_64_tests": [],
       "exclude_aarch64_tests": [],
       "Notes for exclude musl tests" : [
-        "the musl exclusions are tests that fail on musl unscoped",
+        "the musl exclusions are tests that fail on musl unviewd",
         "revisit these to see if we can fix them instead of excluding them"
       ],
       "exclude_musl_tests": [
@@ -153,7 +153,7 @@
       "include_tests": [],
       "exclude_tests": [],
       "Notes for exclude arch tests" : [
-        "the aarch64 exclusions are tests that fail on ARM unscoped",
+        "the aarch64 exclusions are tests that fail on ARM unviewd",
         "revisit these to see if we can fix them instead of excluding them"
       ],
       "exclude_x86_64_tests": [],

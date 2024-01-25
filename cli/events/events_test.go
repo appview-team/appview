@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,7 @@ func TestEventReader(t *testing.T) {
 	rawEvent := `{"type":"evt","body":{"sourcetype":"console","id":"d55805e5c25e-echo-/bin/echo true","_time":1609191683.985,"source":"stdout","host":"d55805e5c25e","proc":"echo","cmd":"/bin/echo true","pid":10117,"_channel":"641503557208802","data":"true"}}
 `
 
-	in := make(chan libscope.EventBody)
+	in := make(chan libappview.EventBody)
 
 	r := bytes.NewBuffer([]byte(rawEvent))
 	go EventReader(r, 0, util.MatchAlways, in)
@@ -45,10 +45,10 @@ func TestReaderWithFilter(t *testing.T) {
 `
 
 	testFilter := func(filter func(string) bool, len int) {
-		in := make(chan libscope.EventBody)
+		in := make(chan libappview.EventBody)
 		r := bytes.NewBuffer([]byte(rawEvent))
 		go EventReader(r, 0, filter, in)
-		events := []libscope.EventBody{}
+		events := []libappview.EventBody{}
 		for e := range in {
 			events = append(events, e)
 		}
@@ -106,26 +106,26 @@ func TestPrintEvents(t *testing.T) {
 		allFields  bool
 		forceColor bool
 		width      int
-		events     []libscope.EventBody
+		events     []libappview.EventBody
 		expOutput  string
 	}{
 		{name: "simple", fields: []string{}, sortField: "", eval: "", json: false, reverse: false, allFields: false, forceColor: false, width: 160,
-			events:    []libscope.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"net_bytes_sent": 0}}},
+			events:    []libappview.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"net_bytes_sent": 0}}},
 			expOutput: "[0] " + expTime + " test net net.close  net_bytes_sent:0"},
 		{name: "allFields", fields: []string{}, sortField: "", eval: "", json: false, reverse: false, allFields: true, forceColor: false, width: 160,
-			events:    []libscope.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"duration": 0}}},
+			events:    []libappview.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"duration": 0}}},
 			expOutput: "[0] " + expTime + " test net net.close [[duration:0]]"},
 		{name: "fields", fields: []string{"duration"}, sortField: "", eval: "", json: false, reverse: false, allFields: false, forceColor: false, width: 160,
-			events:    []libscope.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"duration": 0}}},
+			events:    []libappview.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"duration": 0}}},
 			expOutput: "[0] " + expTime + " test net net.close duration:0"},
 		{name: "eval", fields: []string{}, sortField: "", eval: "source==\"net.close\"", json: false, reverse: false, allFields: false, forceColor: false, width: 160,
-			events:    []libscope.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"net_bytes_sent": 0}}},
+			events:    []libappview.EventBody{{Id: "0", SourceType: "net", Source: "net.close", Host: "test", Proc: "test", Cmd: "test", Data: map[string]interface{}{"net_bytes_sent": 0}}},
 			expOutput: "[0] " + expTime + " test net net.close  net_bytes_sent:0"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			in := make(chan libscope.EventBody)
+			in := make(chan libappview.EventBody)
 			go func() {
 				for _, e := range tc.events {
 					in <- e
@@ -154,32 +154,32 @@ func TestSortEvents(t *testing.T) {
 		name      string
 		sortField string
 		reverse   bool
-		events    []libscope.EventBody
-		expOutput []libscope.EventBody
+		events    []libappview.EventBody
+		expOutput []libappview.EventBody
 	}{
 		{name: "sort by time", sortField: "_time", reverse: false,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
 		},
 		{name: "sort by reverse time", sortField: "_time", reverse: true,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
 		},
 		{name: "sort by host", sortField: "host", reverse: false,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
 		},
 		{name: "sort by reverse host", sortField: "host", reverse: true,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
 		},
 		{name: "sort by pid", sortField: "pid", reverse: false,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "1", Host: "a", Time: 1.01, Pid: 1}},
 		},
 		{name: "sort by reverse pid", sortField: "pid", reverse: true,
-			events:    []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
-			expOutput: []libscope.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
+			events:    []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}},
+			expOutput: []libappview.EventBody{{Id: "1", Host: "a", Time: 1.01, Pid: 1}, {Id: "3", Host: "c", Time: 1.03, Pid: 3}, {Id: "2", Host: "f", Time: 1.04, Pid: 5}},
 		},
 	}
 

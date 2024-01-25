@@ -33,7 +33,7 @@
       <chart>
         <title>CPU Utilization by Process (usec)</title>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.cpu" AND `scope_metrics_index` span=10s BY proc
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.cpu" AND `appview_metrics_index` span=10s BY proc
 | timechart avg(_value) span=10s agg=max limit=5 useother=false BY proc
 | fields - _span</query>
           <earliest>$field1.earliest$</earliest>
@@ -53,7 +53,7 @@
       <chart>
         <title>CPU Threads by Process</title>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.thread" AND `scope_metrics_index` span=10s BY proc
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.thread" AND `appview_metrics_index` span=10s BY proc
 | timechart avg(_value) span=10s agg=max limit=20 useother=false BY proc
 | fields - _span</query>
           <earliest>$field1.earliest$</earliest>
@@ -75,7 +75,7 @@
       <chart>
         <title>File Descriptors in Use by Process</title>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.fd" AND `scope_metrics_index` span=10s BY proc
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.fd" AND `appview_metrics_index` span=10s BY proc
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY proc
 | fields - _span</query>
           <earliest>$field1.earliest$</earliest>
@@ -95,7 +95,7 @@
       <chart>
         <title>Child Processes by Process</title>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.child" AND `scope_metrics_index` span=10s BY proc
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.child" AND `appview_metrics_index` span=10s BY proc
 | timechart avg(_value) span=5m agg=max limit=5 useother=false BY proc
 | fields - _span</query>
           <earliest>$field1.earliest$</earliest>
@@ -117,7 +117,7 @@
       <chart>
         <title>RAM Consumption by Process (KB)</title>
         <search>
-          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.mem" AND `scope_metrics_index` span=10s BY proc
+          <query>| mstats avg(_value) prestats=true WHERE metric_name="proc.mem" AND `appview_metrics_index` span=10s BY proc
 | timechart avg(_value) span=10s agg=max limit=5 useother=false BY proc
 | fields - _span</query>
           <earliest>$field1.earliest$</earliest>

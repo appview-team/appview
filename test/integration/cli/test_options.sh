@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Cribl AppView Command-Line Option Tests
+# AppView Command-Line Option Tests
 #
 
 declare -i ERR=0
@@ -194,15 +194,15 @@ outputs foo
 returns 0
 
 run ./bin/linux/${ARCH}/appview 
-outputs Cribl AppView Command Line Interface
+outputs AppView Command Line Interface
 returns 0
 
 run ./bin/linux/${ARCH}/appview -h
-outputs Cribl AppView Command Line Interface
+outputs AppView Command Line Interface
 returns 0
 
 run ./bin/linux/${ARCH}/appview --help
-outputs Cribl AppView Command Line Interface
+outputs AppView Command Line Interface
 returns 0
 
 run ./bin/linux/${ARCH}/appview logs -h

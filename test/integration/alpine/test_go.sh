@@ -42,8 +42,8 @@ endtest(){
     rm $EVT_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 evalPayload(){
     PAYLOADERR=0
@@ -82,7 +82,7 @@ starttest plainServerDynamic
 cd /go/net
 PORT=8080
 
-scope -z ./plainServerDynamic ${PORT} &
+appview -z ./plainServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -117,7 +117,7 @@ endtest
 starttest plainServerStatic
 cd /go/net
 PORT=8081
-scope -z ./plainServerStatic ${PORT} &
+appview -z ./plainServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -152,7 +152,7 @@ endtest
 starttest tlsServerDynamic
 cd /go/net
 PORT=4430
-scope -z ./tlsServerDynamic ${PORT} &
+appview -z ./tlsServerDynamic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -188,7 +188,7 @@ starttest tlsServerStatic
 cd /go/net
 PORT=4431
 STRUCT_PATH=/go/net/go_offsets.txt
-SCOPE_GO_STRUCT_PATH=$STRUCT_PATH scope -z ./tlsServerStatic ${PORT} &
+APPVIEW_GO_STRUCT_PATH=$STRUCT_PATH appview -z ./tlsServerStatic ${PORT} &
 
 # this sleep gives the server a chance to bind to the port
 # before we try to hit it with curl
@@ -222,7 +222,7 @@ endtest
 #
 starttest plainClientDynamic
 cd /go/net
-scope -z ./plainClientDynamic
+appview -z ./plainClientDynamic
 ERR+=$?
 
 # this sleep gives plainClientDynamic a chance to report its events on exit
@@ -246,7 +246,7 @@ endtest
 #
 starttest plainClientStatic
 cd /go/net
-scope -z ./plainClientStatic
+appview -z ./plainClientStatic
 ERR+=$?
 
 # this sleep gives plainClientStatic a chance to report its events on exit
@@ -270,7 +270,7 @@ endtest
 #
 starttest tlsClientDynamic
 cd /go/net
-scope -z ./tlsClientDynamic
+appview -z ./tlsClientDynamic
 ERR+=$?
 
 # this sleep gives tlsClientDynamic a chance to report its events on exit
@@ -294,7 +294,7 @@ endtest
 #
 starttest tlsClientStatic
 cd /go/net
-SCOPE_GO_STRUCT_PATH=$STRUCT_PATH scope -z ./tlsClientStatic
+APPVIEW_GO_STRUCT_PATH=$STRUCT_PATH appview -z ./tlsClientStatic
 ERR+=$?
 
 # this sleep gives tlsClientStatic a chance to report its events on exit
@@ -348,7 +348,7 @@ endtest
 #
 starttest fileThread
 cd /go/thread
-scope -z ./fileThread
+appview -z ./fileThread
 ERR+=$?
 evaltest
 
@@ -366,7 +366,7 @@ endtest
 #
 starttest cgoDynamic
 cd /go/cgo
-LD_LIBRARY_PATH=. scope -z ./cgoDynamic
+LD_LIBRARY_PATH=. appview -z ./cgoDynamic
 ERR+=$?
 evaltest
 
@@ -384,7 +384,7 @@ endtest
 #
 starttest cgoStatic
 cd /go/cgo
-scope -z ./cgoStatic
+appview -z ./cgoStatic
 ERR+=$?
 evaltest
 
@@ -396,8 +396,8 @@ ERR+=$?
 
 endtest
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 #
 # Done: print results

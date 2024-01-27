@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/definitions/body.schema.json",
-  "title": "Schema for the AppScope event/metric body",
-  "description": "Metadata about the process in which AppScope is running.",
+  "$id": "https://appview.dev/docs/schemas/definitions/body.schema.json",
+  "title": "Schema for the AppView event/metric body",
+  "description": "Metadata about the process in which AppView is running.",
   "$defs": {
     "_time": {
       "title": "_time",
-      "description": "The moment in time when AppScope reported the event or metric. In UNIX time with integer part in seconds and fractional part in microseconds.",
+      "description": "The moment in time when AppView reported the event or metric. In UNIX time with integer part in seconds and fractional part in microseconds.",
       "type": "number",
       "examples": ["1643662126.91777"]
     },
@@ -18,18 +18,18 @@
     },
     "args": {
       "title": "args",
-      "description": "The arguments with which the scoped app was run.",
+      "description": "The arguments with which the viewed app was run.",
       "type": "string"
     },
     "cmd": {
       "title": "cmd",
-      "description": "The command that was run to start the scoped app.",
+      "description": "The command that was run to start the viewed app.",
       "type": "string",
       "examples": ["top"]
     },
     "data": {
       "title": "data",
-      "description": "The data that the scoped app emitted as output.",
+      "description": "The data that the viewed app emitted as output.",
       "type": "string"
     },
     "gid": {
@@ -58,7 +58,7 @@
     },
     "metric_type_histogram": {
       "title": "histogram",
-      "description": "Indicates that the metric from the scoped app is a histogram.",
+      "description": "Indicates that the metric from the viewed app is a histogram.",
       "type": "string",
       "const": "histogram"
     },
@@ -75,7 +75,7 @@
     },
     "sourceconsolestderrstdout": {
       "title": "source",
-      "description": "Specifies whether AppScope is capturing either `stderr` or `stdout` from console.",
+      "description": "Specifies whether AppView is capturing either `stderr` or `stdout` from console.",
       "type": "string",
       "enum": ["stderr", "stdout"]
     },
@@ -261,7 +261,7 @@
     },
     "sourcenotice" : {
       "title": "notice",
-      "description": "Indicates that the Source is an AppScope notification.",
+      "description": "Indicates that the Source is an AppView notification.",
       "type": "string",
       "const": "notice"
     },

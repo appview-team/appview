@@ -1,6 +1,6 @@
 # JSON Schema
 
-AppScope generates events and metrics whose structure is defined in JSON Schema. Each event and metric is defined in its own JSON Schema file in this directory. 
+AppView generates events and metrics whose structure is defined in JSON Schema. Each event and metric is defined in its own JSON Schema file in this directory. 
 
 To generate a `schema-reference.md` markdown file from the JSON Schema files, call:
 
@@ -35,9 +35,9 @@ To add a new event named `foo.bar`, create a file named `event_foo_bar.schema.js
 ```
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/event_foo_bar.schema.json",
+  "$id": "https://appview.dev/docs/schemas/event_foo_bar.schema.json",
   "type": "object",
-  "title": "AppScope Event",
+  "title": "AppView Event",
   "description": "Structure of the `foo.bar` event",
   "required": [
     "type",
@@ -125,9 +125,9 @@ To add a new metric named `foo.bar`, create a file named `metric_foo_bar.schema.
 ```
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/metric_foo_bar.schema.json",
+  "$id": "https://appview.dev/docs/schemas/metric_foo_bar.schema.json",
   "type": "object",
-  "title": "AppScope Metric",
+  "title": "AppView Metric",
   "description": "Structure of the `foo.bar` metric",
   "required": [
     "type",

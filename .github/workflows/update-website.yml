@@ -1,5 +1,5 @@
 # 
-# AppScope Website CI Workflow
+# AppView Website CI Workflow
 #
 # Create a git tag with the prefix 'web' and then 'git push --tags'
 # to kick off the workflow on github.

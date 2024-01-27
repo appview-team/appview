@@ -1,8 +1,8 @@
 /*
- * Testing unshare CLONE_NEWNET and impact for scope
+ * Testing unshare CLONE_NEWNET and impact for appview
  *
  * gcc test/manual/namespace/ns_unsharetest.c -o unsharetest
- * sudo SCOPE_CRIBL_ENABLE=FALSE ldscope -- ./unsharetest
+ * sudo APPVIEW_CRIBL_ENABLE=FALSE ldappview -- ./unsharetest
  */
 #define _GNU_SOURCE
 #include <linux/limits.h>

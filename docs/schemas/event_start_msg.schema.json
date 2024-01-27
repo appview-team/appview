@@ -1,10 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/event_start_msg.schema.json",
+  "$id": "https://appview.dev/docs/schemas/event_start_msg.schema.json",
   "type": "object",
-  "title": "AppScope Start message",
+  "title": "AppView Start message",
   "description": "Structure of the process-start message",
-  "examples": [{"format":"ndjson","info":{"process":{"libscopever":"v1.3.0","pid":35673,"ppid":3390,"gid":1000,"groupname":"test_user","uid":1000,"username":"test_user","hostname":"test_user","procname":"ls","cmd":"ls --color=auto","id":"test_user-ls-ls --color=auto","cgroup":"9:cpuset:/","machine_id":"a1e2ada5a5b1b273b4b5c0c2c1c4f5d1","uuid":"da845a9b-a55d-4c42-893d-08b54ee6e999"},"configuration":{"current":{"metric":{"enable":"true","transport":{"type":"udp","host":"127.0.0.1","port":"8125","tls":{"enable":"false","validateserver":"true","cacertpath":""}},"format":{"type":"statsd","statsdprefix":"","statsdmaxlen":512,"verbosity":4},"watch":[{"type":"fs"},{"type":"net"},{"type":"http"},{"type":"dns"},{"type":"process"},{"type":"statsd"}]},"libscope":{"log":{"level":"info","transport":{"type":"file","path":"/tmp/scope.log","buffering":"line"}},"snapshot":{"coredump":"false","backtrace":"false"},"configevent":"true","summaryperiod":10,"commanddir":"/tmp"},"event":{"enable":"true","transport":{"type":"tcp","host":"127.0.0.1","port":"9109","tls":{"enable":"false","validateserver":"true","cacertpath":""}},"format":{"type":"ndjson","maxeventpersec":10000,"enhancefs":"true"},"watch":[{"type":"file","name":"(\\/logs?\\/)|(\\.log$)|(\\.log[.\\d])","field":".*","value":".*"},{"type":"console","name":"(stdout)|(stderr)","field":".*","value":".*","allowbinary":"true"},{"type":"http","name":".*","field":".*","value":".*","headers":[]},{"type":"net","name":".*","field":".*","value":".*"},{"type":"fs","name":".*","field":".*","value":".*"},{"type":"dns","name":".*","field":".*","value":".*"}]},"payload":{"enable":"false","dir":"/tmp"},"tags":{},"protocol":[],"cribl":{"enable":"false","transport":{"type":"edge"},"authtoken":""}}},"environment":{}}}],
+  "examples": [{"format":"ndjson","info":{"process":{"libappviewver":"v1.3.0","pid":35673,"ppid":3390,"gid":1000,"groupname":"test_user","uid":1000,"username":"test_user","hostname":"test_user","procname":"ls","cmd":"ls --color=auto","id":"test_user-ls-ls --color=auto","cgroup":"9:cpuset:/","machine_id":"a1e2ada5a5b1b273b4b5c0c2c1c4f5d1","uuid":"da845a9b-a55d-4c42-893d-08b54ee6e999"},"configuration":{"current":{"metric":{"enable":"true","transport":{"type":"udp","host":"127.0.0.1","port":"8125","tls":{"enable":"false","validateserver":"true","cacertpath":""}},"format":{"type":"statsd","statsdprefix":"","statsdmaxlen":512,"verbosity":4},"watch":[{"type":"fs"},{"type":"net"},{"type":"http"},{"type":"dns"},{"type":"process"},{"type":"statsd"}]},"libappview":{"log":{"level":"info","transport":{"type":"file","path":"/tmp/appview.log","buffering":"line"}},"snapshot":{"coredump":"false","backtrace":"false"},"configevent":"true","summaryperiod":10,"commanddir":"/tmp"},"event":{"enable":"true","transport":{"type":"tcp","host":"127.0.0.1","port":"9109","tls":{"enable":"false","validateserver":"true","cacertpath":""}},"format":{"type":"ndjson","maxeventpersec":10000,"enhancefs":"true"},"watch":[{"type":"file","name":"(\\/logs?\\/)|(\\.log$)|(\\.log[.\\d])","field":".*","value":".*"},{"type":"console","name":"(stdout)|(stderr)","field":".*","value":".*","allowbinary":"true"},{"type":"http","name":".*","field":".*","value":".*","headers":[]},{"type":"net","name":".*","field":".*","value":".*"},{"type":"fs","name":".*","field":".*","value":".*"},{"type":"dns","name":".*","field":".*","value":".*"}]},"payload":{"enable":"false","dir":"/tmp"},"tags":{},"protocol":[],"cribl":{"enable":"false","transport":{"type":"edge"},"authtoken":""}}},"environment":{}}}],
   "required": [
     "format",
     "info"
@@ -31,10 +31,10 @@
       "properties": {
         "process": {
           "title": "process",
-          "description": "Describes the process associated with the scoped app.",
+          "description": "Describes the process associated with the viewed app.",
           "type": "object",
           "required": [
-            "libscopever",
+            "libappviewver",
             "pid",
             "ppid",
             "gid",
@@ -50,8 +50,8 @@
             "uuid"
           ],
           "properties": {
-            "libscopever": {
-              "$ref": "definitions/data.schema.json#/$defs/libscopever"
+            "libappviewver": {
+              "$ref": "definitions/data.schema.json#/$defs/libappviewver"
             },
             "pid": {
               "$ref": "definitions/data.schema.json#/$defs/pid"
@@ -106,7 +106,7 @@
               "properties": {
                 "metric": {
                   "title": "metric",
-                  "description": "Settings for metrics. See `scope.yml`.",
+                  "description": "Settings for metrics. See `appview.yml`.",
                   "type": "object",
                   "properties": {
                     "enable": {
@@ -114,7 +114,7 @@
                     },
                     "transport": {
                       "title": "transport",
-                      "description": "Backend connection for metrics or events. See `scope.yml`.",
+                      "description": "Backend connection for metrics or events. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "type": {
@@ -134,7 +134,7 @@
                         },
                         "tls": {
                           "title": "tls",
-                          "description": "TLS connection settings. See `scope.yml`.",
+                          "description": "TLS connection settings. See `appview.yml`.",
                           "type": "object",
                           "properties": {
                             "enable": {
@@ -152,7 +152,7 @@
                     },
                     "format": {
                       "title": "format",
-                      "description": "Settings for the format of metric data. See `scope.yml`.",
+                      "description": "Settings for the format of metric data. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "type": {
@@ -171,7 +171,7 @@
                     },
                     "watch": {
                       "title": "watch",
-                      "description": "Array containing objects that enable different categories of metrics. See `scope.yml`.",
+                      "description": "Array containing objects that enable different categories of metrics. See `appview.yml`.",
                       "type": "array",
                       "items": [
                         {
@@ -226,14 +226,14 @@
                     }
                   }
                 },
-                "libscope": {
-                  "title": "libscope",
-                  "description": "Specifies how to set up the AppScope library. See `scope.yml`.",
+                "libappview": {
+                  "title": "libappview",
+                  "description": "Specifies how to set up the AppView library. See `appview.yml`.",
                   "type": "object",
                   "properties": {
                     "log": {
                       "title": "log",
-                      "description": "Logging settings for the AppScope library. See `scope.yml`.",
+                      "description": "Logging settings for the AppView library. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "level": {
@@ -241,7 +241,7 @@
                         },
                         "transport": {
                           "title": "transport",
-                          "description": "Backend connection for AppScope library logging. See `scope.yml`.",
+                          "description": "Backend connection for AppView library logging. See `appview.yml`.",
                           "type": "object",
                           "properties": {
                             "type": {
@@ -261,7 +261,7 @@
                             },
                             "tls": {
                               "title": "tls",
-                              "description": "TLS settings for backend used by the AppScope library. See `scope.yml.`",
+                              "description": "TLS settings for backend used by the AppView library. See `appview.yml.`",
                               "type": "object",
                               "properties": {
                                 "enable": {
@@ -290,7 +290,7 @@
                     },
                     "snapshot": {
                       "title": "snapshot",
-                      "description": "Settings to specify content of the snapshot AppScope creates for crash analysis.",
+                      "description": "Settings to specify content of the snapshot AppView creates for crash analysis.",
                       "type": "object",
                       "properties": {
                         "coredump": {
@@ -305,7 +305,7 @@
                 },
                 "event": {
                   "title": "event",
-                  "description": "Settings for events. See `scope.yml`.",
+                  "description": "Settings for events. See `appview.yml`.",
                   "type": "object",
                   "properties": {
                     "enable": {
@@ -313,7 +313,7 @@
                     },
                     "transport": {
                       "title": "transport",
-                      "description": "Backend connection for events. See `scope.yml`.",
+                      "description": "Backend connection for events. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "type": {
@@ -333,7 +333,7 @@
                         },
                         "tls": {
                           "title": "tls",
-                          "description": "Specifies whether to enable TLS for the metrics backend. See `scope.yml`.",
+                          "description": "Specifies whether to enable TLS for the metrics backend. See `appview.yml`.",
                           "type": "object",
                           "properties": {
                             "enable": {
@@ -351,7 +351,7 @@
                     },
                     "format": {
                       "title": "format",
-                      "description": "Settings for the format of event data. See `scope.yml`.",
+                      "description": "Settings for the format of event data. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "type": {
@@ -367,7 +367,7 @@
                     },
                     "watch": {
                       "title": "watch",
-                      "description": "Array containing objects that enable different categories of events. See `scope.yml`.",
+                      "description": "Array containing objects that enable different categories of events. See `appview.yml`.",
                       "type": "array",
                       "items": [
                         {
@@ -481,7 +481,7 @@
                 },
                 "payload": {
                   "title": "payload",
-                  "description": "Settings for enabling and storing payloads. See `scope.yml`.",
+                  "description": "Settings for enabling and storing payloads. See `appview.yml`.",
                   "type": "object",
                   "properties": {
                     "enable": {
@@ -494,12 +494,12 @@
                 },
                 "tags": {
                   "title": "tags",
-                  "description": "User-defined tags which become fields in generated events and metrics. See `scope.yml`.",
+                  "description": "User-defined tags which become fields in generated events and metrics. See `appview.yml`.",
                   "type": "object"
                 },
                 "protocol": {
                   "title": "protocol",
-                  "description": "List whose entries define protocols that AppScope should detect in network payloads, and how to handle matches. See `scope.yml`.",
+                  "description": "List whose entries define protocols that AppView should detect in network payloads, and how to handle matches. See `appview.yml`.",
                   "type": "array",
                   "items": [
                     {
@@ -529,7 +529,7 @@
                 },
                 "cribl": {
                   "title": "cribl",
-                  "description": "Settings for the `cribl` backend. See `scope.yml`.",
+                  "description": "Settings for the `cribl` backend. See `appview.yml`.",
                   "type": "object",
                   "properties": {
                     "enable": {
@@ -537,7 +537,7 @@
                     },
                     "transport": {
                       "title": "transport",
-                      "description": "Backend connection to Cribl Edge or Stream. See `scope.yml`.",
+                      "description": "Backend connection to Cribl Edge or Stream. See `appview.yml`.",
                       "type": "object",
                       "properties": {
                         "type": {
@@ -557,7 +557,7 @@
                         },
                         "tls": {
                           "title": "tls",
-                          "description": "TLS settings for the Cribl backend. See `scope.yml`.",
+                          "description": "TLS settings for the Cribl backend. See `appview.yml`.",
                           "type": "object",
                           "properties": {
                             "enable": {

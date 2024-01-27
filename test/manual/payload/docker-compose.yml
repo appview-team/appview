@@ -1,20 +1,20 @@
 version: '3.5'
 
-x-scope-common: &scope-common
+x-appview-common: &appview-common
   volumes:
-    - ../../..:/opt/appscope
-  working_dir: /opt/appscope
+    - ../../..:/opt/appview
+  working_dir: /opt/appview
   privileged: true
 
 services:
   payload:
-    image: scopemanual/payload
+    image: appviewmanual/payload
     build:
       cache_from:
-        - scopemanual/payload
+        - appviewmanual/payload
       context: .
       dockerfile: Dockerfile
     ports:
       - "9000:9000"
       - "10091:10091"
-    <<: *scope-common
+    <<: *appview-common

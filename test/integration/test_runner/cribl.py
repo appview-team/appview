@@ -18,7 +18,7 @@ from validation import validate_all
 
 class CriblTCPToFileTest(ApplicationTest):
 
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         # all configured in environment
         # TODO configure in cribl API
         # cribl tcp input localhost:10003
@@ -122,6 +122,6 @@ class CriblTCPToFileTest(ApplicationTest):
 
 
 def configure(runner: Runner, config):
-    app_controller = SubprocessAppController(["/opt/cribl/bin/cribl", "server"], "cribl", config.scope_path,
+    app_controller = SubprocessAppController(["/opt/cribl/bin/cribl", "server"], "cribl", config.appview_path,
                                              config.logs_path)
     runner.add_tests([CriblTCPToFileTest(app_controller)])

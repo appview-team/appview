@@ -5,7 +5,7 @@
 
 #include "dbg.h"
 #include "httpmatch.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "test.h"
 
 #define NET_ENTRIES 1024
@@ -15,8 +15,8 @@ list_t *g_extra_net_info_list = NULL;
 static int
 setup(void **state)
 {
-    g_netinfo = scope_calloc(NET_ENTRIES, sizeof(net_info));
-    g_extra_net_info_list = lstCreate(scope_free);
+    g_netinfo = appview_calloc(NET_ENTRIES, sizeof(net_info));
+    g_extra_net_info_list = lstCreate(appview_free);
 
     return groupSetup(state);
 }
@@ -24,7 +24,7 @@ setup(void **state)
 static int
 teardown(void **state)
 {
-    scope_free(g_netinfo);
+    appview_free(g_netinfo);
     lstDestroy(&g_extra_net_info_list);
 
     return groupTeardown(state);
@@ -33,7 +33,7 @@ teardown(void **state)
 static http_map *
 newReq(uint64_t id, int fd)
 {
-    http_map *map = scope_calloc(1, sizeof(http_map));
+    http_map *map = appview_calloc(1, sizeof(http_map));
     assert_non_null(map);
     map->id.uid = id;
     map->id.sockfd = fd;
@@ -44,7 +44,7 @@ static void
 freeReq(http_map *req)
 {
     assert_non_null(req);
-    scope_free(req);
+    appview_free(req);
 }
 
 
@@ -200,7 +200,7 @@ httpReqExpireRequestsFromCircBufCount(void **state)
 static void
 httpReqExpireRequestsAtDifferentTimes(void **state)
 {
-    setenv("SCOPE_QUEUE_LENGTH", "5", 1);
+    setenv("APPVIEW_QUEUE_LENGTH", "5", 1);
 
     int red = 1235;
     int blue = red + HASH_PRIME;
@@ -234,7 +234,7 @@ httpReqExpireRequestsAtDifferentTimes(void **state)
     httpReqExpire(match, 12, FALSE);
     assert_null(httpReqGet(match, blue));
 
-    unsetenv("SCOPE_QUEUE_LENGTH");
+    unsetenv("APPVIEW_QUEUE_LENGTH");
     httpMatchDestroy(&match);
 }
 

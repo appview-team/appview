@@ -12,7 +12,7 @@
 
 #include "ctl.h"
 #include "cfgutils.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "runtimecfg.h"
 #include "pcre2.h"
 

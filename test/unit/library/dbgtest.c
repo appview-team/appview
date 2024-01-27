@@ -4,7 +4,7 @@
 #include <string.h>
 #include "dbg.h"
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "test.h"
 
 static void
@@ -51,10 +51,10 @@ dbgMacroIdentifiesFileAndLine(void** state)
     char buf[4096] = {0};
     dbgDumpAllToBuffer(buf, sizeof(buf));
 
-    assert_non_null(scope_strstr(buf, "test/unit/library/dbgtest.c:46"));
-    assert_non_null(scope_strstr(buf, "test/unit/library/dbgtest.c:47"));
-    assert_non_null(scope_strstr(buf, "test/unit/library/dbgtest.c:48"));
-    assert_non_null(scope_strstr(buf, "test/unit/library/dbgtest.c:49"));
+    assert_non_null(appview_strstr(buf, "test/unit/library/dbgtest.c:46"));
+    assert_non_null(appview_strstr(buf, "test/unit/library/dbgtest.c:47"));
+    assert_non_null(appview_strstr(buf, "test/unit/library/dbgtest.c:48"));
+    assert_non_null(appview_strstr(buf, "test/unit/library/dbgtest.c:49"));
     assert_int_equal(4, dbgCountAllLines());
 }
 
@@ -71,8 +71,8 @@ dbgAddLineHasCorrectCount(void** state)
     char buf[4096] = {0};
     dbgDumpAllToBuffer(buf, sizeof(buf));
 
-    assert_non_null(scope_strstr(buf, "1: key1 "));
-    assert_non_null(scope_strstr(buf, "5: key2 "));
+    assert_non_null(appview_strstr(buf, "1: key1 "));
+    assert_non_null(appview_strstr(buf, "5: key2 "));
     assert_int_equal(2, dbgCountAllLines());
     assert_int_equal(2, dbgCountMatchingLines("key"));
     assert_int_equal(1, dbgCountMatchingLines("key1"));
@@ -83,10 +83,10 @@ static void
 dbgAddLineCapturesTimeErrnoAndStr(void** state)
 {
     dbgInit();
-    scope_errno = EINVAL;
+    appview_errno = EINVAL;
     dbgAddLine("key1", "str1");
-    scope_errno = EEXIST;
-    assert_int_equal(scope_errno, EEXIST);
+    appview_errno = EEXIST;
+    assert_int_equal(appview_errno, EEXIST);
     dbgAddLine("key2", "%s", "str2");
 
     char buf[4096] = {0};
@@ -100,8 +100,8 @@ dbgAddLineCapturesTimeErrnoAndStr(void** state)
     char str[64] = {0};
     int rv;
 
-    char* key1_line = scope_strstr (buf, "1: key1");
-    rv = scope_sscanf(key1_line, "%llu: %64s %64s %d(%64[^)]) %64s\n",
+    char* key1_line = appview_strstr (buf, "1: key1");
+    rv = appview_sscanf(key1_line, "%llu: %64s %64s %d(%64[^)]) %64s\n",
                     &count, key, time, &err, err_str, str);
     assert_int_equal(rv, 6);
     assert_int_equal(count, 1);
@@ -110,8 +110,8 @@ dbgAddLineCapturesTimeErrnoAndStr(void** state)
     assert_string_equal(err_str, "Invalid argument");
     assert_string_equal(str, "str1");
 
-    char* key2_line = scope_strstr (buf, "1: key2");
-    rv = scope_sscanf(key2_line, "%llu: %64s %64s %d(%64[^)]) %64s\n",
+    char* key2_line = appview_strstr (buf, "1: key2");
+    rv = appview_sscanf(key2_line, "%llu: %64s %64s %d(%64[^)]) %64s\n",
                     &count, key, time, &err, err_str, str);
     assert_int_equal(rv, 6);
     assert_int_equal(count, 1);
@@ -125,19 +125,19 @@ static void
 dbgAddLineCapturesFirstAndLastInstance(void** state)
 {
     dbgInit();
-    scope_errno = 1;
+    appview_errno = 1;
     dbgAddLine("key1", "str1");
-    scope_errno = 2;
+    appview_errno = 2;
     dbgAddLine("key1", "str2");
-    scope_errno = 3;
+    appview_errno = 3;
     dbgAddLine("key1", "str3");
 
     char buf[4096] = {0};
     dbgDumpAllToBuffer(buf, sizeof(buf));
 
-    assert_non_null(scope_strstr(buf, "str1"));
-    assert_null(scope_strstr(buf, "str2"));
-    assert_non_null(scope_strstr(buf, "str3"));
+    assert_non_null(appview_strstr(buf, "str1"));
+    assert_null(appview_strstr(buf, "str2"));
+    assert_non_null(appview_strstr(buf, "str3"));
 }
 
 static void
@@ -145,14 +145,14 @@ dbgAddLineTestReallocWorks(void** state)
 {
     dbgInit();
     int i;
-    char* key = scope_calloc(1, 128*8); // Create an array big enough for all
+    char* key = appview_calloc(1, 128*8); // Create an array big enough for all
     for (i=0; i<128; i++) {
-        assert_true(scope_snprintf(&key[i*8], 8, "key%d", i) > 0);
+        assert_true(appview_snprintf(&key[i*8], 8, "key%d", i) > 0);
         dbgAddLine(&key[i*8], NULL);
     }
     assert_int_equal(dbgCountAllLines(), 128);
     dbgDestroy();
-    scope_free(key);
+    appview_free(key);
 }
 
 static void
@@ -163,10 +163,10 @@ dbgDumpAllOutputsVersionAndTime(void** state)
 
     char version[128] = {0};
     char date[128] = {0};
-    int rv = scope_sscanf(buf, "Scope Version: %128s   Dump From: %128s\n", version, date);
+    int rv = appview_sscanf(buf, "AppView Version: %128s   Dump From: %128s\n", version, date);
 
     assert_int_equal(rv, 2);
-    assert_string_equal(version, SCOPE_VER);
+    assert_string_equal(version, APPVIEW_VER);
     assert_string_not_equal(date, "");
 
 }

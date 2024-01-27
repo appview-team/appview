@@ -1,7 +1,7 @@
 #! /bin/bash
 
 influx_verbose=1
-scope_path="../../../../bin/linux/$(uname -m)/scope"
+appview_path="../../../../bin/linux/$(uname -m)/appview"
 influx_path="./"
 dbfile="$influx_path/db/meta/meta.db"
 
@@ -13,9 +13,9 @@ ERR=0
 rm -f $influx_path/db/*.event
 
 if (( $influx_verbose )); then
-    SCOPE_EVENT_HTTP=true SCOPE_EVENT_DEST=file://$influx_path/db/influxd.event $scope_path $influx_path/influxd_stat --config $influx_path/stress_local.conf &
+    APPVIEW_EVENT_HTTP=true APPVIEW_EVENT_DEST=file://$influx_path/db/influxd.event $appview_path $influx_path/influxd_stat --config $influx_path/stress_local.conf &
 else
-	SCOPE_EVENT_HTTP=true SCOPE_EVENT_DEST=file://$influx_path/db/influxd.event $scope_path $influx_path/influxd_stat --config $influx_path/stress_local.conf 2>/dev/null &
+	APPVIEW_EVENT_HTTP=true APPVIEW_EVENT_DEST=file://$influx_path/db/influxd.event $appview_path $influx_path/influxd_stat --config $influx_path/stress_local.conf 2>/dev/null &
 fi
     
 until test -e "$dbfile" ; do 
@@ -24,17 +24,17 @@ done
 
 #sleep 2
 
-SCOPE_EVENT_HTTP=true SCOPE_EVENT_DEST=file://$influx_path/db/influxc.event $scope_path $influx_path/stress_test insert -n 1000000 -f
-#SCOPE_EVENT_HTTP=true $scope_path $influx_path/main insert -r 30s -f
+APPVIEW_EVENT_HTTP=true APPVIEW_EVENT_DEST=file://$influx_path/db/influxc.event $appview_path $influx_path/stress_test insert -n 1000000 -f
+#APPVIEW_EVENT_HTTP=true $appview_path $influx_path/main insert -r 30s -f
 #$influx_path/main insert -r 30s -f
-#GODEBUG=schedtrace=100 SCOPE_EVENT_HTTP=true SCOPE_EVENT_DEST=file://$influx_path/db/influxc.event $scope_path $influx_path/main insert -n 1000000 -f
-#SCOPE_EVENT_HTTP=true SCOPE_EVENT_DEST=file://$influx_path/db/influxc.event $scope_path $influx_path/influx_stress_stat
-#SCOPE_EVENT_HTTP=true $scope_path $influx_path/influx_stress_stat
+#GODEBUG=schedtrace=100 APPVIEW_EVENT_HTTP=true APPVIEW_EVENT_DEST=file://$influx_path/db/influxc.event $appview_path $influx_path/main insert -n 1000000 -f
+#APPVIEW_EVENT_HTTP=true APPVIEW_EVENT_DEST=file://$influx_path/db/influxc.event $appview_path $influx_path/influx_stress_stat
+#APPVIEW_EVENT_HTTP=true $appview_path $influx_path/influx_stress_stat
 ERR+=$?
 
 #sleep 2
 
-pkill -f scope
+pkill -f appview
 
 pexist="influxd"
 until test -z "$pexist" ; do

@@ -1,19 +1,19 @@
-# Command and Control in Appscope
+# Command and Control in Appappview
 
-AppScope provides two mechanisms to affect the behavior of a running process. The first is a file-based mechanism we've called Dynamic Configuration.  The other is a socket-based request/response interface I'll call Socket Interface. The initial use case for both of these mechanisms is to be able to change the configuration of the AppScope library after the process is up and running. Another more recent use case includes the ability to detach and reattach to the process [link](https://github.com/criblio/appscope/blob/master/docs/Attach.md).  This page is intended to document the basics of these mechanisms including the format of requests, and expected responses.
+AppView provides two mechanisms to affect the behavior of a running process. The first is a file-based mechanism we've called Dynamic Configuration.  The other is a socket-based request/response interface I'll call Socket Interface. The initial use case for both of these mechanisms is to be able to change the configuration of the AppView library after the process is up and running. Another more recent use case includes the ability to detach and reattach to the process [link](https://github.com/criblio/appview/blob/master/docs/Attach.md).  This page is intended to document the basics of these mechanisms including the format of requests, and expected responses.
 
 ## Dynamic Configuration
 
 This feature provides an "environment variable-like" interface that can be used to alter the current configuration of a running process.
 
-[This page](https://appscope.dev/docs/troubleshooting#dynamic-configuration) has a nice description of this file-based mechanism with examples for using this feature and what the "environment variable" format looks like.  The library provides no success or failure response when using the Dynamic Configuration mechanism, though the library will delete the scope.<pid> file after it's completed processing the file.
+[This page](https://appview.dev/docs/troubleshooting#dynamic-configuration) has a nice description of this file-based mechanism with examples for using this feature and what the "environment variable" format looks like.  The library provides no success or failure response when using the Dynamic Configuration mechanism, though the library will delete the appview.<pid> file after it's completed processing the file.
 
-All configuration environment variables can be specified in this file. Values and names of the configuration environment variables can be found [here](https://appscope.dev/docs/config-file/#scopeyml-config-file) in comments "Values:" and "Override:" respectively.  By our own convention, all environment variable names used by AppScope start with "SCOPE_".
+All configuration environment variables can be specified in this file. Values and names of the configuration environment variables can be found [here](https://appview.dev/docs/config-file/#appviewyml-config-file) in comments "Values:" and "Override:" respectively.  By our own convention, all environment variable names used by AppView start with "APPVIEW_".
 
 There are also a few environment variables that are unique to the Dynamic Configuration interface; they do not directly change configuration.  These act more like commands, and are listed here with brief descriptions:
-* SCOPE_CMD_DBG_PATH - Can be used to dump limited debug information by specifying an absolute path.  The file will be created if necessary, if path describes an existing file, new data will be appended to the end of the file. In the first of these cases, the directory in which the file is to be created must already exist.
-* SCOPE_CMD_ATTACH - "false" unscopes the process, stopping [function interposition](https://appscope.dev/docs/how-works#how-appscope-works).  "true" reestablishes function interposition.
-* SCOPE_CONF_RELOAD - Can be used to change the configuration by supplying an absolute file path to a [scope.yml](https://appscope.dev/docs/config-file/#scopeyml-config-file) file. There is no requirement for all configuration fields to be supplied, though library defaults will be used for each field which is omitted.
+* APPVIEW_CMD_DBG_PATH - Can be used to dump limited debug information by specifying an absolute path.  The file will be created if necessary, if path describes an existing file, new data will be appended to the end of the file. In the first of these cases, the directory in which the file is to be created must already exist.
+* APPVIEW_CMD_ATTACH - "false" unviews the process, stopping [function interposition](https://appview.dev/docs/how-works#how-appview-works).  "true" reestablishes function interposition.
+* APPVIEW_CONF_RELOAD - Can be used to change the configuration by supplying an absolute file path to a [appview.yml](https://appview.dev/docs/config-file/#appviewyml-config-file) file. There is no requirement for all configuration fields to be supplied, though library defaults will be used for each field which is omitted.
 
 ## Socket Interface
 
@@ -25,9 +25,9 @@ Socket Interface requests are made by sending newline-delimited json to the libr
 
 For every request, the value of the "type" field must be the string "req".
 This lists supported string values for "req" field. For each value of "req", the expectations for the "body" are described:
-* GetCfg - This request needs no body field.  The response will contain a "body" field (json representation) with the current AppScope configuration. 
-* SetCfg - The "body" field must be a json representation of the configuration described [here](https://appscope.dev/docs/config-file/#scopeyml-config-file).  There is no requirement for all configuration fields to be supplied, though library defaults will be used for each field which is omitted. 
-* Switch - The "body" field may have string values "detach" and "attach".  "detach" unscopes the process, stopping [function interposition](https://appscope.dev/docs/how-works#how-appscope-works).  "Attach" reestablishes function interposition.
+* GetCfg - This request needs no body field.  The response will contain a "body" field (json representation) with the current AppView configuration. 
+* SetCfg - The "body" field must be a json representation of the configuration described [here](https://appview.dev/docs/config-file/#appviewyml-config-file).  There is no requirement for all configuration fields to be supplied, though library defaults will be used for each field which is omitted. 
+* Switch - The "body" field may have string values "detach" and "attach".  "detach" unviews the process, stopping [function interposition](https://appview.dev/docs/how-works#how-appview-works).  "Attach" reestablishes function interposition.
 
 The value of "reqId" can be any integer that can be represented in 64 bits.  There are no other requirements for this value.
 
@@ -67,7 +67,7 @@ GetCfg response:
                     "enable": "true",
                     "transport": {
                         "type": "file",
-                        "path": "/home/ubuntu/.scope/history/top_62_4856_1670867817643836286/metrics.json",
+                        "path": "/home/ubuntu/.appview/history/top_62_4856_1670867817643836286/metrics.json",
                         "buffering": "line"
                     },
                     "format": {
@@ -77,18 +77,18 @@ GetCfg response:
                         "verbosity": 4
                     }
                 },
-                "libscope": {
+                "libappview": {
                     "log": {
                         "level": "warning",
                         "transport": {
                             "type": "file",
-                            "path": "/home/ubuntu/.scope/history/top_62_4856_1670867817643836286/ldscope.log",
+                            "path": "/home/ubuntu/.appview/history/top_62_4856_1670867817643836286/ldappview.log",
                             "buffering": "line"
                         }
                     },
                     "configevent": "false",
                     "summaryperiod": 10,
-                    "commanddir": "/home/ubuntu/.scope/history/top_62_4856_1670867817643836286/cmd"
+                    "commanddir": "/home/ubuntu/.appview/history/top_62_4856_1670867817643836286/cmd"
                 },
                 "event": {
                     "enable": "true",
@@ -144,7 +144,7 @@ SetCfg request:
             "metric": {
                 "format": {
                     "type": "metricjson",
-                    "statsdprefix": "cribl.scope",
+                    "statsdprefix": "cribl.appview",
                     "statsdmaxlen": "42",
                     "verbosity": "0",
                     "tags": [
@@ -158,7 +158,7 @@ SetCfg request:
                 },
                 "transport": {
                     "type": "file",
-                    "path": "/var/log/scope.log"
+                    "path": "/var/log/appview.log"
                 }
             },
             "event": {
@@ -181,7 +181,7 @@ SetCfg request:
                     }
                 ]
             },
-            "libscope": {
+            "libappview": {
                 "transport": {
                     "type": "file",
                     "path": "/var/log/event.log"
@@ -191,7 +191,7 @@ SetCfg request:
                     "level": "debug",
                     "transport": {
                         "type": "file"
-                        "path": "/tmp/scope.log"
+                        "path": "/tmp/appview.log"
                     }
                 }
             }

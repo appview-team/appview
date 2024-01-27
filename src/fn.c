@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <link.h>
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "dbg.h"
 #include "utils.h"
 #include "fn.h"
@@ -24,7 +24,7 @@
  * postload, is, in many cases, quite different. In the attach case
  * the lib constructor is run after all required libs have been loaded.
  * In the post load attach case we will see ld.so resolve symbols from
- * libscope where they need to be resolved by system libs; libc, libpthred,
+ * libappview where they need to be resolved by system libs; libc, libpthred,
  * libdl, et al.
  *
  * It becomes important to note that the handle obtained by dlopen() and used
@@ -36,7 +36,7 @@
  * is not resolved the search will continue to include shared objects that are
  * required by libdl.so and then those used by the executable at large.
  *
- * In the libscope.so case there are several dependent libs; libc, libdl, librt,
+ * In the libappview.so case there are several dependent libs; libc, libdl, librt,
  * libpthread, ld.so. In general, a hierarchy exists, not quite literal, but in
  * practical terms, libc is not dependent on other libs. Likewise, libpthread is
  * dependent on libc and librt is dependent on libpthread and libc. We make use
@@ -75,15 +75,15 @@
  * that ld-linux.so resolves symbols as expected on static execs with RTLD_DEFAULT.
  *
  * It's important to note that the use of RTLD_DEFAULT in a dynamic exec generally
- * results in symbols being resolved from libscope. Therefore, we need to use this
+ * results in symbols being resolved from libappview. Therefore, we need to use this
  * handle in a static exec case only. It makes sense in that RTLD_DEFAULT causes a
- * symbol search to begin with the current object. When executed from the libscope
+ * symbol search to begin with the current object. When executed from the libappview
  * constructor, this results in symbols that we want to locate in libpthread or libc
- * to be resolved from libscope. That doesn't work.
+ * to be resolved from libappview. That doesn't work.
 */
 #define GETADDR(val, sym)                                \
     ares.in_symbol = sym;                                \
-    if (checkEnv("SCOPE_EXEC_TYPE", "static") == TRUE) { \
+    if (checkEnv("APPVIEW_EXEC_TYPE", "static") == TRUE) { \
         val = dlsym(RTLD_DEFAULT, sym);                  \
         /* GNU ld.so */                                  \
     } else if (dl_iterate_phdr(getAddr, &ares)) {        \
@@ -113,7 +113,7 @@ getAddr(struct dl_phdr_info *info, size_t size, void *data)
 
     ares->out_addr = NULL;
 
-    if (scope_strstr(info->dlpi_name, "librt.so") == NULL) return 0;
+    if (appview_strstr(info->dlpi_name, "librt.so") == NULL) return 0;
 
     // can we find the symbol in this object
     void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
@@ -127,7 +127,7 @@ getAddr(struct dl_phdr_info *info, size_t size, void *data)
         return 0;
     }
 
-    // We found the symbol in a lib that is not libscope
+    // We found the symbol in a lib that is not libappview
     ares->out_addr = addr;
     return 1;
 }

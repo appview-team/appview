@@ -4,13 +4,13 @@
 
 These were made by setting these and running the syscalls test
 
-    export SCOPE_METRIC_VERBOSITY=4 (or 9)
+    export APPVIEW_METRIC_VERBOSITY=4 (or 9)
 
-    export SCOPE_METRIC_FORMAT=ndjson
+    export APPVIEW_METRIC_FORMAT=ndjson
 
-    export SCOPE_METRIC_DEST=file:///tmp/mtc.out
+    export APPVIEW_METRIC_DEST=file:///tmp/mtc.out
 
-    /usr/local/scope/scope-test
+    /usr/local/appview/appview-test
 
     then running onemtc.sh to create a filtered version of the output
 
@@ -24,13 +24,13 @@ These were made by setting these and running the syscalls test
 
 These were made by setting these and running the tls test
 
-      export SCOPE_METRIC_VERBOSITY=4 (or 9)
+      export APPVIEW_METRIC_VERBOSITY=4 (or 9)
 
-      export SCOPE_METRIC_FORMAT=ndjson
+      export APPVIEW_METRIC_FORMAT=ndjson
 
-      export SCOPE_METRIC_DEST=file:///tmp/http.out
+      export APPVIEW_METRIC_DEST=file:///tmp/http.out
 
-      /usr/local/scope/scope-test
+      /usr/local/appview/appview-test
 
       then running onemtc2.sh to create a filtered version of the output
 
@@ -45,12 +45,12 @@ These were made by setting these and running the tls test
 In order to capture the metric http.req.content_length the following command can be used:
 curl -X POST https://reqbin.com/echo/post/json -H "Content-Type: application/json" -d '{"productId": 123456, "quantity": 100}'
 Example:
-      export SCOPE_METRIC_VERBOSITY=4 (or 9)
+      export APPVIEW_METRIC_VERBOSITY=4 (or 9)
 
-      export SCOPE_METRIC_FORMAT=ndjson
+      export APPVIEW_METRIC_FORMAT=ndjson
 
-      export SCOPE_METRIC_DEST=file:///tmp/http.clen
+      export APPVIEW_METRIC_DEST=file:///tmp/http.clen
 
-      ldscope -- curl -X POST https://reqbin.com/echo/post/json -H "Content-Type: application/json" -d '{"productId": 123456, "quantity": 100}'
+      ldappview -- curl -X POST https://reqbin.com/echo/post/json -H "Content-Type: application/json" -d '{"productId": 123456, "quantity": 100}'
 
       the metric for http.req.content_length will be found in http.clen

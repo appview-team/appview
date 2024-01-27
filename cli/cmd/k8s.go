@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/k8s"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/k8s"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -16,14 +16,14 @@ var opt k8s.Options
 // k8sCmd represents the k8s command
 var k8sCmd = &cobra.Command{
 	Use:   "k8s",
-	Short: "Install scope in kubernetes",
-	Long: `Prints configurations to pass to kubectl, which then automatically instruments newly-launched containers. This installs a mutating admission webhook, which adds an initContainer to each pod. The webhook also sets environment variables that install AppScope for all processes in that container.
+	Short: "Install appview in kubernetes",
+	Long: `Prints configurations to pass to kubectl, which then automatically instruments newly-launched containers. This installs a mutating admission webhook, which adds an initContainer to each pod. The webhook also sets environment variables that install AppView for all processes in that container.
 
-The --*dest flags accept file names like /tmp/scope.log; URLs like file:///tmp/scope.log; or sockets specified with the pattern unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
-	Example: `  scope k8s --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 | kubectl apply -f -
-kubectl label namespace default scope=enabled
+The --*dest flags accept file names like /tmp/appview.log; URLs like file:///tmp/appview.log; or sockets specified with the pattern unix:///var/run/mysock, tcp://hostname:port, udp://hostname:port, or tls://hostname:port.`,
+	Example: `  appview k8s --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 | kubectl apply -f -
+kubectl label namespace default appview=enabled
 
-  scope k8s --metricdest tcp://scope-stats-exporter:9109 --metricformat statsd --metricprefix appscope --eventdest tcp://other.host:10070 | kubectl apply -f -
+  appview k8s --metricdest tcp://appview-stats-exporter:9109 --metricformat statsd --metricprefix appview --eventdest tcp://other.host:10070 | kubectl apply -f -
 `,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -41,9 +41,9 @@ kubectl label namespace default scope=enabled
 		opt.MetricPrefix = rc.MetricsPrefix
 		opt.EventDest = rc.EventsDest
 		opt.CriblDest = rc.CriblDest
-		rc.WorkDir = "/scope"
+		rc.WorkDir = "/appview"
 		var err error
-		opt.ScopeConfigYaml, err = rc.ScopeConfigYaml()
+		opt.AppViewConfigYaml, err = rc.AppViewConfigYaml()
 		util.CheckErrSprintf(err, "%v", err)
 		server, _ := cmd.Flags().GetBool("server")
 		opt.ExporterDisable, _ = cmd.Flags().GetBool("noexporter")
@@ -80,15 +80,15 @@ kubectl label namespace default scope=enabled
 
 func init() {
 	RootCmd.AddCommand(k8sCmd)
-	k8sCmd.Flags().StringVar(&opt.App, "app", "scope", "Name of the app in Kubernetes")
+	k8sCmd.Flags().StringVar(&opt.App, "app", "appview", "Name of the app in Kubernetes")
 	k8sCmd.Flags().StringVar(&opt.Namespace, "namespace", "default", "Name of the namespace in which to install")
-	k8sCmd.Flags().StringVar(&opt.SignerName, "signername", "kubernetes.io/kubelet-serving", "Name of the signer used to sign the certificate request for the AppScope Admission Webhook")
-	k8sCmd.Flags().StringVar(&opt.Version, "version", "", "Version of scope to deploy")
+	k8sCmd.Flags().StringVar(&opt.SignerName, "signername", "kubernetes.io/kubelet-serving", "Name of the signer used to sign the certificate request for the AppView Admission Webhook")
+	k8sCmd.Flags().StringVar(&opt.Version, "version", "", "Version of appview to deploy")
 	k8sCmd.Flags().StringVar(&opt.CertFile, "certfile", "/etc/certs/tls.crt", "Certificate file for TLS in the container (mounted secret)")
 	k8sCmd.Flags().StringVar(&opt.KeyFile, "keyfile", "/etc/certs/tls.key", "Private key file for TLS in the container (mounted secret)")
 	k8sCmd.Flags().IntVar(&opt.Port, "port", 4443, "Port to listen on")
 	k8sCmd.Flags().Bool("server", false, "Run Webhook server")
-	k8sCmd.Flags().BoolVar(&opt.Debug, "debug", false, "Turn on debug logging in the scope webhook container")
+	k8sCmd.Flags().BoolVar(&opt.Debug, "debug", false, "Turn on debug logging in the appview webhook container")
 	k8sCmd.Flags().Bool("noexporter", false, "Disable StatsD to Prometheus Exporter deployment")
 	k8sCmd.Flags().IntVar(&opt.ExporterPromPort, "promport", 9090, "Specify StatsD to Prometheus Exporter port for HTTP metrics requests")
 

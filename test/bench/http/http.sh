@@ -1,9 +1,9 @@
 #!/bin/bash
-# Requires nginx, scope, ab
+# Requires nginx, appview, ab
 # Configure /etc/nginx/nginx.conf with: worker_processes 1
 
-unscoped_nginx() {
-    printf "Unscoped Nginx:\n"
+unviewd_nginx() {
+    printf "Unviewd Nginx:\n"
     sudo nginx -s stop
     sudo nginx
     PID=$(ps -ef | grep www-data | grep -v grep | awk '{ print $2 }')
@@ -15,10 +15,10 @@ unscoped_nginx() {
     printf "Diff:\t%s\n" $(($END-$START)) 
 }
 
-scoped_nginx() {
-    printf "\nScoped Nginx:\n"
+viewed_nginx() {
+    printf "\nViewed Nginx:\n"
     sudo nginx -s stop
-    sudo ../../../bin/linux/x86_64/scope run -- nginx
+    sudo ../../../bin/linux/x86_64/appview run -- nginx
     PID=$(ps -ef | grep www-data | grep -v grep | awk '{ print $2 }')
     START=$(cat /proc/$PID/schedstat | awk '{ print $1 }')
     ab -c 1 -n 10000 http://127.0.0.1:80/ > /dev/null 2>&1
@@ -28,5 +28,5 @@ scoped_nginx() {
     printf "Diff:\t%s\n" $(($END-$START)) 
 }
 
-unscoped_nginx
-scoped_nginx
+unviewd_nginx
+viewed_nginx

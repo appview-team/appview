@@ -15,7 +15,7 @@
 #include "loaderutils.h"
 #include "nsfile.h"
 #include "patch.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 #define EXE_TEST_FILE "/bin/cat"
 #define LIBMUSL "musl"
@@ -30,7 +30,7 @@
 
 /*
  * This code exists solely to support the ability to
- * build a libscope and a scope on a glibc distro
+ * build a libappview and a appview on a glibc distro
  * that will execute on both a glibc distro and a
  * musl distro.
  *
@@ -38,7 +38,7 @@
  * execute on both glibc and musl distros.
  *
  * The process:
- * 1) extract the scope exec and libscope.so
+ * 1) extract the appview exec and libappview.so
  *    dynamic lib from this object.
  * 2) open an executable file on the current FS and
  *    read the loader string from the .interp section.
@@ -49,8 +49,8 @@
  * 5) for musl; create or add to the ld lib path
  *    env var to point to the dir created above.
  * 6) for musl; modify the loader string in .interp
- *    of scope to ld-musl.so.
- * 7) execve the extracted scope passing args
+ *    of appview to ld-musl.so.
+ * 7) execve the extracted appview passing args
  *    from this command line.
  */
 
@@ -94,7 +94,7 @@ get_dir(const char *path, char *fres, size_t len) {
 }
 */
 
-// modify the loader string in the .interp section of scope
+// modify the loader string in the .interp section of appview
 // return -1 on error
 static int
 set_loader(unsigned char *buf)
@@ -217,7 +217,7 @@ getLoaderFile(const char *exe) {
 }
 
 #if 0
-// modify the loader string in the .interp section of scope
+// modify the loader string in the .interp section of appview
 static int
 setLoaderFile(const char *exe)
 {
@@ -273,25 +273,25 @@ setLoaderFile(const char *exe)
 #endif
 
 patch_status_t
-patchLoader(unsigned char *scope, uid_t nsUid, gid_t nsGid)
+patchLoader(unsigned char *appview, uid_t nsUid, gid_t nsGid)
 {
     patch_status_t patch_res = PATCH_NO_OP;
     char *ldso_exe = NULL;
-    char *ldso_scope = NULL;
+    char *ldso_appview = NULL;
 
     ldso_exe = getLoaderFile(EXE_TEST_FILE);
     if (ldso_exe && strstr(ldso_exe, LIBMUSL) != NULL) {
 
         // Avoid creating ld-musl-x86_64.so.1 -> /lib/ld-musl-x86_64.so.1
-        if ((ldso_scope = get_loader(scope)) == NULL) {
+        if ((ldso_appview = get_loader(appview)) == NULL) {
             patch_res = PATCH_FAILED;
             goto out;
         }
-        if (strstr(ldso_scope, "musl")) {
+        if (strstr(ldso_appview, "musl")) {
             goto out;
         }
 
-        if (!set_loader(scope)) {
+        if (!set_loader(appview)) {
             patch_res = PATCH_SUCCESS;
         } else {
             patch_res = PATCH_FAILED;
@@ -299,12 +299,12 @@ patchLoader(unsigned char *scope, uid_t nsUid, gid_t nsGid)
     }
 
 out:
-    if (ldso_scope) free(ldso_scope);
+    if (ldso_appview) free(ldso_appview);
     if (ldso_exe) free(ldso_exe);
     return patch_res;
 }
 
-// modify NEEDED entries in libscope.so to avoid dependencies
+// modify NEEDED entries in libappview.so to avoid dependencies
 static int
 setLibraryFile(const char *libpath)
 {

@@ -2,9 +2,9 @@
 
 #include "coredump.h"
 
-#include "scopetypes.h"
-#include "scopestdlib.h"
-#include "scopeelf.h"
+#include "appviewtypes.h"
+#include "appviewstdlib.h"
+#include "appviewelf.h"
 
 #include "test.h"
 
@@ -12,17 +12,17 @@
 static bool
 checkIfElfCoreFile(const char* path) {
     bool res = FALSE;
-    int fd = scope_open(path, O_RDONLY);
+    int fd = appview_open(path, O_RDONLY);
     if (fd == -1) {
         goto end;
     }
 
-    Elf64_Ehdr *header = scope_malloc(sizeof(Elf64_Ehdr));
+    Elf64_Ehdr *header = appview_malloc(sizeof(Elf64_Ehdr));
     if (!header) {
         goto close_file;
     }
 
-    if (scope_read(fd, header, sizeof(Elf64_Ehdr)) == -1) {
+    if (appview_read(fd, header, sizeof(Elf64_Ehdr)) == -1) {
         goto free_header_buf;
     }
 
@@ -47,10 +47,10 @@ checkIfElfCoreFile(const char* path) {
     res = TRUE;
 
 free_header_buf:
-	scope_free(header);
+	appview_free(header);
 
 close_file:
-    scope_close(fd);
+    appview_close(fd);
 
 end:
     return res;
@@ -58,13 +58,13 @@ end:
 
 static void
 coreDumpSuccess(void** state) {
-    char *prefix = "/tmp/scope_core.";
+    char *prefix = "/tmp/appview_core.";
     bool res;
     int unlinkRes;
     char pathBuf[1024] = {0};
 
-    pid_t pid = scope_getpid();
-    scope_snprintf(pathBuf, sizeof(pathBuf), "%s%d", prefix, pid);
+    pid_t pid = appview_getpid();
+    appview_snprintf(pathBuf, sizeof(pathBuf), "%s%d", prefix, pid);
 
     res = coreDumpGenerate(pathBuf);
     assert_true(res);
@@ -72,7 +72,7 @@ coreDumpSuccess(void** state) {
     res = checkIfElfCoreFile(pathBuf);
     assert_true(res);
 
-    unlinkRes = scope_unlink(pathBuf);
+    unlinkRes = appview_unlink(pathBuf);
     assert_int_equal(unlinkRes, 0);
 }
 

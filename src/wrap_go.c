@@ -17,14 +17,14 @@
 #include "fn.h"
 #include "oci.h"
 #include "capstone/capstone.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "snapshot.h"
 
 #define GOPCLNTAB_MAGIC_112 0xfffffffb
 #define GOPCLNTAB_MAGIC_116 0xfffffffa
 #define GOPCLNTAB_MAGIC_118 0xfffffff0
 #define GOPCLNTAB_MAGIC_120 0xfffffff1
-#define SCOPE_STACK_SIZE (size_t)(32 * 1024)
+#define APPVIEW_STACK_SIZE (size_t)(32 * 1024)
 #define UNKNOWN_GO_VER (-1)
 #define MAX_SUPPORTED_GO_VER (20)
 #define HTTP2_FRAME_HEADER_LEN (9)
@@ -351,7 +351,7 @@ adjustGoStructOffsetsForVersion(void)
             g_go_schema->arg_offsets.c_tls_client_read_pc=0x98;
             g_go_schema->arg_offsets.c_http2_client_write_tcpConn=0x80;
         } else {
-            scopeLogWarn("Architecture not supported. Not adjusting schema offsets.");
+            appviewLogWarn("Architecture not supported. Not adjusting schema offsets.");
             return;
         }
         tap_entry(tap_syscall)->func_name = "runtime/internal/syscall.Syscall6";
@@ -369,7 +369,7 @@ adjustGoStructOffsetsForVersion(void)
             g_go_schema->arg_offsets.c_tls_client_read_pc=0x98;
             g_go_schema->arg_offsets.c_http2_client_write_tcpConn=0x80;
         } else {
-            scopeLogWarn("Architecture not supported. Not adjusting schema offsets.");
+            appviewLogWarn("Architecture not supported. Not adjusting schema offsets.");
             return;
         }
         g_go_schema->struct_offsets.cc_to_fr=0x138;
@@ -391,28 +391,28 @@ void
 createGoStructFile(void) {
     char* debug_file;
     int fd;
-    if ((debug_file = fullGetEnv("SCOPE_GO_STRUCT_PATH")) &&
-        ((fd = scope_open(debug_file, O_CREAT|O_WRONLY|O_CLOEXEC, 0666)) != -1)) {
-        scope_dprintf(fd, "runtime.g|m=%d|\n", g_go_schema->struct_offsets.g_to_m);
-        scope_dprintf(fd, "runtime.m|tls=%d|\n", g_go_schema->struct_offsets.m_to_tls);
-        scope_dprintf(fd, "net/http.connReader|conn=%d|Server\n", g_go_schema->struct_offsets.connReader_to_conn);
-        scope_dprintf(fd, "net/http.persistConn|conn=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_conn);
-        scope_dprintf(fd, "net/http.persistConn|br=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_bufrd);
-        scope_dprintf(fd, "runtime.iface|data=%d|\n", g_go_schema->struct_offsets.iface_data);
-        scope_dprintf(fd, "net.netFD|pfd=%d|\n", g_go_schema->struct_offsets.netfd_to_pd);
-        scope_dprintf(fd, "internal/poll.FD|Sysfd=%d|\n", g_go_schema->struct_offsets.pd_to_fd);
-        scope_dprintf(fd, "bufio.Reader|buf=%d|\n", g_go_schema->struct_offsets.bufrd_to_buf);
-        scope_dprintf(fd, "net/http.conn|rwc=%d|Server\n", g_go_schema->struct_offsets.conn_to_rwc);
-        scope_dprintf(fd, "net/http.conn|tlsState=%d|Server\n", g_go_schema->struct_offsets.conn_to_tlsState);
-        scope_dprintf(fd, "net/http.persistConn|tlsState=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_tlsState);
-        scope_dprintf(fd, "net/http.http2Framer|readBuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_readBuf);
-        scope_dprintf(fd, "net/http.http2Framer|wbuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_writeBuf);
-        scope_dprintf(fd, "net/http.http2Framer|headerBuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_headerBuf);
-        scope_dprintf(fd, "net/http.http2ClientConn|fr=%d|Client\n", g_go_schema->struct_offsets.cc_to_fr);
-        scope_dprintf(fd, "net/http.http2ClientConn|tconn=%d|Client\n", g_go_schema->struct_offsets.cc_to_tconn);
-        scope_dprintf(fd, "net/http.http2serverConn|framer=%d|Server\n", g_go_schema->struct_offsets.sc_to_fr);
-        scope_dprintf(fd, "net/http.http2serverConn|conn=%d|Server\n", g_go_schema->struct_offsets.sc_to_conn);
-        scope_close(fd);
+    if ((debug_file = fullGetEnv("APPVIEW_GO_STRUCT_PATH")) &&
+        ((fd = appview_open(debug_file, O_CREAT|O_WRONLY|O_CLOEXEC, 0666)) != -1)) {
+        appview_dprintf(fd, "runtime.g|m=%d|\n", g_go_schema->struct_offsets.g_to_m);
+        appview_dprintf(fd, "runtime.m|tls=%d|\n", g_go_schema->struct_offsets.m_to_tls);
+        appview_dprintf(fd, "net/http.connReader|conn=%d|Server\n", g_go_schema->struct_offsets.connReader_to_conn);
+        appview_dprintf(fd, "net/http.persistConn|conn=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_conn);
+        appview_dprintf(fd, "net/http.persistConn|br=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_bufrd);
+        appview_dprintf(fd, "runtime.iface|data=%d|\n", g_go_schema->struct_offsets.iface_data);
+        appview_dprintf(fd, "net.netFD|pfd=%d|\n", g_go_schema->struct_offsets.netfd_to_pd);
+        appview_dprintf(fd, "internal/poll.FD|Sysfd=%d|\n", g_go_schema->struct_offsets.pd_to_fd);
+        appview_dprintf(fd, "bufio.Reader|buf=%d|\n", g_go_schema->struct_offsets.bufrd_to_buf);
+        appview_dprintf(fd, "net/http.conn|rwc=%d|Server\n", g_go_schema->struct_offsets.conn_to_rwc);
+        appview_dprintf(fd, "net/http.conn|tlsState=%d|Server\n", g_go_schema->struct_offsets.conn_to_tlsState);
+        appview_dprintf(fd, "net/http.persistConn|tlsState=%d|Client\n", g_go_schema->struct_offsets.persistConn_to_tlsState);
+        appview_dprintf(fd, "net/http.http2Framer|readBuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_readBuf);
+        appview_dprintf(fd, "net/http.http2Framer|wbuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_writeBuf);
+        appview_dprintf(fd, "net/http.http2Framer|headerBuf=%d|Server\n", g_go_schema->struct_offsets.fr_to_headerBuf);
+        appview_dprintf(fd, "net/http.http2ClientConn|fr=%d|Client\n", g_go_schema->struct_offsets.cc_to_fr);
+        appview_dprintf(fd, "net/http.http2ClientConn|tconn=%d|Client\n", g_go_schema->struct_offsets.cc_to_tconn);
+        appview_dprintf(fd, "net/http.http2serverConn|framer=%d|Server\n", g_go_schema->struct_offsets.sc_to_fr);
+        appview_dprintf(fd, "net/http.http2serverConn|conn=%d|Server\n", g_go_schema->struct_offsets.sc_to_conn);
+        appview_close(fd);
     }
 }
 
@@ -443,8 +443,8 @@ go_str(void *go_str, bool force)
     if (!go_str_tmp || go_str_tmp->len <= 0) return NULL;
 
     char *c_str;
-    if ((c_str = scope_calloc(1, go_str_tmp->len+1)) == NULL) return NULL;
-    scope_memmove(c_str, go_str_tmp->str, go_str_tmp->len);
+    if ((c_str = appview_calloc(1, go_str_tmp->len+1)) == NULL) return NULL;
+    appview_memmove(c_str, go_str_tmp->str, go_str_tmp->len);
     c_str[go_str_tmp->len] = '\0';
 
     return c_str;
@@ -457,7 +457,7 @@ free_go_str(char *str) {
     if (g_go_minor_ver >= 17) {
         return;
     }
-    if(str) scope_free(str);
+    if(str) appview_free(str);
 }
 */
 
@@ -469,24 +469,24 @@ containerStart(void)
     char *buf;
     const char *cWorkDir;
 
-    if ((buf = scope_calloc(1, NCARGS)) == NULL) return;
+    if ((buf = appview_calloc(1, NCARGS)) == NULL) return;
 
     if ((argc = osGetArgv(g_proc.pid, buf, NCARGS)) == 0) {
-        scope_free(buf);
+        appview_free(buf);
         return;
     }
 
-    sysprint("Scope: found runc");
+    sysprint("AppView: found runc");
 
-    for (i = 0; buf[i]; i += scope_strlen(&buf[i]) + 1) {
+    for (i = 0; buf[i]; i += appview_strlen(&buf[i]) + 1) {
         char *arg = &buf[i];
 
         if (arg) {
             sysprint("\t%s:%d %s %d argv %s\n", __FUNCTION__, __LINE__, g_proc.procname, argc, arg);
 
-            if (scope_strstr(arg, "--bundle")) {
+            if (appview_strstr(arg, "--bundle")) {
                 // work dir for the container
-                cWorkDir = &buf[i + scope_strlen(arg) + 1];
+                cWorkDir = &buf[i + appview_strlen(arg) + 1];
                 if (cWorkDir) sysprint("\t%s:%d container path %s\n", __FUNCTION__, __LINE__, cWorkDir);
                 break;
             }
@@ -495,25 +495,25 @@ containerStart(void)
 
     if (cWorkDir) {
         char cfgPath[PATH_MAX] = {0};
-        char scopePath[PATH_MAX] = {0};
+        char appviewPath[PATH_MAX] = {0};
         struct stat fileStat;
 
-        if (scope_snprintf(scopePath, sizeof(scopePath), "/usr/lib/appscope/%s/scope", libVersion(SCOPE_VER)) < 0) {
+        if (appview_snprintf(appviewPath, sizeof(appviewPath), "/usr/lib/appview/%s/appview", libVersion(APPVIEW_VER)) < 0) {
             goto exit;
         }
 
-        if (scope_stat(scopePath, &fileStat) == -1) {
-            sysprint("\t%s: scope is not accessible %s\n", __FUNCTION__, scopePath);
+        if (appview_stat(appviewPath, &fileStat) == -1) {
+            sysprint("\t%s: appview is not accessible %s\n", __FUNCTION__, appviewPath);
             goto exit;
         }
 
-        if (scope_snprintf(cfgPath, sizeof(cfgPath), "%s/config.json", cWorkDir) < 0) {
+        if (appview_snprintf(cfgPath, sizeof(cfgPath), "%s/config.json", cWorkDir) < 0) {
             goto exit;
         }
 
         char *unixSocketPath = cfgRulesUnixPath();
         if (!unixSocketPath) {
-            sysprint("\t%s: missing unix path in scope_rules file \n", __FUNCTION__);
+            sysprint("\t%s: missing unix path in appview_rules file \n", __FUNCTION__);
         }
 
         void *cfgMem = ociReadCfgIntoMem(cfgPath);
@@ -521,20 +521,20 @@ containerStart(void)
             goto exit;
         }
 
-        char *modCfgMem = ociModifyCfg(cfgMem, scopePath, unixSocketPath);
-        scope_free(cfgMem);
+        char *modCfgMem = ociModifyCfg(cfgMem, appviewPath, unixSocketPath);
+        appview_free(cfgMem);
 
         if (modCfgMem) {
             ociWriteConfig(cfgPath, modCfgMem);
-            scope_free(modCfgMem);
+            appview_free(modCfgMem);
         } else {
-            sysprint("\t%s: Modify OCI config fails config: %s, scope: %s, UNIX socket: %s \n", __FUNCTION__, cfgPath, scopePath, unixSocketPath);
+            sysprint("\t%s: Modify OCI config fails config: %s, appview: %s, UNIX socket: %s \n", __FUNCTION__, cfgPath, appviewPath, unixSocketPath);
         }
-        scope_free(unixSocketPath);
+        appview_free(unixSocketPath);
     }
 
 exit:
-    scope_free(buf);
+    appview_free(buf);
 }
 
 static bool
@@ -556,7 +556,7 @@ match_assy_instruction(void *addr, char *mnemonic)
     asm_count = cs_disasm(dhandle, addr, size, (uint64_t)addr, 0, &asm_inst);
     if (asm_count <= 0) return FALSE;
 
-    if (!scope_strcmp((const char*)asm_inst->mnemonic, mnemonic)) rc = TRUE;
+    if (!appview_strcmp((const char*)asm_inst->mnemonic, mnemonic)) rc = TRUE;
 
     if (asm_inst) cs_free(asm_inst, asm_count);
     cs_close(&dhandle);
@@ -596,9 +596,9 @@ getGoVersionAddr(const char* buf)
         // 0x10 + ptrSize           pointer to runtime.modinfo
         // 0x10 + 2 * ptr size      pointer to build flags
 
-        if (!scope_strcmp(sec_name, ".go.buildinfo") &&
+        if (!appview_strcmp(sec_name, ".go.buildinfo") &&
             (sections[i].sh_size >= 0x18) &&
-            (!scope_memcmp(&sec_data[0], magic, sizeof(magic))) &&
+            (!appview_memcmp(&sec_data[0], magic, sizeof(magic))) &&
             (sec_data[0xe] == 0x08)) {  // 64 bit executables only
 
             // debug/buildinfo/buildinfo.go
@@ -609,7 +609,7 @@ getGoVersionAddr(const char* buf)
                 uint64_t *addressPtr = (uint64_t*)&sec_data[0x10];
                 go_build_ver_addr = (void*)*addressPtr;
             } else if (sec_data[0xf] == 0x02) {
-                scope_memmove(g_go_build_ver, (char*)&sec_data[0x21], 6);
+                appview_memmove(g_go_build_ver, (char*)&sec_data[0x21], 6);
                 g_go_build_ver[6] = '\0';
                 go_build_ver_addr = &g_go_build_ver;
             }
@@ -633,9 +633,9 @@ getSym12(const void *pclntab_addr, char *sname)
         uint64_t sym_addr     = *((const uint64_t *)(symtab_addr));
         const char *func_name = (const char *)(pclntab_addr + name_offset);
 
-        if (scope_strcmp(sname, func_name) == 0) {
+        if (appview_strcmp(sname, func_name) == 0) {
             symaddr = sym_addr;
-            scopeLog(CFG_LOG_TRACE, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
+            appviewLog(CFG_LOG_TRACE, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
             break;
         }
 
@@ -662,15 +662,15 @@ getSym16(const void *pclntab_addr, char *sname, char *altname, char *mnemonic)
         uint64_t sym_addr = *((const uint64_t *)(symtab_addr));
         const char *func_name = (const char *)(pclntab_addr + funcnametab_offset + name_offset);
 
-        if (scope_strcmp(sname, func_name) == 0) {
+        if (appview_strcmp(sname, func_name) == 0) {
             symaddr = sym_addr;
-            scopeLog(CFG_LOG_TRACE, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
+            appviewLog(CFG_LOG_TRACE, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
             break;
         }
 
         // In go 1.17+ we need to ensure we find the correct symbol in the case of ambiguity
         if (altname && mnemonic &&
-            (scope_strcmp(altname, func_name) == 0) &&
+            (appview_strcmp(altname, func_name) == 0) &&
             (match_assy_instruction((void *)sym_addr, mnemonic) == TRUE)) {
             symaddr = sym_addr;
             break;
@@ -703,15 +703,15 @@ getSym1820(const void *pclntab_addr, char *sname, char *altname, char *mnemonic)
         func_offset = *((uint32_t *)(symtab_addr));
         uint64_t sym_addr = (uint64_t)(func_offset + text_start);
         const char *func_name = (const char *)(pclntab_addr + funcnametab_offset + name_offset);
-        if (scope_strcmp(sname, func_name) == 0) {
+        if (appview_strcmp(sname, func_name) == 0) {
             symaddr = sym_addr;
-            scopeLog(CFG_LOG_ERROR, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
+            appviewLog(CFG_LOG_ERROR, "symbol found %s = 0x%08lx\n", func_name, sym_addr);
             break;
         }
 
         // In go 1.17+ we need to ensure we find the correct symbol in the case of ambiguity
         if (altname && mnemonic &&
-            (scope_strcmp(altname, func_name) == 0) &&
+            (appview_strcmp(altname, func_name) == 0) &&
             (match_assy_instruction((void *)sym_addr, mnemonic) == TRUE)) {
             symaddr = sym_addr;
             break;
@@ -733,7 +733,7 @@ embedPclntab(const char *buf, char *sname, char *altname, char *mnemonic)
 
     for (int i = 0; i < ehdr->e_shnum; i++) {
         const char *sec_name = section_strtab + sections[i].sh_name;
-        if (scope_strstr(sec_name, "data.rel.ro") != 0) {
+        if (appview_strstr(sec_name, "data.rel.ro") != 0) {
 
             const void *pclntab_addr = buf + sections[i].sh_offset;
             unsigned char *data = (unsigned char *)pclntab_addr;
@@ -789,7 +789,7 @@ getGoSymbol(const char *buf, char *sname, char *altname, char *mnemonic)
 
     for (i = 0; i < ehdr->e_shnum; i++) {
         sec_name = section_strtab + sections[i].sh_name;
-        if (scope_strstr(sec_name, ".gopclntab")) {
+        if (appview_strstr(sec_name, ".gopclntab")) {
             found = TRUE;
             const void *pclntab_addr = buf + sections[i].sh_offset;
             /*
@@ -804,7 +804,7 @@ getGoSymbol(const char *buf, char *sname, char *altname, char *mnemonic)
             } else if ((magic == GOPCLNTAB_MAGIC_118) || (magic == GOPCLNTAB_MAGIC_120)) {
                 symaddr = getSym1820(pclntab_addr, sname, altname, mnemonic);
             } else {
-                scopeLog(CFG_LOG_DEBUG, "Invalid header in .gopclntab");
+                appviewLog(CFG_LOG_DEBUG, "Invalid header in .gopclntab");
                 break;
             }
             break;
@@ -825,22 +825,22 @@ static bool
 looks_like_first_inst_of_go_func(cs_insn* asm_inst)
 {
     if (g_arch == X86_64) {
-        return (!scope_strcmp((const char*)asm_inst->mnemonic, "mov") &&
-                !scope_strcmp((const char*)asm_inst->op_str, "rcx, qword ptr fs:[0xfffffffffffffff8]")) ||
+        return (!appview_strcmp((const char*)asm_inst->mnemonic, "mov") &&
+                !appview_strcmp((const char*)asm_inst->op_str, "rcx, qword ptr fs:[0xfffffffffffffff8]")) ||
             // -buildmode=pie compiles to this:
-            (!scope_strcmp((const char*)asm_inst->mnemonic, "mov") &&
-            !scope_strcmp((const char*)asm_inst->op_str, "rcx, -8")) ||
-            (!scope_strcmp((const char*)asm_inst->mnemonic, "cmp") &&
-            !scope_strcmp((const char*)asm_inst->op_str, "rsp, qword ptr [r14 + 0x10]")) ||
-            (!scope_strcmp((const char*)asm_inst->mnemonic, "lea") &&
-            scope_strstr((const char*)asm_inst->op_str, "r12, [rsp - ")) ||
-            (!scope_strcmp((const char*)asm_inst->mnemonic, "mov") &&
-            !scope_strcmp((const char*)asm_inst->op_str, "r10, rsi")) ||
-            (!scope_strcmp((const char*)asm_inst->mnemonic, "mov") &&
-            !scope_strcmp((const char*)asm_inst->op_str, "edi, dword ptr [rsp + 8]"));
+            (!appview_strcmp((const char*)asm_inst->mnemonic, "mov") &&
+            !appview_strcmp((const char*)asm_inst->op_str, "rcx, -8")) ||
+            (!appview_strcmp((const char*)asm_inst->mnemonic, "cmp") &&
+            !appview_strcmp((const char*)asm_inst->op_str, "rsp, qword ptr [r14 + 0x10]")) ||
+            (!appview_strcmp((const char*)asm_inst->mnemonic, "lea") &&
+            appview_strstr((const char*)asm_inst->op_str, "r12, [rsp - ")) ||
+            (!appview_strcmp((const char*)asm_inst->mnemonic, "mov") &&
+            !appview_strcmp((const char*)asm_inst->op_str, "r10, rsi")) ||
+            (!appview_strcmp((const char*)asm_inst->mnemonic, "mov") &&
+            !appview_strcmp((const char*)asm_inst->op_str, "edi, dword ptr [rsp + 8]"));
     } else if (g_arch == AARCH64) {
-        return ((!scope_strcmp((const char*)asm_inst->mnemonic, "ldr") &&
-                 scope_strstr((const char*)asm_inst->op_str, "[x28, #")));
+        return ((!appview_strcmp((const char*)asm_inst->mnemonic, "ldr") &&
+                 appview_strstr((const char*)asm_inst->op_str, "[x28, #")));
     } else {
         return FALSE;
     }
@@ -900,7 +900,7 @@ patch_addrs(funchook_t *funchook,
 
         // Stop when it looks like we've hit another goroutine
         if (i > 0 && (looks_like_first_inst_of_go_func(&asm_inst[i]) ||
-            (!scope_strcmp((const char*)asm_inst[i].mnemonic, END_INST) &&
+            (!appview_strcmp((const char*)asm_inst[i].mnemonic, END_INST) &&
             asm_inst[i].size == 1 ))) {
             break;
         }
@@ -930,7 +930,7 @@ patch_addrs(funchook_t *funchook,
         }
 
         // PATCH SYSCALLS
-        if (!scope_strcmp((const char*)asm_inst[i].mnemonic, SYSCALL_INST)) {
+        if (!appview_strcmp((const char*)asm_inst[i].mnemonic, SYSCALL_INST)) {
             // In the "syscall" case, we want to patch the instruction directly
             void *pre_patch_addr = (void*)asm_inst[i].address;
             void *patch_addr = (void*)asm_inst[i].address;
@@ -966,10 +966,10 @@ patch_addrs(funchook_t *funchook,
          *
          * Note: We don't need a frame size here.
          */
-        if ((!scope_strcmp(tap->func_name, "net/http.(*http2serverConn).readFrames")) ||
-            (!scope_strcmp(tap->func_name, "net/http.(*http2clientConnReadLoop).run"))) {
-            if ((!scope_strcmp((const char*)asm_inst[i].mnemonic, CALL_INST)) &&
-                (scope_strstr(g_ReadFrame_addr, (const char*)asm_inst[i].op_str + 1)) &&
+        if ((!appview_strcmp(tap->func_name, "net/http.(*http2serverConn).readFrames")) ||
+            (!appview_strcmp(tap->func_name, "net/http.(*http2clientConnReadLoop).run"))) {
+            if ((!appview_strcmp((const char*)asm_inst[i].mnemonic, CALL_INST)) &&
+                (appview_strstr(g_ReadFrame_addr, (const char*)asm_inst[i].op_str + 1)) &&
                 (asm_inst[i].size == CALL_SIZE)) {
                 // TODO: why the + 1?
                 // In the "call" case, we want to patch the instruction after the call
@@ -992,10 +992,10 @@ patch_addrs(funchook_t *funchook,
         // If the current instruction is a RET
         // and previous inst is add or sub, then get the stack frame size.
         // Or, if the current inst is xorps then proceed without a stack frame size.
-        else if ((!scope_strcmp((const char*)asm_inst[i].mnemonic, "ret")) &&
+        else if ((!appview_strcmp((const char*)asm_inst[i].mnemonic, "ret")) &&
                  (asm_inst[i].size == RET_SIZE) &&
-                 ((!scope_strcmp((const char*)asm_inst[i-1].mnemonic, "add")) ||
-                 (!scope_strcmp((const char*)asm_inst[i-1].mnemonic, "sub"))) &&
+                 ((!appview_strcmp((const char*)asm_inst[i-1].mnemonic, "add")) ||
+                 (!appview_strcmp((const char*)asm_inst[i-1].mnemonic, "sub"))) &&
                 (add_arg = add_argument(&asm_inst[i-1]))) {
             // In the "ret" case, we want to patch previous instruction (to maintain the callee stack context)
             void *pre_patch_addr = (void*)asm_inst[i-1].address;
@@ -1025,14 +1025,14 @@ patchClone(void)
 {
     void *clone = dlsym(RTLD_DEFAULT, "__clone");
     if (clone) {
-        size_t pageSize = scope_getpagesize();
+        size_t pageSize = appview_getpagesize();
         void *addr = (void *)((ptrdiff_t) clone & ~(pageSize - 1));
 
         const int perm = PROT_READ | PROT_EXEC;
 
         // Add write permission on the page
         if (osMemPermAllow(addr, pageSize, perm, PROT_WRITE) == FALSE) {
-            scopeLogError("The system is not allowing processes to be scoped. Try setting MemoryDenyWriteExecute to false for the Go service.");
+            appviewLogError("The system is not allowing processes to be viewed. Try setting MemoryDenyWriteExecute to false for the Go service.");
             return;
         }
 
@@ -1040,13 +1040,13 @@ patchClone(void)
             0xb8, 0x00, 0x00, 0x00, 0x00,      // mov $0x0,%eax
             0xc3                               // retq
         };
-        scope_memcpy(clone, ass, sizeof(ass));
+        appview_memcpy(clone, ass, sizeof(ass));
 
-        scopeLog(CFG_LOG_DEBUG, "patchClone: CLONE PATCHED\n");
+        appviewLog(CFG_LOG_DEBUG, "patchClone: CLONE PATCHED\n");
 
         // restore original permission to the page
         if (osMemPermRestore(addr, pageSize, perm) == FALSE) {
-            scopeLogError("ERROR: patchClone: osMemPermRestore failed\n");
+            appviewLogError("ERROR: patchClone: osMemPermRestore failed\n");
             return;
         }
     }
@@ -1063,24 +1063,24 @@ go_version_numbers(const char *go_runtime_version)
     g_go_maint_ver = 0; // Default to 0 in case not present
 
     char buf[256] = {0};
-    scope_strncpy(buf, go_runtime_version, sizeof(buf)-1);
+    appview_strncpy(buf, go_runtime_version, sizeof(buf)-1);
 
-    scope_strtok(buf, ".");
+    appview_strtok(buf, ".");
 
     // Get the minor version number
-    char *minor = scope_strtok(NULL, ".");
+    char *minor = appview_strtok(NULL, ".");
     if (!minor) return;
-    scope_errno = 0;
-    long minor_val = scope_strtol(minor, NULL, 10);
-    if (scope_errno || minor_val <= 0 || minor_val > INT_MAX) return;
+    appview_errno = 0;
+    long minor_val = appview_strtol(minor, NULL, 10);
+    if (appview_errno || minor_val <= 0 || minor_val > INT_MAX) return;
     g_go_minor_ver = minor_val;
 
     // Get the maintenance version number
-    char *maint = scope_strtok(NULL, ".");
+    char *maint = appview_strtok(NULL, ".");
     if (!maint) return;
-    scope_errno = 0;
-    long maint_val = scope_strtol(maint, NULL, 10);
-    if (scope_errno || maint_val <= 0 || maint_val > INT_MAX) return;
+    appview_errno = 0;
+    long maint_val = appview_strtol(maint, NULL, 10);
+    if (appview_errno || maint_val <= 0 || maint_val > INT_MAX) return;
     g_go_maint_ver = maint_val;
 }
 
@@ -1096,15 +1096,15 @@ tryAbi0(const char *buf, char *sname)
 {
     if (!buf || !sname) return NULL;
 
-    size_t slen = scope_strlen(sname);
+    size_t slen = appview_strlen(sname);
     if (slen == 0) return NULL;
 
     void *funcaddr = NULL;
     char abi0name[slen + sizeof(".abi0 ")];
 
-    scope_memset(abi0name, 0, sizeof(abi0name));
-    scope_strncpy(abi0name, sname, slen);
-    scope_strcat(abi0name, ".abi0");
+    appview_memset(abi0name, 0, sizeof(abi0name));
+    appview_strncpy(abi0name, sname, slen);
+    appview_strcat(abi0name, ".abi0");
 
     funcprint("%s:%d %s (%ld) %s\n", __FUNCTION__, __LINE__, sname, slen, abi0name);
 
@@ -1137,19 +1137,19 @@ initGoHook(elf_buf_t *ebuf)
     }
 
     // check ELF type
-    //if (checkEnv("SCOPE_EXEC_TYPE", "static")) {
+    //if (checkEnv("APPVIEW_EXEC_TYPE", "static")) {
     if (is_static(ebuf->buf)) {
-        scopeSetGoAppStateStatic(TRUE);
+        appviewSetGoAppStateStatic(TRUE);
         //patchClone();
         sysprint("This is a static app\n");
     } else {
-        scopeSetGoAppStateStatic(FALSE);
+        appviewSetGoAppStateStatic(FALSE);
         sysprint("This is a dynamic app\n");
     }
 
     // if it's a position independent executable, get the base address from /proc/self/maps
     // default to a dynamic app?
-    if (scopeGetGoAppStateStatic() == FALSE) {
+    if (appviewGetGoAppStateStatic() == FALSE) {
         if (osGetBaseAddr(&base) == FALSE) {
             sysprint("ERROR: can't get the base address\n");
             funchook_destroy(funchook);
@@ -1179,28 +1179,28 @@ initGoHook(elf_buf_t *ebuf)
     if (go_ver && (go_runtime_version = go_ver)) {
         sysprint("go_runtime_version = %s\n", go_runtime_version);
         go_version_numbers(go_runtime_version);
-        //scope_printf("minor ver: %d\n", g_go_minor_ver);
-        //scope_printf("maint ver: %d\n", g_go_maint_ver);
+        //appview_printf("minor ver: %d\n", g_go_minor_ver);
+        //appview_printf("maint ver: %d\n", g_go_maint_ver);
     }
     if (g_go_minor_ver < MIN_SUPPORTED_GO_VER) {
         if (!is_go(ebuf->buf)) {
             // Don't expect to get here, but try to be clear if we do.
-            scopeLogWarn("%s is not a go application.  Continuing without AppScope.", ebuf->cmd);
+            appviewLogWarn("%s is not a go application.  Continuing without AppView.", ebuf->cmd);
         } else if (go_runtime_version) {
-            scopeLogWarn("%s was compiled with go version `%s`.  AppScope can only instrument go1.%d or newer on %s.  Continuing without AppScope.",
+            appviewLogWarn("%s was compiled with go version `%s`.  AppView can only instrument go1.%d or newer on %s.  Continuing without AppView.",
                          ebuf->cmd, go_runtime_version, MIN_SUPPORTED_GO_VER, g_arch == AARCH64 ? "ARM64" : "x86_64");
         } else {
-            scopeLogWarn("%s was either compiled with a version of go older than go1.4, or symbols have been stripped.  AppScope can only instrument go1.%d or newer, and requires symbols if compiled with a version of go older than go1.13.  Continuing without AppScope.", ebuf->cmd, MIN_SUPPORTED_GO_VER);
+            appviewLogWarn("%s was either compiled with a version of go older than go1.4, or symbols have been stripped.  AppView can only instrument go1.%d or newer, and requires symbols if compiled with a version of go older than go1.13.  Continuing without AppView.", ebuf->cmd, MIN_SUPPORTED_GO_VER);
         }
         funchook_destroy(funchook);
         return; // don't install our hooks
     } else if (g_go_minor_ver > MAX_SUPPORTED_GO_VER) {
-        scopeLogWarn("%s was compiled with go version `%s`. Versions newer than Go 1.%d are not yet supported. Continuing without AppScope.", ebuf->cmd, go_runtime_version, MAX_SUPPORTED_GO_VER);
+        appviewLogWarn("%s was compiled with go version `%s`. Versions newer than Go 1.%d are not yet supported. Continuing without AppView.", ebuf->cmd, go_runtime_version, MAX_SUPPORTED_GO_VER);
         funchook_destroy(funchook);
         return; // don't install our hooks
     }
 
-    if (scope_strstr(g_proc.procname, "runc") != NULL) {
+    if (appview_strstr(g_proc.procname, "runc") != NULL) {
         containerStart();
     }
 
@@ -1211,10 +1211,10 @@ initGoHook(elf_buf_t *ebuf)
     }
 
     ReadFrame_addr = (uint64_t *)((uint64_t)ReadFrame_addr + base);
-    scope_snprintf(g_ReadFrame_addr, sizeof(g_ReadFrame_addr), "%p\n", ReadFrame_addr);
+    appview_snprintf(g_ReadFrame_addr, sizeof(g_ReadFrame_addr), "%p\n", ReadFrame_addr);
 
     char gosave[30] = "gosave";
-    if (g_go_minor_ver >= 17) scope_strcpy(gosave, "gosave_systemstack_switch");
+    if (g_go_minor_ver >= 17) appview_strcpy(gosave, "gosave_systemstack_switch");
     if (((go_systemstack_switch = (uint64_t)getSymbol(ebuf->buf, gosave)) == 0) &&
         ((go_systemstack_switch = (uint64_t)getGoSymbol(ebuf->buf, gosave, NULL, NULL)) == 0)) {
         sysprint("WARN: can't get the address for %s\n", gosave);
@@ -1241,7 +1241,7 @@ initGoHook(elf_buf_t *ebuf)
         } else if (g_arch == AARCH64) {
             g_go_schema = &go_17_schema_arm;
         } else {
-            scopeLogWarn("Architecture not supported. Continuing without AppScope.");
+            appviewLogWarn("Architecture not supported. Continuing without AppView.");
             funchook_destroy(funchook);
             return;
         }
@@ -1314,7 +1314,7 @@ return_addr(assembly_fn fn)
         if (tap->assembly_fn == fn) return tap->return_addr;
     }
 
-    scopeLogError("FATAL ERROR: no return addr");
+    appviewLogError("FATAL ERROR: no return addr");
     exit(-1);
 }
 
@@ -1325,7 +1325,7 @@ frame_size(assembly_fn fn)
         if (tap->assembly_fn == fn) return tap->frame_size;
     }
 
-    scopeLogWarn("WARN: no frame size");
+    appviewLogWarn("WARN: no frame size");
     exit(-1);
 }
 
@@ -1420,7 +1420,7 @@ c_syscall(char *sys_stack, char *g_stack)
             char *buf   = (char *)*(uint64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
             uint64_t initialTime = getTime();
 
-            funcprint("Scope: write fd %ld rc %ld buf %s\n", fd, rc, buf);
+            funcprint("AppView: write fd %ld rc %ld buf %s\n", fd, rc, buf);
             doWrite(fd, initialTime, (rc != -1), buf, rc, "go_write", BUF, 0);
         }
         break;
@@ -1428,13 +1428,13 @@ c_syscall(char *sys_stack, char *g_stack)
         {
             char *path = (char *)*(uint64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
             if (!path) {
-                scopeLogError("ERROR:go_open: null pathname");
-                scope_puts("Scope:ERROR:open:no path");
-                scope_fflush(scope_stdout);
+                appviewLogError("ERROR:go_open: null pathname");
+                appview_puts("AppView:ERROR:open:no path");
+                appview_fflush(appview_stdout);
                 return;
             }
 
-            funcprint("Scope: open of %ld\n", rc);
+            funcprint("AppView: open of %ld\n", rc);
             doOpen(rc, path, FD, "open");
         }
         break;
@@ -1446,7 +1446,7 @@ c_syscall(char *sys_stack, char *g_stack)
             char *pathname = (char *)*(uint64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
             uint64_t flags = *(int64_t *)(sys_stack + 0x20);
 
-            funcprint("Scope: unlinkat dirfd %ld pathname %s flags %ld\n", dirfd, pathname, flags);
+            funcprint("AppView: unlinkat dirfd %ld pathname %s flags %ld\n", dirfd, pathname, flags);
             doDelete(pathname, "go_unlinkat");
         }
         break;
@@ -1455,7 +1455,7 @@ c_syscall(char *sys_stack, char *g_stack)
             uint64_t dirfd = *(int64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p1);
             uint64_t initialTime = getTime();
 
-            funcprint("Scope: getdents dirfd %ld rc %ld\n", dirfd, rc);
+            funcprint("AppView: getdents dirfd %ld rc %ld\n", dirfd, rc);
             doRead(dirfd, initialTime, (rc != -1), NULL, rc, "go_getdents", BUF, 0);
         }
         break;
@@ -1466,7 +1466,7 @@ c_syscall(char *sys_stack, char *g_stack)
             uint64_t domain = *(int64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p1);
             uint64_t type   = *(int64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
 
-            funcprint("Scope: socket domain: %ld type: 0x%lx sd: %ld\n", domain, type, rc);
+            funcprint("AppView: socket domain: %ld type: 0x%lx sd: %ld\n", domain, type, rc);
             addSock(rc, type, domain); // Creates a net object
         }
         break;
@@ -1478,7 +1478,7 @@ c_syscall(char *sys_stack, char *g_stack)
             struct sockaddr *addr = *(struct sockaddr **)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
             socklen_t *addrlen    = *(socklen_t **)(sys_stack + g_go_schema->arg_offsets.c_syscall_p3);
 
-            funcprint("Scope: accept4 of %ld\n", rc);
+            funcprint("AppView: accept4 of %ld\n", rc);
             doAccept(fd, rc, addr, addrlen, "go_accept4");
         }
         break;
@@ -1488,7 +1488,7 @@ c_syscall(char *sys_stack, char *g_stack)
             char *buf   = (char *)*(uint64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p2);
             uint64_t initialTime = getTime();
 
-            funcprint("Scope: read of %ld rc %ld\n", fd, rc);
+            funcprint("AppView: read of %ld rc %ld\n", fd, rc);
             doRead(fd, initialTime, (rc >= 0), buf, rc, "go_read", BUF, 0);
         }
         break;
@@ -1496,7 +1496,7 @@ c_syscall(char *sys_stack, char *g_stack)
         {
             uint64_t fd = *(int64_t *)(sys_stack + g_go_schema->arg_offsets.c_syscall_p1);
 
-            funcprint("Scope: close of %ld\n", fd);
+            funcprint("AppView: close of %ld\n", fd);
             doCloseAndReportFailures(fd, (rc != -1), "go_close"); // If net, deletes a net object
         }
         break;
@@ -1550,7 +1550,7 @@ c_tls_server_read(char *sys_stack, char *g_stack)
 
     int fd = getFDFromConn(tcpConn);
 
-    funcprint("Scope: go_http_server_read of %d\n", fd);
+    funcprint("AppView: go_http_server_read of %d\n", fd);
     doProtocol((uint64_t)0, fd, buf, rc, TLSRX, BUF);
 }
 
@@ -1579,7 +1579,7 @@ c_tls_server_write(char *sys_stack, char *g_stack)
 
     int fd = getFDFromConn(tcpConn);
 
-    funcprint("Scope: c_tls_server_write of %d\n", fd);
+    funcprint("AppView: c_tls_server_write of %d\n", fd);
     doProtocol((uint64_t)0, fd, buf, rc, TLSTX, BUF);
 }
 
@@ -1614,7 +1614,7 @@ c_tls_client_read(char *sys_stack, char *g_stack)
         len = *(uint64_t *)(pc_br + 0x08);
         if (buf && (len > 0)) {
             doProtocol((uint64_t)0, fd, buf, len, TLSRX, BUF);
-            funcprint("Scope: c_tls_client_read of %d\n", fd);
+            funcprint("AppView: c_tls_client_read of %d\n", fd);
         }
     }
 }
@@ -1679,17 +1679,17 @@ c_http2_server_read(char *sys_stack, char *g_stack)
     rc += HTTP2_FRAME_HEADER_LEN;
 
     int fd = getFDFromConn(tcpConn);
-    funcprint("Scope: c_http2_server_read: buf 0x%x readBuf 0x%x\n", *buf, *readBuf);
+    funcprint("AppView: c_http2_server_read: buf 0x%x readBuf 0x%x\n", *buf, *readBuf);
 
-    char *frame = (char *)scope_malloc(rc);
+    char *frame = (char *)appview_malloc(rc);
     if (!frame) return;
-    scope_memmove(frame, buf, HTTP2_FRAME_HEADER_LEN);
-    scope_memmove(frame + HTTP2_FRAME_HEADER_LEN, readBuf, rc - HTTP2_FRAME_HEADER_LEN);
+    appview_memmove(frame, buf, HTTP2_FRAME_HEADER_LEN);
+    appview_memmove(frame + HTTP2_FRAME_HEADER_LEN, readBuf, rc - HTTP2_FRAME_HEADER_LEN);
 
     doProtocol((uint64_t)0, fd, frame, rc, TLSRX, BUF);
-    funcprint("Scope: c_http2_server_read of %d\n", fd);
+    funcprint("AppView: c_http2_server_read of %d\n", fd);
 
-    scope_free(frame);
+    appview_free(frame);
 }
 
 EXPORTON void *
@@ -1736,7 +1736,7 @@ c_http2_server_write(char *sys_stack, char *g_stack)
     // on this socket.
     if ((rc < 1) && (!newbuf[3])) return;
 
-    funcprint("Scope: c_http2_server_write of %d %i\n", fd, rc);
+    funcprint("AppView: c_http2_server_write of %d %i\n", fd, rc);
     doProtocol((uint64_t)0, fd, writeBuf, rc, TLSTX, BUF);
 }
 
@@ -1767,7 +1767,7 @@ c_http2_server_preface(char *sys_stack, char *g_stack)
 
     int fd = getFDFromConn(tcpConn);
 
-    funcprint("Scope: c_http2_server_preface of %d %ld\n", fd, *rc);
+    funcprint("AppView: c_http2_server_preface of %d %ld\n", fd, *rc);
     doProtocol((uint64_t)0, fd, PRI_STR, PRI_STR_LEN - 1, TLSRX, BUF);
 }
 
@@ -1813,15 +1813,15 @@ c_http2_client_read(char *sys_stack, char *g_stack)
     if (rc < 1) return;
     rc += HTTP2_FRAME_HEADER_LEN;
 
-    char *frame = (char *)scope_malloc(rc);
+    char *frame = (char *)appview_malloc(rc);
     if (!frame) return;
-    scope_memmove(frame, buf, HTTP2_FRAME_HEADER_LEN);
-    scope_memmove(frame + HTTP2_FRAME_HEADER_LEN, readBuf, rc - HTTP2_FRAME_HEADER_LEN);
+    appview_memmove(frame, buf, HTTP2_FRAME_HEADER_LEN);
+    appview_memmove(frame + HTTP2_FRAME_HEADER_LEN, readBuf, rc - HTTP2_FRAME_HEADER_LEN);
 
     doProtocol((uint64_t)0, fd, frame, rc, TLSRX, BUF);
-    funcprint("Scope: c_http2_client_read of %d\n", fd);
+    funcprint("AppView: c_http2_client_read of %d\n", fd);
 
-    scope_free(frame);
+    appview_free(frame);
 }
 
 EXPORTON void *
@@ -1844,7 +1844,7 @@ c_http2_client_write(char *sys_stack, char *g_stack)
     int fd = getFDFromConn(tcpConn);
 
     doProtocol((uint64_t)0, fd, buf, rc, TLSTX, BUF);
-    funcprint("Scope: c_http2_client_write of %d\n", fd);
+    funcprint("AppView: c_http2_client_write of %d\n", fd);
 }
 
 EXPORTON void *
@@ -1864,7 +1864,7 @@ c_exit(char *sys_stack)
      */
     int arc;
     char *exit_stack, *tstack, *gstack;
-    if ((exit_stack = scope_malloc(EXIT_STACK_SIZE)) == NULL) {
+    if ((exit_stack = appview_malloc(EXIT_STACK_SIZE)) == NULL) {
         return;
     }
 
@@ -1904,7 +1904,7 @@ c_exit(char *sys_stack)
         :                                 // clobbered register
         );
 
-    scope_free(exit_stack);
+    appview_free(exit_stack);
 #endif
 }
 

@@ -1,5 +1,5 @@
 # Preload the library
-set environment LD_PRELOAD=/root/appscope/lib/linux/libscope.so
+set environment LD_PRELOAD=/root/appview/lib/linux/libappview.so
 
 # Allow breakpoints on function not yet found without confirmation
 set breakpoint pending on
@@ -8,6 +8,6 @@ set breakpoint pending on
 #set follow-fork-mode child
 
 # Save command history
-set history filename /root/appscope/.gdb_history
+set history filename /root/appview/.gdb_history
 set history save on
 set history remove-duplicates unlimited

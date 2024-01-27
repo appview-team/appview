@@ -13,12 +13,12 @@ RUN apt update \
     vim \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /var/run/appscope/ && \
-    mkdir /usr/local/scope && \
-    mkdir /usr/local/scope/bin && \
-    mkdir /usr/local/scope/lib && \
-    ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-    ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN mkdir -p /var/run/appview/ && \
+    mkdir /usr/local/appview && \
+    mkdir /usr/local/appview/bin && \
+    mkdir /usr/local/appview/lib && \
+    ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+    ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
 RUN openssl genrsa -out ca.key 2048 && \
     openssl req -new -key ca.key -out ca.csr -subj "/C=US/ST=California/L=San Francisco/O=Cribl/OU=Cribl/CN=localhost" && \
@@ -27,24 +27,24 @@ RUN openssl genrsa -out ca.key 2048 && \
     cp ca.key /etc/ssl/private/ && \
     cp ca.csr /etc/ssl/private/
 
-COPY scope-profile.sh /etc/profile.d/scope.sh
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
-COPY ./nginx/scope-test /usr/local/scope/scope-test
+COPY ./nginx/appview-test /usr/local/appview/appview-test
 COPY ./nginx/test_nginx.sh /opt/test/bin/test_nginx.sh
 COPY ./nginx/nginx.conf /etc/nginx/nginx.conf
 COPY docker-entrypoint.sh /
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-ENV SCOPE_LOG_DEST=file:///tmp/scope.log
-ENV SCOPE_EVENT_DEST=file:///tmp/events.json
-ENV SCOPE_METRIC_DEST=file:///tmp/metrics.json
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=error
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=true
-ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-ENV SCOPE_EVENT_HTTP=true
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+ENV APPVIEW_LOG_DEST=file:///tmp/appview.log
+ENV APPVIEW_EVENT_DEST=file:///tmp/events.json
+ENV APPVIEW_METRIC_DEST=file:///tmp/metrics.json
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=error
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=true
+ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+ENV APPVIEW_EVENT_HTTP=true
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 

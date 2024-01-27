@@ -10,13 +10,13 @@
 #include "libdir.h"
 #include "libver.h"
 #include "test.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
-#define TEST_BASE_DIR "/tmp/appscope-test/"
-#define TEST_INSTALL_BASE "/tmp/appscope-test/install"
-#define TEST_INSTALL_BASE_NOT_REACHABLE "/root/base/appscope"
-#define TEST_TMP_BASE "/tmp/appscope-test/tmp"
-#define TEST_TMP_BASE_NOT_REACHALBE "/root/tmp/appscope"
+#define TEST_BASE_DIR "/tmp/appview-test/"
+#define TEST_INSTALL_BASE "/tmp/appview-test/install"
+#define TEST_INSTALL_BASE_NOT_REACHABLE "/root/base/appview"
+#define TEST_TMP_BASE "/tmp/appview-test/tmp"
+#define TEST_TMP_BASE_NOT_REACHALBE "/root/tmp/appview"
 
 static int
 rm_callback(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
@@ -38,8 +38,8 @@ teardownlibdirTest(void **state) {
  * Define the extern offset for integration test compilation 
  * See details in libdir.c
  */
-unsigned char _binary_libscope_so_start;
-unsigned char _binary_libscope_so_end;
+unsigned char _binary_libappview_so_start;
+unsigned char _binary_libappview_so_end;
 
 static void
 CreateDirIfMissingWrongPathNull(void **state) {
@@ -158,12 +158,12 @@ static void
 SetLibrarySuccessDev(void **state) {
     libdirInitTest(TEST_INSTALL_BASE, TEST_TMP_BASE, "dev");
     // Create dummy file
-    mkdir_status_t mkres = libdirCreateDirIfMissing("/tmp/appscope-test/success/dev", 0777, geteuid(), getegid());
+    mkdir_status_t mkres = libdirCreateDirIfMissing("/tmp/appview-test/success/dev", 0777, geteuid(), getegid());
     assert_in_range(mkres, MKDIR_STATUS_CREATED, MKDIR_STATUS_EXISTS);
-    FILE *fp = fopen("/tmp/appscope-test/success/dev/libscope.so", "w");
+    FILE *fp = fopen("/tmp/appview-test/success/dev/libappview.so", "w");
     assert_non_null(fp);
     fclose(fp);
-    int res = libdirSetLibraryBase("/tmp/appscope-test/success");
+    int res = libdirSetLibraryBase("/tmp/appview-test/success");
     assert_int_equal(res, 0);
 }
 
@@ -185,7 +185,7 @@ ExtractNewFileDev(void **state) {
     // TEST_TMP_BASE will be used
     int res = libdirExtract(geteuid(), getegid());
     assert_int_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libappview.so");
     res = stat(expected_location, &dirStat);
     assert_int_equal(res, 0);
     memset(expected_location, 0, PATH_MAX);
@@ -201,7 +201,7 @@ ExtractNewFileDevAlternative(void **state) {
     // Extract will fail because second path is not accessbile
     int res = libdirExtract(geteuid(), getegid());
     assert_int_not_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libappview.so");
     res = stat(expected_location, &dirStat);
     assert_int_not_equal(res, 0);
     memset(expected_location, 0, PATH_MAX);
@@ -217,7 +217,7 @@ ExtractNewFileOfficial(void **state) {
     // TEST_INSTALL_BASE will be used
     int res = libdirExtract(geteuid(), getegid());
     assert_int_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libappview.so");
     res = stat(expected_location, &dirStat);
     assert_int_equal(res, 0);
     remove(expected_location);
@@ -234,7 +234,7 @@ ExtractNewFileOfficialAlternative(void **state) {
     // TEST_TMP_BASE will be used
     int res = libdirExtract(geteuid(), getegid());
     assert_int_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libappview.so");
     res = stat(expected_location, &dirStat);
     assert_int_equal(res, 0);
     remove(expected_location);
@@ -251,13 +251,13 @@ ExtractFileExistsOfficial(void **state) {
 
     int res = libdirExtract(geteuid(), getegid());
     assert_int_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libappview.so");
     res = stat(expected_location, &firstStat);
     assert_int_equal(res, 0);
 
     res = libdirExtract(geteuid(), getegid());
     assert_int_equal(res, 0);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libappview.so");
     res = stat(expected_location, &secondStat);
     assert_int_equal(res, 0);
     assert_int_equal(firstStat.st_ctim.tv_sec, secondStat.st_ctim.tv_sec);
@@ -276,7 +276,7 @@ GetPathDev(void **state) {
     assert_in_range(mkres, MKDIR_STATUS_CREATED, MKDIR_STATUS_EXISTS);
     // Create dummy file
     memset(expected_location, 0, PATH_MAX);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_TMP_BASE, normVer, "libappview.so");
     FILE *fp = fopen(expected_location, "w");
     assert_non_null(fp);
     fclose(fp);
@@ -298,7 +298,7 @@ GetPathOfficial(void **state) {
     assert_in_range(mkres, MKDIR_STATUS_CREATED, MKDIR_STATUS_EXISTS);
     // Create dummy file
     memset(expected_location, 0, PATH_MAX);
-    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libscope.so");
+    snprintf(expected_location, PATH_MAX, "%s/%s/%s", TEST_INSTALL_BASE, normVer, "libappview.so");
     FILE *fp = fopen(expected_location, "w");
     assert_non_null(fp);
     fclose(fp);

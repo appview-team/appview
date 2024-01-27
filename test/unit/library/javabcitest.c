@@ -4,7 +4,7 @@
 #include <unistd.h>
 
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "javabci.h"
 
 /*
@@ -218,7 +218,7 @@ javaBciConvertMethodToNative(void** state)
 
     javaDestroy(&modClassInfo);
     free(dest);
-    scope_free(addrConv);
+    appview_free(addrConv);
 }
 
 static void
@@ -252,7 +252,7 @@ javaBciAddStringTag(void** state)
     java_class_t *classInfo = javaReadClass(JavaTest_class);
     assert_non_null(classInfo);
 
-    int idx = javaAddStringTag(classInfo, "Scope is DOPE");
+    int idx = javaAddStringTag(classInfo, "AppVW is DOPE");
     
     unsigned char *dest = malloc(classInfo->length);
     javaWriteClass(dest, classInfo);

@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/criblio/scope/ipc"
-	"github.com/criblio/scope/libscope"
+	"github.com/appview-team/appview/ipc"
+	"github.com/appview-team/appview/libappview"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
@@ -16,9 +16,9 @@ var errWaitingInput = errors.New("error waiting for input")
 var errReadingStdIn = errors.New("error reading standard input")
 var errReadingData = errors.New("error reading data")
 
-// GetCfgStdIn reads a Scope Config file from StdIn
-func GetCfgStdIn() (libscope.ScopeConfig, error) {
-	var cfg libscope.ScopeConfig
+// GetCfgStdIn reads a AppView Config file from StdIn
+func GetCfgStdIn() (libappview.AppViewConfig, error) {
+	var cfg libappview.AppViewConfig
 
 	stdinFs, err := os.Stdin.Stat()
 	if err != nil {
@@ -43,14 +43,14 @@ func GetCfgStdIn() (libscope.ScopeConfig, error) {
 	return cfg, nil
 }
 
-// UpdateScopeCfg updates the configuration of a scoped process
-func UpdateScopeCfg(pidCtx ipc.IpcPidCtx, confFile []byte) error {
-	cmd := ipc.CmdSetScopeCfg{CfgData: confFile}
+// UpdateAppViewCfg updates the configuration of a viewed process
+func UpdateAppViewCfg(pidCtx ipc.IpcPidCtx, confFile []byte) error {
+	cmd := ipc.CmdSetAppViewCfg{CfgData: confFile}
 	resp, err := cmd.Request(pidCtx)
 	if err != nil {
 		return err
 	}
-	err = cmd.UnmarshalResp(resp.ResponseScopeMsgData)
+	err = cmd.UnmarshalResp(resp.ResponseAppViewMsgData)
 	if err != nil {
 		return err
 	}

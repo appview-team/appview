@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "log.h"
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "fn.h"
 #include "test.h"
 
@@ -36,7 +36,7 @@ logSendForNullMessageDoesntCrashUnix(void** state)
 {
     log_t* log = logCreate();
     assert_non_null(log);
-    transport_t* t = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t = transportCreateUnix("/var/run/appview.sock");
     assert_non_null(t);
     logTransportSet(log, t);
     assert_int_equal(logSend(log, NULL, DEFAULT_LOG_LEVEL), -1);
@@ -69,7 +69,7 @@ logTranportSetAndLogSend(void** state)
     log_t* log = logCreate();
     assert_non_null(log);
     transport_t* t1 = transportCreateUdp("127.0.0.1", "12345");
-    transport_t* t2 = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t2 = transportCreateUnix("/var/run/appview.sock");
     transport_t* t3 = transportCreateFile(file_path, CFG_BUFFER_FULLY);
     logTransportSet(log, t1);
     logTransportSet(log, t2);

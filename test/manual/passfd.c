@@ -1,5 +1,5 @@
 /*
- * passfd.c - Test to see that Scope is handling the passing of fd access
+ * passfd.c - Test to see that AppView is handling the passing of fd access
  * rights between processes correctly
  *
  * gcc -g -Wall test/manual/passfd.c -lpthread -o test/linux/passfdtest
@@ -34,7 +34,7 @@
 #include <sys/wait.h>
 
 #define TESTFILE "/tmp/pass.txt"
-#define EVENTFILE "/tmp/scope_events.log"
+#define EVENTFILE "/tmp/appview_events.log"
 #define TESTPORT "9009"
 #define TESTPORTNO 9009
 #define HOST "localhost"

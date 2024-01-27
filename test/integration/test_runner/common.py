@@ -14,25 +14,25 @@ class TestResult:
 class TestExecutionData:
     result: TestResult
     duration: int
-    scope_messages: List[str]
+    appview_messages: List[str]
     test_data: Any
 
     def __init__(self):
-        self.scope_messages = []
+        self.appview_messages = []
         self.duration = 0
         self.test_data = None
 
 
 class TestSetResult:
     error: None
-    unscoped_execution_data: TestExecutionData
-    scoped_execution_data: TestExecutionData
+    unviewd_execution_data: TestExecutionData
+    viewed_execution_data: TestExecutionData
     passed: bool
 
     def __init__(self):
         self.passed = False
-        self.scoped_execution_data = TestExecutionData()
-        self.unscoped_execution_data = TestExecutionData()
+        self.viewed_execution_data = TestExecutionData()
+        self.unviewd_execution_data = TestExecutionData()
         self.error = None
 
 
@@ -42,7 +42,7 @@ class AppController(ABC):
         self.__name = name
 
     @abstractmethod
-    def start(self, scoped):
+    def start(self, viewed):
         pass
 
     @abstractmethod
@@ -61,7 +61,7 @@ class AppController(ABC):
 class Test(ABC):
 
     @abstractmethod
-    def run(self, scoped) -> Tuple[TestResult, Any]:
+    def run(self, viewed) -> Tuple[TestResult, Any]:
         pass
 
     @property
@@ -75,12 +75,12 @@ class ApplicationTest(Test, ABC):
     def __init__(self, app_controller: AppController):
         self.app_controller = app_controller
 
-    def run(self, scoped) -> Tuple[TestResult, Any]:
+    def run(self, viewed) -> Tuple[TestResult, Any]:
 
-        self.app_controller.start(scoped)
+        self.app_controller.start(viewed)
 
         try:
-            result, data = self.do_run(scoped)
+            result, data = self.do_run(viewed)
             self.app_controller.assert_running()
         finally:
             self.app_controller.stop()
@@ -88,5 +88,5 @@ class ApplicationTest(Test, ABC):
         return result, data
 
     @abstractmethod
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         pass

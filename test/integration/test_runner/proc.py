@@ -8,23 +8,23 @@ from common import AppController
 
 class SubprocessAppController(AppController):
 
-    def __init__(self, start_command, name, scope_path, logs_path, start_wait=5, stop_wait=11):
+    def __init__(self, start_command, name, appview_path, logs_path, start_wait=5, stop_wait=11):
         super().__init__(name)
         self.logs_path = logs_path
-        self.scope_path = scope_path
+        self.appview_path = appview_path
         self.stop_wait = stop_wait
         self.start_wait = start_wait
         self.start_command = start_command
         self.proc = None
         self.__stdout_file = None
 
-    def start(self, scoped=False):
+    def start(self, viewed=False):
         stdout_path = os.path.join(self.logs_path, f"{self.name}_stdout.log")
         logging.info(
-            f"Starting app {self.name} in {'scoped' if scoped else 'unscoped'} mode. Output will be stored in {stdout_path}")
+            f"Starting app {self.name} in {'viewed' if viewed else 'unviewd'} mode. Output will be stored in {stdout_path}")
         env = os.environ.copy()
-        if scoped:
-            env["LD_PRELOAD"] = self.scope_path
+        if viewed:
+            env["LD_PRELOAD"] = self.appview_path
         logging.debug(f"Command is {self.start_command}. Environment {env}")
         self.__stdout_file = open(stdout_path, "a")
 

@@ -1,4 +1,4 @@
-# AppScope - Docs Website
+# AppView - Docs Website
 
 _Using Node 16 or higher breaks some of this. It works with 14._
 

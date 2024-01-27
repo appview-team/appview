@@ -14,7 +14,7 @@
 #include "libver.h"
 #include "nsfile.h"
 #include "patch.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "setup.h"
 
 #define BUFSIZE (4096)
@@ -30,7 +30,7 @@ typedef enum {
 } service_cfg_status_t;
 
 /*
- * Helper function to check if specified service is already configured to preload scope.
+ * Helper function to check if specified service is already configured to preload appview.
  * Returns TRUE if service is already configured FALSE otherwise.
  */
 bool
@@ -46,7 +46,7 @@ isCfgFileConfigured(const char *serviceCfgPath) {
 
     while(fgets(buf, sizeof(buf), fPtr)) {
         // TODO improve it to verify particular version ?
-        if (strstr(buf, "/libscope.so")) {
+        if (strstr(buf, "/libappview.so")) {
             res = TRUE;
             break;
         }
@@ -58,12 +58,12 @@ isCfgFileConfigured(const char *serviceCfgPath) {
 }
 
 /*
- * Helper function to remove any lines containing "/libscope.so" from service configs
+ * Helper function to remove any lines containing "/libappview.so" from service configs
  * Reads and Writes characters one at a time to avoid the requirement for a fixed size buffer
  * Returns number of lines modified ; 0 if no file was modified; -1 on error
  */
 int
-removeScopeCfgFile(const char *filePath) {
+removeAppViewCfgFile(const char *filePath) {
     FILE *f1, *f2;
     int c;
     char *tempPath = "/tmp/tmpFile-XXXXXX";
@@ -91,7 +91,7 @@ removeScopeCfgFile(const char *filePath) {
         if (newline) {
             fseek(f1, file_pos - 1, SEEK_SET); // Rewind file position to beginning of line
             fgets(line_buf, sizeof(line_buf), f1);
-            if (strstr(line_buf, "/libscope.so")) {
+            if (strstr(line_buf, "/libappview.so")) {
                 // Skip over this line, effectively removing it from the new file
                 count++;
                 newline = TRUE;
@@ -259,7 +259,7 @@ serviceCfgStatusOpenRc(const char *serviceName, uid_t uid, gid_t gid) {
  * Returns SERVICE_STATUS_SUCCESS if service was setup correctly, other values in case of failure.
  */
 static service_status_t
-newServiceCfgSystemD(const char *serviceCfgPath, const char *libscopePath, uid_t uid, gid_t gid) {
+newServiceCfgSystemD(const char *serviceCfgPath, const char *libappviewPath, uid_t uid, gid_t gid) {
     service_status_t res = SERVICE_STATUS_SUCCESS;
     char cfgEntry[BUFSIZE] = {0};
 
@@ -269,7 +269,7 @@ newServiceCfgSystemD(const char *serviceCfgPath, const char *libscopePath, uid_t
         return SERVICE_STATUS_ERROR_OTHER;
     }
 
-    size_t size = snprintf(cfgEntry, BUFSIZE, "[Service]\nEnvironment=LD_PRELOAD=%s\n", libscopePath);
+    size_t size = snprintf(cfgEntry, BUFSIZE, "[Service]\nEnvironment=LD_PRELOAD=%s\n", libappviewPath);
     if (fwrite(cfgEntry, sizeof(char), size, fPtr) < size) {
         perror("error: newServiceCfgSystemD, fwrite failed");
         res = SERVICE_STATUS_ERROR_OTHER;
@@ -286,7 +286,7 @@ newServiceCfgSystemD(const char *serviceCfgPath, const char *libscopePath, uid_t
  * Returns SERVICE_STATUS_SUCCESS if service was setup correctly, other values in case of failure.
  */
 static service_status_t
-newServiceCfgInitD(const char *serviceCfgPath, const char *libscopePath, uid_t uid, gid_t gid) {
+newServiceCfgInitD(const char *serviceCfgPath, const char *libappviewPath, uid_t uid, gid_t gid) {
     service_status_t res = SERVICE_STATUS_SUCCESS;
     char cfgEntry[BUFSIZE] = {0};
 
@@ -297,7 +297,7 @@ newServiceCfgInitD(const char *serviceCfgPath, const char *libscopePath, uid_t u
         return SERVICE_STATUS_ERROR_OTHER;
     }
 
-    size_t size = snprintf(cfgEntry, BUFSIZE, "LD_PRELOAD=%s\n", libscopePath);
+    size_t size = snprintf(cfgEntry, BUFSIZE, "LD_PRELOAD=%s\n", libappviewPath);
     if (fwrite(cfgEntry, sizeof(char), size, fPtr) < size) {
         perror("error: newServiceCfgInitD, fwrite failed");
         res = SERVICE_STATUS_ERROR_OTHER;
@@ -314,7 +314,7 @@ newServiceCfgInitD(const char *serviceCfgPath, const char *libscopePath, uid_t u
  * Returns SERVICE_STATUS_SUCCESS if service was setup correctly, other values in case of failure.
  */
 static service_status_t
-newServiceCfgOpenRc(const char *serviceCfgPath, const char *libscopePath, uid_t uid, gid_t gid) {
+newServiceCfgOpenRc(const char *serviceCfgPath, const char *libappviewPath, uid_t uid, gid_t gid) {
     service_status_t res = SERVICE_STATUS_SUCCESS;
     char cfgEntry[BUFSIZE] = {0};
 
@@ -325,7 +325,7 @@ newServiceCfgOpenRc(const char *serviceCfgPath, const char *libscopePath, uid_t 
         return SERVICE_STATUS_ERROR_OTHER;
     }
 
-    size_t size = snprintf(cfgEntry, BUFSIZE, "export LD_PRELOAD=%s\n", libscopePath);
+    size_t size = snprintf(cfgEntry, BUFSIZE, "export LD_PRELOAD=%s\n", libappviewPath);
     if (fwrite(cfgEntry, sizeof(char), size, fPtr) < size) {
         perror("error: newServiceCfgOpenRc, fwrite failed");
         res = SERVICE_STATUS_ERROR_OTHER;
@@ -342,7 +342,7 @@ newServiceCfgOpenRc(const char *serviceCfgPath, const char *libscopePath, uid_t 
  * Returns SERVICE_STATUS_SUCCESS if service was modified correctly, other values in case of failure.
  */
 static service_status_t
-modifyServiceCfgSystemd(const char *serviceCfgPath, const char *libscopePath, uid_t nsEuid, gid_t nsEgid) {
+modifyServiceCfgSystemd(const char *serviceCfgPath, const char *libappviewPath, uid_t nsEuid, gid_t nsEgid) {
     FILE *readFd;
     FILE *newFd;
     char *tempPath = "/tmp/tmpFile-XXXXXX";
@@ -363,7 +363,7 @@ modifyServiceCfgSystemd(const char *serviceCfgPath, const char *libscopePath, ui
         return SERVICE_STATUS_ERROR_OTHER;
     }
 
-    snprintf(cfgEntry, BUFSIZE, "[Service]\nEnvironment=LD_PRELOAD=%s\n", libscopePath);
+    snprintf(cfgEntry, BUFSIZE, "[Service]\nEnvironment=LD_PRELOAD=%s\n", libappviewPath);
 
     while (!feof(readFd)) {
         char buf[4096] = {0};
@@ -401,7 +401,7 @@ removeServiceCfgsSystemd(void) {
     DIR *d;
     struct dirent *dir;
 
-    // Remove scope from SystemD service configs
+    // Remove appview from SystemD service configs
     const char *const systemDPrefixList[] = {
         "/etc/systemd/system",
         "/lib/systemd/system",
@@ -422,9 +422,9 @@ removeServiceCfgsSystemd(void) {
                     continue;
                 }
                 if (stat(cfgScript, &st) == 0) {
-                    // If a service is configured with scope, remove scope from it
+                    // If a service is configured with appview, remove appview from it
                     if (isCfgFileConfigured(cfgScript)) {
-                        if (removeScopeCfgFile(cfgScript) <= 0) {
+                        if (removeAppViewCfgFile(cfgScript) <= 0) {
                             res = SERVICE_STATUS_ERROR_OTHER;
                         }
                     }
@@ -454,9 +454,9 @@ removeServiceCfgsInitD(void) {
                 res = SERVICE_STATUS_ERROR_OTHER;
                 continue;
             }
-            // If a service is configured with scope, remove scope from it
+            // If a service is configured with appview, remove appview from it
             if (isCfgFileConfigured(cfgScript)) {
-                if (removeScopeCfgFile(cfgScript) <= 0) {
+                if (removeAppViewCfgFile(cfgScript) <= 0) {
                     res = SERVICE_STATUS_ERROR_OTHER;
                 }
             }
@@ -484,9 +484,9 @@ removeServiceCfgsOpenRC(void) {
                 res = SERVICE_STATUS_ERROR_OTHER;
                 continue;
             }
-            // If a service is configured with scope, remove scope from it
+            // If a service is configured with appview, remove appview from it
             if (isCfgFileConfigured(cfgScript)) {
-                if (removeScopeCfgFile(cfgScript) <= 0) {
+                if (removeAppViewCfgFile(cfgScript) <= 0) {
                     res = SERVICE_STATUS_ERROR_OTHER;
                 }
             }
@@ -501,9 +501,9 @@ removeServiceCfgsOpenRC(void) {
 struct service_ops {
     bool (*isServiceInstalled)(const char *serviceName);
     service_cfg_status_t (*serviceCfgStatus)(const char *serviceCfgPath, uid_t nsUid, gid_t nsGid);
-    service_status_t (*newServiceCfg)(const char *serviceCfgPath, const char *libscopePath, uid_t nsUid, gid_t nsGid);
-    service_status_t (*modifyServiceCfg)(const char *serviceCfgPath, const char *libscopePath, uid_t nsUid, gid_t nsGid);
-    service_status_t (*removeAllScopeServiceCfg)(void);
+    service_status_t (*newServiceCfg)(const char *serviceCfgPath, const char *libappviewPath, uid_t nsUid, gid_t nsGid);
+    service_status_t (*modifyServiceCfg)(const char *serviceCfgPath, const char *libappviewPath, uid_t nsUid, gid_t nsGid);
+    service_status_t (*removeAllAppViewServiceCfg)(void);
 };
 
 static struct service_ops SystemD = {
@@ -511,7 +511,7 @@ static struct service_ops SystemD = {
     .serviceCfgStatus = serviceCfgStatusSystemD,
     .newServiceCfg = newServiceCfgSystemD,
     .modifyServiceCfg = modifyServiceCfgSystemd,
-    .removeAllScopeServiceCfg = removeServiceCfgsSystemd,
+    .removeAllAppViewServiceCfg = removeServiceCfgsSystemd,
 };
 
 static struct service_ops InitD = {
@@ -519,7 +519,7 @@ static struct service_ops InitD = {
     .serviceCfgStatus = serviceCfgStatusInitD,
     .newServiceCfg = newServiceCfgInitD,
     .modifyServiceCfg = newServiceCfgInitD,
-    .removeAllScopeServiceCfg = removeServiceCfgsInitD,
+    .removeAllAppViewServiceCfg = removeServiceCfgsInitD,
 };
 
 static struct service_ops OpenRc = {
@@ -527,7 +527,7 @@ static struct service_ops OpenRc = {
     .serviceCfgStatus = serviceCfgStatusOpenRc,
     .newServiceCfg = newServiceCfgOpenRc,
     .modifyServiceCfg = newServiceCfgOpenRc,
-    .removeAllScopeServiceCfg = removeServiceCfgsOpenRC,
+    .removeAllAppViewServiceCfg = removeServiceCfgsOpenRC,
 };
 
 /*
@@ -540,7 +540,7 @@ setupService(const char *serviceName, uid_t nsUid, gid_t nsGid) {
     struct service_ops *service;
 
     char serviceCfgPath[PATH_MAX] = {0};
-    char libscopePath[PATH_MAX] = {0};
+    char libappviewPath[PATH_MAX] = {0};
 
     service_status_t status;
 
@@ -574,15 +574,15 @@ setupService(const char *serviceName, uid_t nsUid, gid_t nsGid) {
         return SERVICE_STATUS_NOT_INSTALLED;
     }
 
-    const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
+    const char *loaderVersion = libverNormalizedVersion(APPVIEW_VER);
     bool isDevVersion = libverIsNormVersionDev(loaderVersion);
 
-    snprintf(libscopePath, PATH_MAX, SCOPE_LIBSCOPE_PATH);
-    if (access(libscopePath, R_OK) || isDevVersion) {
-        memset(libscopePath, 0, PATH_MAX);
-        snprintf(libscopePath, PATH_MAX, "/tmp/appscope/%s/libscope.so", loaderVersion);
-        if (access(libscopePath, R_OK)) {
-            fprintf(stderr, "error: libscope is not available %s\n", libscopePath);
+    snprintf(libappviewPath, PATH_MAX, APPVIEW_LIBAPPVIEW_PATH);
+    if (access(libappviewPath, R_OK) || isDevVersion) {
+        memset(libappviewPath, 0, PATH_MAX);
+        snprintf(libappviewPath, PATH_MAX, "/tmp/appview/%s/libappview.so", loaderVersion);
+        if (access(libappviewPath, R_OK)) {
+            fprintf(stderr, "error: libappview is not available %s\n", libappviewPath);
             return SERVICE_STATUS_ERROR_OTHER;
         }
     }
@@ -592,10 +592,10 @@ setupService(const char *serviceName, uid_t nsUid, gid_t nsGid) {
         return SERVICE_STATUS_ERROR_OTHER;
     } else if (cfgStatus == SERVICE_CFG_NEW) {
         // Fresh configuration
-        status = service->newServiceCfg(serviceCfgPath, libscopePath, nsUid, nsGid);
+        status = service->newServiceCfg(serviceCfgPath, libappviewPath, nsUid, nsGid);
     } else if (isCfgFileConfigured(serviceCfgPath) == FALSE) {
         // Modification of configuration file
-        status = service->modifyServiceCfg(serviceCfgPath, libscopePath, nsUid, nsGid);
+        status = service->modifyServiceCfg(serviceCfgPath, libappviewPath, nsUid, nsGid);
     } else {
         // Service was already setup correctly
         return SERVICE_STATUS_SUCCESS;
@@ -611,7 +611,7 @@ setupService(const char *serviceName, uid_t nsUid, gid_t nsGid) {
 }
 
 /*
- * Remove scope from all service configurations
+ * Remove appview from all service configurations
  * Returns SERVICE_STATUS_SUCCESS on success
  */
 service_status_t
@@ -620,7 +620,7 @@ setupUnservice(void) {
     struct service_ops serviceMgrs[] = {SystemD, InitD, OpenRc};
 
     for (int i = 0; i < (sizeof(serviceMgrs) / sizeof(struct service_ops)); i++) {
-        if ((res = serviceMgrs[i].removeAllScopeServiceCfg()) != SERVICE_STATUS_SUCCESS) {
+        if ((res = serviceMgrs[i].removeAllAppViewServiceCfg()) != SERVICE_STATUS_SUCCESS) {
             return res;
         }
     }
@@ -742,12 +742,12 @@ getMountPath(pid_t pid)
     }
 
     while (getline(&buf, &len, fstream) != -1) {
-        // if a docker overlay mount and not already mounted; appscope
+        // if a docker overlay mount and not already mounted; appview
         if ((strstr(buf, "overlay")) &&
             (strstr(buf, "docker"))) {
             
             // no longer a candidate as we've already mounted this proc
-            if (strstr(buf, "appscope")) {
+            if (strstr(buf, "appview")) {
                 continue;
             }
 
@@ -778,7 +778,7 @@ getMountPath(pid_t pid)
     return NULL;
 }
 
-// Mount the scope rules and unix socket into mountDest/usr/lib/appscope/*
+// Mount the appview rules and unix socket into mountDest/usr/lib/appview/*
 bool
 setupMount(pid_t pid, const char *mountDest, uid_t nsUid, gid_t nsGid)
 {
@@ -792,8 +792,8 @@ setupMount(pid_t pid, const char *mountDest, uid_t nsUid, gid_t nsGid)
     return TRUE;
 }
 
-// Install a rules file in /usr/lib/appscope/
-// or, if defined, $CRIBL_HOME/appscope
+// Install a rules file in /usr/lib/appview/
+// or, if defined, $CRIBL_HOME/appview
 bool
 setupRules(void *rulesFileMem, size_t rulesSize, uid_t nsUid, gid_t nsGid)
 {
@@ -802,17 +802,17 @@ setupRules(void *rulesFileMem, size_t rulesSize, uid_t nsUid, gid_t nsGid)
 //    char criblRulesPath[PATH_MAX];
 //    char criblRulesDir[PATH_MAX];
 
-    char *rulesPath = SCOPE_RULES_USR_PATH;
-    char *rulesDir = SCOPE_USR_PATH;
+    char *rulesPath = APPVIEW_RULES_USR_PATH;
+    char *rulesDir = APPVIEW_USR_PATH;
 
 //	// If $CRIBL_HOME is set, only place a rules file there instead
 //    const char *criblHome = getenv("CRIBL_HOME");
 //    if (criblHome) {
-//        if (snprintf(criblRulesPath, sizeof(criblRulesPath), "%s/appscope/scope_rules", criblHome) == -1) {
+//        if (snprintf(criblRulesPath, sizeof(criblRulesPath), "%s/appview/appview_rules", criblHome) == -1) {
 //            perror("snprintf cribl rules path");
 //            return status;
 //        }
-//        if (snprintf(criblRulesDir, sizeof(criblRulesDir), "%s/appscope", criblHome) == -1) {
+//        if (snprintf(criblRulesDir, sizeof(criblRulesDir), "%s/appview", criblHome) == -1) {
 //            perror("snprintf cribl rules dir");
 //            return status;
 //        }
@@ -858,19 +858,19 @@ cleanupDestFd:
 bool
 setupPreload(const char *path, uid_t nsUid, gid_t nsGid)
 {
-    char *scopeLibPath;
+    char *appviewLibPath;
     char buf[PATH_MAX] = {0};
     size_t len = 0;
 
     if (!strcmp(path, "auto")) {
-        scopeLibPath = (char *)libdirGetPath(LIBRARY_FILE);
+        appviewLibPath = (char *)libdirGetPath(LIBRARY_FILE);
 
-        if (access(scopeLibPath, R_OK|X_OK)) {
-            fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
+        if (access(appviewLibPath, R_OK|X_OK)) {
+            fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", appviewLibPath);
             return FALSE;
         }
 
-        if ((len = snprintf(buf, sizeof(buf), scopeLibPath)) == -1 ) {
+        if ((len = snprintf(buf, sizeof(buf), appviewLibPath)) == -1 ) {
             perror("snprintf failed");
             return FALSE;
         }

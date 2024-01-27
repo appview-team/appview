@@ -11,15 +11,15 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "dbg.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "os.h"
 #include "notify.h"
 
 // From transport.c: Avoids naming conflict between our src/wrap.c and libssl.a
-#define SSL_read SCOPE_SSL_read
-#define SSL_write SCOPE_SSL_write
+#define SSL_read APPVIEW_SSL_read
+#define SSL_write APPVIEW_SSL_write
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #undef SSL_read
@@ -48,7 +48,7 @@ setVar(const char *var)
     if ((enval = getenv(var)) == NULL) {
         rv = -1;
     } else {
-        if (scope_strstr(enval, "TRUE") || scope_strstr(enval, "true")) {
+        if (appview_strstr(enval, "TRUE") || appview_strstr(enval, "true")) {
             rv = (int)TRUE;
         } else {
             rv = (int)FALSE;
@@ -63,14 +63,14 @@ setList(char *list, char *dest[], size_t max_entries){
     int num_entries = 0;
     char *token = NULL;
 
-    token = scope_strtok(list, ",");
+    token = appview_strtok(list, ",");
     while ((token != NULL) && (num_entries < max_entries)) {
-        if ((dest[num_entries] = scope_strdup(token)) == NULL) {
-            scopeLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
+        if ((dest[num_entries] = appview_strdup(token)) == NULL) {
+            appviewLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
             return FALSE;
         }
         num_entries++;
-        token = scope_strtok(NULL, ",");
+        token = appview_strtok(NULL, ",");
     }
 
     return TRUE;
@@ -169,7 +169,7 @@ getSlackVars(void)
     // Get the Slack token from an env var
     g_slackApiToken = getenv(SLACK_TOKEN_VAR);
     if (g_slackApiToken == NULL) {
-        scopeLog(CFG_LOG_INFO, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
+        appviewLog(CFG_LOG_INFO, "%s: No %s environment variable defined", __FUNCTION__, SLACK_TOKEN_VAR);
         return FALSE;
     }
 
@@ -185,37 +185,37 @@ static void
 sendSlackMessage(SSL *ssl, const char *msg) {
     bool success = FALSE;
     char *payload;
-    size_t plen = scope_strlen(msg) + scope_strlen(g_slackApiToken) + scope_strlen(g_slackChannel) + 256;
+    size_t plen = appview_strlen(msg) + appview_strlen(g_slackApiToken) + appview_strlen(g_slackChannel) + 256;
     char pname[PATH_MAX];
 
     if (osGetProcname(pname, PATH_MAX)) {
-        scope_strncpy(pname, "_", PATH_MAX);
+        appview_strncpy(pname, "_", PATH_MAX);
     }
 
-    if ((payload = scope_malloc(plen)) == NULL) {
-        scopeLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a payload", __FUNCTION__);
+    if ((payload = appview_malloc(plen)) == NULL) {
+        appviewLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a payload", __FUNCTION__);
         return;
     }
     
-    scope_snprintf(payload, plen,
+    appview_snprintf(payload, plen,
                    "token=%s&channel=%s&text=Process %s (pid %d) on host %s encountered %s",
                    g_slackApiToken, g_slackChannel, pname, getpid(), g_proc.hostname, msg);
 
     char request[plen];
-    scope_snprintf(request, sizeof(request),
+    appview_snprintf(request, sizeof(request),
                    "POST %s HTTP/1.1\r\n"
                    "Host: %s\r\n"
                    "Connection: close\r\n"
                    "Content-Type: application/x-www-form-urlencoded\r\n"
                    "Content-Length: %zu\r\n\r\n"
                    "%s", 
-                   SLACK_API_PATH, SLACK_API_HOST, scope_strlen(payload), payload);
+                   SLACK_API_PATH, SLACK_API_HOST, appview_strlen(payload), payload);
 
     int rv;
-    if ((rv = SCOPE_SSL_write(ssl, request, scope_strlen(request))) <= 0) {
+    if ((rv = APPVIEW_SSL_write(ssl, request, appview_strlen(request))) <= 0) {
         int err = SSL_get_error(ssl, rv);
-        scopeLog(CFG_LOG_ERROR, "%s: error %d sending a request to Slack over an SSL channel", __FUNCTION__, err);
-        scope_free(payload);
+        appviewLog(CFG_LOG_ERROR, "%s: error %d sending a request to Slack over an SSL channel", __FUNCTION__, err);
+        appview_free(payload);
         return;
     }
 
@@ -226,10 +226,10 @@ sendSlackMessage(SSL *ssl, const char *msg) {
      */
     char response[1024];
     int bytesRead;
-    while ((bytesRead = SCOPE_SSL_read(ssl, response, sizeof(response) - 1)) > 0) {
+    while ((bytesRead = APPVIEW_SSL_read(ssl, response, sizeof(response) - 1)) > 0) {
         response[bytesRead] = '\0';
         // TODO: handle the respone correctly. Get the JSON payload and process. 
-        if (scope_strstr(response, "\"ok\":true")) {
+        if (appview_strstr(response, "\"ok\":true")) {
             success = TRUE;
             break;
         }
@@ -237,10 +237,10 @@ sendSlackMessage(SSL *ssl, const char *msg) {
         //printf("%s", response);
     }
 
-    scopeLog(CFG_LOG_INFO, "Successfully sent a notification message to slack");
-    scope_free(payload);
+    appviewLog(CFG_LOG_INFO, "Successfully sent a notification message to slack");
+    appview_free(payload);
     if (success == FALSE) {
-        scopeLog(CFG_LOG_INFO, "%s: failed response from a slack notify message", __FUNCTION__);
+        appviewLog(CFG_LOG_INFO, "%s: failed response from a slack notify message", __FUNCTION__);
     }
 }
 
@@ -257,52 +257,52 @@ slackNotify(const char *msg) {
 
     SSL_CTX *ctx = SSL_CTX_new(method);
     if (!ctx) {
-        scopeLog(CFG_LOG_ERROR, "%s: Can't get an SSL context", __FUNCTION__);
+        appviewLog(CFG_LOG_ERROR, "%s: Can't get an SSL context", __FUNCTION__);
         return FALSE;
     }
 
-    int sockfd = scope_socket(AF_INET, SOCK_STREAM, 0);
+    int sockfd = appview_socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't create a socket", __FUNCTION__);
+        appviewLog(CFG_LOG_ERROR, "%s: can't create a socket", __FUNCTION__);
         return FALSE;
     }
 
-    struct hostent *server = scope_gethostbyname(SLACK_API_HOST);
+    struct hostent *server = appview_gethostbyname(SLACK_API_HOST);
     if (server == NULL) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't get the IP addr for slack.com", __FUNCTION__);
-        scope_close(sockfd);
+        appviewLog(CFG_LOG_ERROR, "%s: can't get the IP addr for slack.com", __FUNCTION__);
+        appview_close(sockfd);
         return FALSE;
     }
 
     struct sockaddr_in serverAddr;
-    scope_memset(&serverAddr, 0, sizeof(serverAddr));
+    appview_memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
-    scope_memcpy(&serverAddr.sin_addr.s_addr, server->h_addr, server->h_length);
-    serverAddr.sin_port = scope_htons(HTTPS_PORT);
+    appview_memcpy(&serverAddr.sin_addr.s_addr, server->h_addr, server->h_length);
+    serverAddr.sin_port = appview_htons(HTTPS_PORT);
 
-    if (scope_connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't connect to slack", __FUNCTION__);
-        scope_close(sockfd);
+    if (appview_connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
+        appviewLog(CFG_LOG_ERROR, "%s: can't connect to slack", __FUNCTION__);
+        appview_close(sockfd);
         return FALSE;
     }
 
     ssl = SSL_new(ctx);
     if (ssl == NULL) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't create a new SSL object", __FUNCTION__);
-        scope_close(sockfd);
+        appviewLog(CFG_LOG_ERROR, "%s: can't create a new SSL object", __FUNCTION__);
+        appview_close(sockfd);
         return FALSE;
     }
 
     if (SSL_set_fd(ssl, sockfd) == 0) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't assign a file descriptor to an SSL object", __FUNCTION__);
-        scope_close(sockfd);
+        appviewLog(CFG_LOG_ERROR, "%s: can't assign a file descriptor to an SSL object", __FUNCTION__);
+        appview_close(sockfd);
         return FALSE;
     }
 
 
     if (SSL_connect(ssl) <= 0) {
-        scopeLog(CFG_LOG_ERROR, "%s: can't connect to the slack socket over SSL", __FUNCTION__);
-        scope_close(sockfd);
+        appviewLog(CFG_LOG_ERROR, "%s: can't connect to the slack socket over SSL", __FUNCTION__);
+        appview_close(sockfd);
         return FALSE;
     }
 
@@ -310,7 +310,7 @@ slackNotify(const char *msg) {
 
     SSL_free(ssl);
     SSL_CTX_free(ctx);
-    scope_close(sockfd);
+    appview_close(sockfd);
 
     return TRUE;
 }

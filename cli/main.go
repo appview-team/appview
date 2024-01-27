@@ -21,27 +21,27 @@ package main
 #include "../src/loader/ns.h"
 
 // Example Usage:
-// scope [OPTIONS] --ldattach PID
-// scope [OPTIONS] --lddetach PID
-// scope [OPTIONS] --rules RULES_PATH --rootdir /hostfs
-// scope [OPTIONS] --service SERVICE --namespace PID
-// scope [OPTIONS] --passthrough EXECUTABLE [ARGS...]
-// scope [OPTIONS] --patch SO_FILE
+// appview [OPTIONS] --ldattach PID
+// appview [OPTIONS] --lddetach PID
+// appview [OPTIONS] --rules RULES_PATH --rootdir /hostfs
+// appview [OPTIONS] --service SERVICE --namespace PID
+// appview [OPTIONS] --passthrough EXECUTABLE [ARGS...]
+// appview [OPTIONS] --patch SO_FILE
 
 // Options:
 // -l, --libbasedir DIR              specify parent for the library directory (default: /tmp)
 // -a, --ldattach PID                attach to the specified process ID
 // -d, --lddetach PID                detach from the specified process ID
-// -i, --install                     install libscope.so and scope
+// -i, --install                     install libappview.so and appview
 // -e, --preload PATH                set ld.so.preload to PATH. "auto" = auto detect libpath; "off" = disable
 // -f, --rules RULES_PATH            install the rules file specified in RULES_PATH
 // -m, --mount MOUNT_DEST            mount rules file and unix socket into MOUNT_DEST
 // -R, --rootdir PATH                specify root directory of the target namespace
 // -s, --service SERVICE             setup specified service NAME
-// -v, --unservice                   remove scope from all service configurations
+// -v, --unservice                   remove appview from all service configurations
 // -n  --namespace PID               perform operation on specified container PID
-// -p, --patch SO_FILE               patch specified libscope.so
-// -z, --passthrough                 scope a command, bypassing all cli set up
+// -p, --patch SO_FILE               patch specified libappview.so
+// -z, --passthrough                 view a command, bypassing all cli set up
 
 // Long aliases for short options
 // NOTE: Be sure to align these with the options listed in the call to getopt_long
@@ -63,8 +63,8 @@ static struct option opts[] = {
 	{ 0, 0, 0, 0 }
 };
 
-unsigned long g_libscopesz;
-unsigned long g_scopedynsz;
+unsigned long g_libappviewsz;
+unsigned long g_appviewdynsz;
 
 // This is the constructor for the Go application.
 // Code here executes before the Go Runtime starts.
@@ -76,7 +76,7 @@ __attribute__((constructor)) void cli_constructor() {
 	FILE *f;
 	int c;
 	char fname[PATH_MAX];
-	int scope_pid = getpid();
+	int appview_pid = getpid();
 	int arg_max = 1024; // Is this reasonable?
 	int arg_c = 0;
 	size_t size = 0;
@@ -113,18 +113,18 @@ __attribute__((constructor)) void cli_constructor() {
 	char *arg_libbasedir = NULL;
 	char *arg_patch = NULL;
 
-	if ((g_libscopesz = strtoul(LIBSCOPE_SO_SIZE, NULL, 10)) == ULONG_MAX) {
+	if ((g_libappviewsz = strtoul(LIBAPPVIEW_SO_SIZE, NULL, 10)) == ULONG_MAX) {
 	   perror("strtoul");
 	   exit(EXIT_FAILURE);
 	}
 
-	if ((g_scopedynsz = strtoul(SCOPEDYN_SIZE, NULL, 10)) == ULONG_MAX) {
+	if ((g_appviewdynsz = strtoul(APPVIEWDYN_SIZE, NULL, 10)) == ULONG_MAX) {
 	   perror("strtoul");
 	   exit(EXIT_FAILURE);
 	}
 
 	// Open /proc/pid/cmdline to get args
-	snprintf(fname, sizeof fname, "/proc/%d/cmdline", scope_pid);
+	snprintf(fname, sizeof fname, "/proc/%d/cmdline", appview_pid);
 	f = fopen(fname, "r");
 	if (!f) {
 		perror("fopen");
@@ -284,8 +284,8 @@ __attribute__((constructor)) void cli_constructor() {
 	}
 
 	// Execute commands
-	cmdArgc = arg_c-optind; // argc of the program we want to scope
-	cmdArgv = &arg_v[optind]; // argv of the program we want to scope
+	cmdArgc = arg_c-optind; // argc of the program we want to appview
+	cmdArgv = &arg_v[optind]; // argv of the program we want to appview
 
 	if (opt_ldattach) exit(cmdAttach(pid, arg_rootdir));
 	if (opt_lddetach) exit(cmdDetach(pid, arg_rootdir));
@@ -306,8 +306,8 @@ __attribute__((constructor)) void cli_constructor() {
 */
 import "C"
 import (
-	"github.com/criblio/scope/cmd"
-	"github.com/criblio/scope/internal"
+	"github.com/appview-team/appview/cmd"
+	"github.com/appview-team/appview/internal"
 )
 
 // GitSummary is produced by govvv and stores tag, commit and branch status

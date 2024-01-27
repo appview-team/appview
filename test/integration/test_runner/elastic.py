@@ -20,7 +20,7 @@ config = dotdict({
 
 class ElasticIndexAndSearchTest(ApplicationTest):
 
-    def do_run(self, scoped) -> Tuple[TestResult, Any]:
+    def do_run(self, viewed) -> Tuple[TestResult, Any]:
         logging.info(f"Connecting to Elasticsearch at {config.scheme} {config.host} {config.port}")
         es = self.__connect_to_es()
 
@@ -92,7 +92,7 @@ class ElasticIndexAndSearchTest(ApplicationTest):
 
 
 def configure(runner: Runner, config):
-    app_controller = SubprocessAppController(["/usr/local/bin/docker-entrypoint.sh"], "elastic", config.scope_path,
+    app_controller = SubprocessAppController(["/usr/local/bin/docker-entrypoint.sh"], "elastic", config.appview_path,
                                              config.logs_path, start_wait=60)
 
     runner.add_tests([ElasticIndexAndSearchTest(app_controller)])

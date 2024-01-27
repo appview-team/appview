@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 
 from common import TestResult, Test
-from scope import ScopeDataCollector
+from appview import AppViewDataCollector
 from utils import ms
 from validation import TestExecutionValidator, TestSetValidator, passed
 from watcher import TestWatcher
@@ -14,7 +14,7 @@ import time
 class Runner:
     __watcher: TestWatcher
     __tests: List[Test]
-    __collector: ScopeDataCollector
+    __collector: AppViewDataCollector
     __test_execution_validators: List[TestExecutionValidator]
     __test_set_validators: List[TestSetValidator]
 
@@ -40,13 +40,13 @@ class Runner:
         logging.info(f"Test execution validators: {[v.name for v in self.__test_execution_validators]}")
         logging.info(f"Test set validators: {[v.name for v in self.__test_set_validators]}")
 
-        logging.info("Starting unscoped tests.")
+        logging.info("Starting unviewd tests.")
         self.__execute_tests(False)
-        logging.info("Unscoped tests execution finished.")
+        logging.info("Unviewd tests execution finished.")
 
-        logging.info("Starting scoped tests.")
+        logging.info("Starting viewed tests.")
         self.__execute_tests(True)
-        logging.info("Scoped tests execution finished.")
+        logging.info("Viewed tests execution finished.")
 
         logging.info("Validating results.")
         self.__validate_results()
@@ -68,18 +68,18 @@ class Runner:
 
         return passed()
 
-    def __validate_test_execution(self, name, scoped, test_data, scope_messages):
+    def __validate_test_execution(self, name, viewed, test_data, appview_messages):
         for validator in self.__test_execution_validators:
-            if validator.should_validate(name, scoped):
+            if validator.should_validate(name, viewed):
                 logging.debug(f"Test execution {name}. Applying validator {validator.name}")
-                res = validator.validate(test_data, scope_messages)
+                res = validator.validate(test_data, appview_messages)
                 if not res.passed:
                     logging.warning(f"Test execution validator {validator.name} failed on {name}. Error: {res.error}")
                     return res
 
         return passed()
 
-    def __execute_tests(self, scoped):
+    def __execute_tests(self, viewed):
         for test in self.__tests:
 
             logging.info("Running test %s", test.name)
@@ -87,7 +87,7 @@ class Runner:
             result = None
             data = None
             try:
-                result, data = test.run(scoped)
+                result, data = test.run(viewed)
             except Exception as e:
                 logging.warning(f"Test {test.name} failed with exception", exc_info=True)
                 result = TestResult(passed=False, error="Exception: " + str(e))
@@ -102,16 +102,16 @@ class Runner:
                     logging.info(data)
 
             self.__collector.wait()
-            scope_messages = self.__collector.get_all()
-            logging.info(f"Received {len(scope_messages)} messages from scope")
-            if len(scope_messages) > 0: logging.debug(f"Last 10 messages:\n {''.join(scope_messages[-9:])}")
+            appview_messages = self.__collector.get_all()
+            logging.info(f"Received {len(appview_messages)} messages from appview")
+            if len(appview_messages) > 0: logging.debug(f"Last 10 messages:\n {''.join(appview_messages[-9:])}")
             self.__collector.reset()
 
             if result.passed:
-                result = self.__validate_test_execution(name=test.name, scoped=scoped, test_data=data,
-                                                        scope_messages=scope_messages)
+                result = self.__validate_test_execution(name=test.name, viewed=viewed, test_data=data,
+                                                        appview_messages=appview_messages)
 
-            self.__watcher.test_execution_completed(name=test.name, result=result, scoped=scoped, duration=duration,
-                                                    scope_messages=scope_messages, test_data=data)
+            self.__watcher.test_execution_completed(name=test.name, result=result, viewed=viewed, duration=duration,
+                                                    appview_messages=appview_messages, test_data=data)
 
             logging.info("Finished test %s.", test.name)

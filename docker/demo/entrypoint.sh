@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [ ! -f /etc/nginx/scope-demo.com.crt ]; then
-    openssl req -nodes -new -x509 -newkey rsa:2048 -keyout /etc/nginx/scope-demo.com.key -out /etc/nginx/scope-demo.com.crt -days 420 -subj '/O=Scope/C=US/CN=scope-demo.com' >/dev/null 2>/dev/null
+if [ ! -f /etc/nginx/appview-demo.com.crt ]; then
+    openssl req -nodes -new -x509 -newkey rsa:2048 -keyout /etc/nginx/appview-demo.com.key -out /etc/nginx/appview-demo.com.crt -days 420 -subj '/O=AppView/C=US/CN=appview-demo.com' >/dev/null 2>/dev/null
 fi
 
-if [ -z "${SCOPE_NO_NGINX}" ]; then
-    scope nginx
+if [ -z "${APPVIEW_NO_NGINX}" ]; then
+    appview nginx
 fi
 
 exec "$@"

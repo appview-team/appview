@@ -1,5 +1,5 @@
 ARG VERSION
-FROM cribl/scope:${VERSION}
+FROM cribl/appview:${VERSION}
 WORKDIR /root
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && \
     apt-get install -y --no-install-recommends wget curl ca-certificates jq \

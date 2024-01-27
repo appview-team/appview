@@ -2,7 +2,7 @@
 #define __UTILS_H__
 
 #include <time.h>
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 typedef struct {
     const char *str;

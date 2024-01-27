@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "dbg.h"
 #include "test.h"
 
@@ -33,26 +33,26 @@
 
 #ifdef __SANITIZE_ADDRESS__
 #include <stdlib.h>
-void * __real_scopelibc_malloc(size_t);
-void * __wrap_scopelibc_malloc(size_t size)
+void * __real_appviewlibc_malloc(size_t);
+void * __wrap_appviewlibc_malloc(size_t size)
 {
     return malloc(size);
 }
 
-void __real_scopelibc_free(void *);
-void __wrap_scopelibc_free(void * ptr)
+void __real_appviewlibc_free(void *);
+void __wrap_appviewlibc_free(void * ptr)
 {
     return free(ptr);
 }
 
-void * __real_scopelibc_calloc(size_t, size_t);
-void * __wrap_scopelibc_calloc(size_t nelem, size_t size)
+void * __real_appviewlibc_calloc(size_t, size_t);
+void * __wrap_appviewlibc_calloc(size_t nelem, size_t size)
 {
     return calloc(nelem, size);
 }
 
-void * __real_scopelibc_realloc(void *, size_t);
-void * __wrap_scopelibc_realloc(void * ptr, size_t size)
+void * __real_appviewlibc_realloc(void *, size_t);
+void * __wrap_appviewlibc_realloc(void * ptr, size_t size)
 {
     return realloc(ptr, size);
 }
@@ -94,27 +94,27 @@ dbgHasNoUnexpectedFailures(void** state)
 void
 dbgDumpAllToBuffer(char* buf, int size)
 {
-    FILE* f = scope_fmemopen(buf, size, "a+");
+    FILE* f = appview_fmemopen(buf, size, "a+");
     assert_non_null(f);
     dbgDumpAll(f);
-    if (scope_ftell(f) >= size) {
+    if (appview_ftell(f) >= size) {
         fail_msg("size of %d was inadequate for dbgDumpAllToBuffer, "
-                 "%ld was needed", size, scope_ftell(f));
+                 "%ld was needed", size, appview_ftell(f));
     }
-    if (scope_fclose(f)) fail_msg("Couldn't close fmemopen'd file");
+    if (appview_fclose(f)) fail_msg("Couldn't close fmemopen'd file");
 }
 
 int
 writeFile(const char* path, const char* text)
 {
-    FILE* f = scope_fopen(path, "w");
+    FILE* f = appview_fopen(path, "w");
     if (!f)
         fail_msg("Couldn't open file");
 
-    if (!scope_fwrite(text, scope_strlen(text), 1, f))
+    if (!appview_fwrite(text, appview_strlen(text), 1, f))
         fail_msg("Couldn't write file");
 
-    if (scope_fclose(f))
+    if (appview_fclose(f))
         fail_msg("Couldn't close file");
 
     return 0;
@@ -123,17 +123,17 @@ writeFile(const char* path, const char* text)
 int
 deleteFile(const char* path)
 {
-    return scope_unlink(path);
+    return appview_unlink(path);
 }
 
 long
 fileEndPosition(const char* path)
 {
     FILE* f;
-    if ((f = scope_fopen(path, "r"))) {
-        scope_fseek(f, 0, SEEK_END);
-        long pos = scope_ftell(f);
-        scope_fclose(f);
+    if ((f = appview_fopen(path, "r"))) {
+        appview_fseek(f, 0, SEEK_END);
+        long pos = appview_ftell(f);
+        appview_fclose(f);
         return pos;
     }
     return -1;

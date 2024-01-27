@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/criblio/scope/inspect"
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/ipc"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/update"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/inspect"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/ipc"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/update"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -21,13 +21,13 @@ import (
 // updateCmd represents the info command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Updates the configuration of a scoped process",
-	Long:  `Updates the configuration of a scoped process identified by PID.`,
-	Example: `  scope update 1000 --config scope_cfg.yml
-  scope update 1000 < scope_cfg.yml
-  scope update 1000 --json < scope_cfg.yml
-  scope update 1000 --rootdir /path/to/host/root --config scope_cfg.yml
-  scope update 1000 --rootdir /path/to/host/root/proc/<hostpid>/root < scope_cfg.yml`,
+	Short: "Updates the configuration of a viewed process",
+	Long:  `Updates the configuration of a viewed process identified by PID.`,
+	Example: `  appview update 1000 --config appview_cfg.yml
+  appview update 1000 < appview_cfg.yml
+  appview update 1000 --json < appview_cfg.yml
+  appview update 1000 --rootdir /path/to/host/root --config appview_cfg.yml
+  appview update 1000 --rootdir /path/to/host/root/proc/<hostpid>/root < appview_cfg.yml`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
@@ -58,12 +58,12 @@ var updateCmd = &cobra.Command{
 			}
 		} else {
 			// User did not specify a path to a config with --config. Try to read from StdIn
-			var scopeCfg libscope.ScopeConfig
-			if scopeCfg, err = update.GetCfgStdIn(); err != nil {
+			var appviewCfg libappview.AppViewConfig
+			if appviewCfg, err = update.GetCfgStdIn(); err != nil {
 				util.ErrAndExit("Unable to parse config from stdin: %v", err)
 			}
-			if cfgBytes, err = yaml.Marshal(scopeCfg); err != nil {
-				util.ErrAndExit("Unable to marshal scope config into byte array: %v", err)
+			if cfgBytes, err = yaml.Marshal(appviewCfg); err != nil {
+				util.ErrAndExit("Unable to marshal appview config into byte array: %v", err)
 			}
 		}
 
@@ -72,12 +72,12 @@ var updateCmd = &cobra.Command{
 			util.ErrAndExit("error parsing PID argument")
 		}
 
-		status, _ := util.PidScopeLibInMaps(rootdir, pid)
+		status, _ := util.PidAppViewLibInMaps(rootdir, pid)
 		if !status {
 			if !admin {
 				util.Warn("INFO: Run as root (or via sudo) to interact with all processes")
 			}
-			util.ErrAndExit("Unable to communicate with %v - process is not scoped", pid)
+			util.ErrAndExit("Unable to communicate with %v - process is not viewed", pid)
 		}
 
 		pidCtx := &ipc.IpcPidCtx{
@@ -85,14 +85,14 @@ var updateCmd = &cobra.Command{
 			Pid:        pid,
 		}
 
-		err = update.UpdateScopeCfg(*pidCtx, cfgBytes)
+		err = update.UpdateAppViewCfg(*pidCtx, cfgBytes)
 		if err != nil {
 			if !admin {
 				util.Warn("INFO: Run as root (or via sudo) to interact with all processes")
 			}
-			util.ErrAndExit("Update Scope configuration fails: %v", err)
+			util.ErrAndExit("Update AppView configuration fails: %v", err)
 		}
-		util.Warn("Update Scope configuration success.")
+		util.Warn("Update AppView configuration success.")
 
 		if inspectFlag {
 			time.Sleep(2 * time.Second)

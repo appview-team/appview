@@ -3,23 +3,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 static void
 vdso_functions_before_init(void **state)
 {
     struct timespec ts;
-    scope_clock_gettime(CLOCK_MONOTONIC, &ts);
-    scope_sched_getcpu();
+    appview_clock_gettime(CLOCK_MONOTONIC, &ts);
+    appview_sched_getcpu();
 }
 
 static void
 vdso_functions_after_init(void **state)
 {
-    scope_init_vdso_ehdr();
+    appview_init_vdso_ehdr();
     struct timespec ts;
-    scope_clock_gettime(CLOCK_MONOTONIC, &ts);
-    scope_sched_getcpu();
+    appview_clock_gettime(CLOCK_MONOTONIC, &ts);
+    appview_sched_getcpu();
 }
 
 int

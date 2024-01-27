@@ -202,7 +202,7 @@ getMountPath(pid_t pid)
     }
 
     while (getline(&buf, &len, fstream) != -1) {
-        // if a docker overlay mount and not already mounted; appscope
+        // if a docker overlay mount and not already mounted; appview
         if ((strstr(buf, "overlay")) &&
             (strstr(buf, "docker"))) {
             char *start, *end;
@@ -217,7 +217,7 @@ getMountPath(pid_t pid)
         }
 
         // no longer a candidate as we've already mounted this proc
-        if (strstr(buf, "appscope")) candidate = FALSE;
+        if (strstr(buf, "appview")) candidate = FALSE;
 
         free(buf);
         buf = NULL;

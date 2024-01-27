@@ -223,6 +223,6 @@ func TestHandleMutate(t *testing.T) {
 	labelPatch := map[string]interface{}{}
 	err = json.Unmarshal(patches[0].Value, &labelPatch)
 	assert.NoError(t, err)
-	assert.Equal(t, labelPatch["appscope.dev/scope"], "true")
+	assert.Equal(t, labelPatch["appview.dev/appview"], "true")
 	// TODO validate more of patch
 }

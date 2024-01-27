@@ -29,7 +29,7 @@ COPY gdbinit /root/.gdbinit
 
 RUN git clone https://github.com/criblio/fluent-bit
 WORKDIR fluent-bit/build
-RUN git checkout dev-appscope
+RUN git checkout dev-appview
 RUN cmake ../
 RUN make
 RUN cp bin/fluent-bit /usr/bin/fluent-bit

@@ -2,11 +2,11 @@
 
 - For IPC communication we are using pair of posix message queue:
 
-- The client in the communication is `scope`
-- The server in the communication is scoped application
-- The message queue created by `scope` is `ScopeIPCOut.<PID>` and `ScopeIPCIn.<PID>`
-- scoped application reads from `ScopeIPCIn.<PID>` and writes to `ScopeIPCOut.<PID>`
-- `scope` reads from `ScopeIPCOut.<PID>` and writes to `ScopeIPCIn.<PID>`
+- The client in the communication is `appview`
+- The server in the communication is viewed application
+- The message queue created by `appview` is `AppViewIPCOut.<PID>` and `AppViewIPCIn.<PID>`
+- viewed application reads from `AppViewIPCIn.<PID>` and writes to `AppViewIPCOut.<PID>`
+- `appview` reads from `AppViewIPCOut.<PID>` and writes to `AppViewIPCIn.<PID>`
 - The message queues are used in non-blocking way - both by client and server
 
 ![IPC Demo](images/ipc.gif)
@@ -22,15 +22,15 @@ The default message takes following form:
 
 Without framing mechanism:
 
-<METADATA_JSON><NUL><SCOPE_JSON>
+<METADATA_JSON><NUL><APPVIEW_JSON>
 
 With framing mechanism:
 
-<METADATA_JSON><NUL><PART_OF_SCOPE_JSON>
+<METADATA_JSON><NUL><PART_OF_APPVIEW_JSON>
 
 ## Example
 
-### Scope status request
+### AppView status request
 
 ```
 "{\"req\":0,\"uniq\":1234,\"remain\":11}"\x00"{\"req\":0}"
@@ -44,12 +44,12 @@ With framing mechanism:
 
 #### Request Message
 
-- req - `0`, "Get Scope Status" request
+- req - `0`, "Get AppView Status" request
 
-### Scope status response
+### AppView status response
 
 ```
-"{\"status\":200,\"uniq\":1234,\"remain\":29}"\x00"{\"status\":200,\"scoped\":false}"
+"{\"status\":200,\"uniq\":1234,\"remain\":29}"\x00"{\"status\":200,\"viewed\":false}"
 ```
 
 #### Response Meta
@@ -61,7 +61,7 @@ With framing mechanism:
 #### Response Message
 
 - `status` - `200`, message status - describes that message in request was successfully handled
-- `scoped` - `false`, scoped status - scope status of process - `false` means that we disable interposition
+- `viewed` - `false`, viewed status - appview status of process - `false` means that we disable interposition
 
 
 ### Framing mechanism
@@ -77,9 +77,9 @@ With framing mechanism:
 
 Depending on expected logic adding new request required adding handling both on CLI side and library side.
 
-- Adding new request, CLI: `ipcscope.go`
-- Adding new request, library: `ipc_scope_req_t` in `ipc_resp.h`
-- Extending the `cmdScopeName` structure in `ipc_resp.c`
-- Adding response for the request, CLI: `ipcscope.go`
+- Adding new request, CLI: `ipcappview.go`
+- Adding new request, library: `ipc_appview_req_t` in `ipc_resp.h`
+- Extending the `cmdAppViewName` structure in `ipc_resp.c`
+- Adding response for the request, CLI: `ipcappview.go`
 - Adding response for the request, library: `*supportedResp` in `ipc.c`
 - (Optional) Adding processing request in the library see `ipcProcessSetCfg` as an example

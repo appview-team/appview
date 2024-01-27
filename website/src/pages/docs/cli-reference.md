@@ -5,98 +5,98 @@ title: CLI Reference
 ## CLI Reference
 ---
 
-In the AppScope CLI, the `scope` command takes a Linux command as an argument. That's called "scoping" the Linux command. For example, if you run `scope top`, we say you have "scoped" the `top` command.
+In the AppView CLI, the `appview` command takes a Linux command as an argument. That's called "scoping" the Linux command. For example, if you run `appview top`, we say you have "viewed" the `top` command.
 
-The AppScope CLI also has subcommands, which pair with `scope` to do many things. For example, if you run `scope dash`, AppScope displays its dashboard.
+The AppView CLI also has subcommands, which pair with `appview` to do many things. For example, if you run `appview dash`, AppView displays its dashboard.
 
-This Reference explains how to use `scope` and its arsenal of subcommands.
+This Reference explains how to use `appview` and its arsenal of subcommands.
 
 ### Subcommand Syntax
 
 To execute CLI subcommands, the basic syntax is:
 
 ```
-./scope <subcommand> [flags] [options]
+./appview <subcommand> [flags] [options]
 ```
 
 ### Subcommands Available
 
-To see a list of available subcommands, enter `./scope` alone, or `./scope -h`, or `./scope --help`. This displays the basic help listing below.
+To see a list of available subcommands, enter `./appview` alone, or `./appview -h`, or `./appview --help`. This displays the basic help listing below.
 
 ```
-Cribl AppScope Command Line Interface
+Cribl AppView Command Line Interface
 
-AppScope is a general-purpose observable application telemetry system.
+AppView is a general-purpose observable application telemetry system.
 
-Running `scope` with no subcommands will execute the `scope run` command.
+Running `appview` with no subcommands will execute the `appview run` command.
 
 Usage:
-  scope [command]
+  appview [command]
 
 Available Commands:
-  attach      Scope a currently-running process
+  attach      View a currently-running process
   completion  Generates completion code for specified shell
-  daemon      Run the scope daemon
-  dash        Display scope dashboard for a previous or active session
-  detach      Unscope a currently-running process
+  daemon      Run the appview daemon
+  dash        Display appview dashboard for a previous or active session
+  detach      Unview a currently-running process
   events      Outputs events for a session
   extract     Output instrumentary library files to <dir>
-  rules       View or modify system-wide AppScope rules
+  rules       View or modify system-wide AppView rules
   flows       Observed flows from the session, potentially including payloads
   help        Help about any command
-  history     List scope session history
-  inspect     Returns information about scoped process
-  k8s         Install scope in kubernetes
-  logs        Display scope logs
+  history     List appview session history
+  inspect     Returns information about viewed process
+  k8s         Install appview in kubernetes
+  logs        Display appview logs
   metrics     Outputs metrics for a session
   prom        Run the Prometheus Target
   prune       Prune deletes session history
-  ps          List processes currently being scoped
-  run         Executes a scoped command
-  service     Configure a systemd/OpenRC service to be scoped
+  ps          List processes currently being viewed
+  run         Executes a viewed command
+  service     Configure a systemd/OpenRC service to be viewed
   snapshot    Create a snapshot for a process
-  start       Install the AppScope library
-  stop        Stop scoping all scoped processes and services
-  update      Updates the configuration of a scoped process
-  version     Display scope version
-  watch       Executes a scoped command on an interval
+  start       Install the AppView library
+  stop        Stop scoping all viewed processes and services
+  update      Updates the configuration of a viewed process
+  version     Display appview version
+  watch       Executes a viewed command on an interval
 
 Flags:
-  -h, --help          help for scope
-  -z, --passthrough   Scope an application with current environment & no config.
+  -h, --help          help for appview
+  -z, --passthrough   AppView an application with current environment & no config.
 
-Use "scope [command] --help" for more information about a command.
+Use "appview [command] --help" for more information about a command.
 ```
 
 As noted just above, to see a specific subcommand's help or its required parameters, enter: 
-`./scope <subcommand> -h` 
+`./appview <subcommand> -h` 
 
 …or: 
-`./scope help <subcommand>`.
+`./appview help <subcommand>`.
 
 ---
 
 ### attach
 ---
 
-Scopes a currently-running process identified by PID or ProcessName.
+Views a currently-running process identified by PID or ProcessName.
 
-The `--*dest` flags accept file names like `/tmp/scope.log` or URLs like `file:///tmp/scope.log`. They may also
+The `--*dest` flags accept file names like `/tmp/appview.log` or URLs like `file:///tmp/appview.log`. They may also
 be set to sockets with `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
 
 #### Usage
 
-`scope attach [flags] PID | <process_name>`
+`appview attach [flags] PID | <process_name>`
 
 #### Examples
 
 ```
-scope attach 1000
-scope attach firefox 
-scope attach top < scope.yml
-scope attach --rootdir /path/to/host firefox 
-scope attach --rootdir /path/to/host/mount/proc/<hostpid>/root 1000
-scope attach --payloads 2000
+appview attach 1000
+appview attach firefox 
+appview attach top < appview.yml
+appview attach --rootdir /path/to/host firefox 
+appview attach --rootdir /path/to/host/mount/proc/<hostpid>/root 1000
+appview attach --payloads 2000
 ```
 
 #### Flags
@@ -111,15 +111,15 @@ scope attach --payloads 2000
   -i, --inspect               Inspect the process after attach is complete
   -j, --json                  Output as newline delimited JSON
   -l, --librarypath string    Set path for dynamic libraries
-      --loglevel string       Set scope library log level (debug, warning, info, error, none)
+      --loglevel string       Set appview library log level (debug, warning, info, error, none)
   -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
       --metricformat string   Set format of metrics output (statsd|ndjson) (default "ndjson")
       --metricprefix string   Set prefix for StatsD metrics, ignored if metric format isn't statsd
   -n, --nobreaker             Set Cribl to not break streams into events.
   -p, --payloads              Capture payloads of network transactions
   -R, --rootdir               Path to root filesystem of target namespace
-  -u, --userconfig string     Scope an application with a user specified config file; overrides all other settings.
-  -v, --verbosity int         Set scope metric verbosity (default 4)
+  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
+  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```
 
 ### completion
@@ -129,13 +129,13 @@ Generates completion code for specified shell.
 
 #### Usage
 
-`scope completion [flags] [bash|zsh]`
+`appview completion [flags] [bash|zsh]`
 
 #### Examples
 
 ```
-scope completion bash > /etc/bash_completion.d/scope # Generate and install scope autocompletion for bash
-source <(scope completion bash)                      # Generate and load scope autocompletion for bash
+appview completion bash > /etc/bash_completion.d/appview # Generate and install appview autocompletion for bash
+source <(appview completion bash)                      # Generate and load appview autocompletion for bash
 ```
 
 #### Flags
@@ -151,11 +151,11 @@ Displays an interactive dashboard with an overview of what's happening with the 
 
 #### Usage
 
-`scope dash [flags]`
+`appview dash [flags]`
 
 #### Examples
 
-`scope dash`
+`appview dash`
 
 #### Flags
 
@@ -167,21 +167,21 @@ Displays an interactive dashboard with an overview of what's happening with the 
 ### detach
 ---
 
-Unscopes a currently-running process identified by PID or process name.
+Unviews a currently-running process identified by PID or process name.
 
 #### Usage
 
-`scope detach [flags] PID | <process_name>`
+`appview detach [flags] PID | <process_name>`
 
 #### Examples
 
 ```
-scope detach 1000
-scope detach firefox
-scope detach --all
-scope detach 1000 --rootdir /path/to/host/mount
-scope detach --rootdir /path/to/host/mount
-scope detach --all --rootdir /path/to/host/mount/proc/<hostpid>/root
+appview detach 1000
+appview detach firefox
+appview detach --all
+appview detach 1000 --rootdir /path/to/host/mount
+appview detach --rootdir /path/to/host/mount
+appview detach --all --rootdir /path/to/host/mount/proc/<hostpid>/root
 ```
 
 #### Flags
@@ -199,25 +199,25 @@ Outputs events for a session. You can obtain detailed information about each eve
 
 #### Usage
 
-`scope events [flags] ([eventId])`
+`appview events [flags] ([eventId])`
 
 #### Examples
 
 ```
 Examples:
-scope events
-scope events m61
-scope events --sourcetype http
-scope events --source stderr
-scope events --match file
-scope events --fields net_bytes_sent,net_bytes_recv --match net_bytes
-scope events --follow
-scope events --all
-scope events --allfields
-scope events --id 4
-scope events --sort _time --reverse
-scope events --eval 'sourcetype!="net"'
-scope events -n 1000 -e 'sourcetype!="console" && source.indexOf("cribl.log") == -1 && (data["file.name"] || "").indexOf("/proc") == -1'
+appview events
+appview events m61
+appview events --sourcetype http
+appview events --source stderr
+appview events --match file
+appview events --fields net_bytes_sent,net_bytes_recv --match net_bytes
+appview events --follow
+appview events --all
+appview events --allfields
+appview events --id 4
+appview events --sort _time --reverse
+appview events --eval 'sourcetype!="net"'
+appview events -n 1000 -e 'sourcetype!="console" && source.indexOf("cribl.log") == -1 && (data["file.name"] || "").indexOf("/proc") == -1'
 ```
 
 #### Flags
@@ -243,14 +243,14 @@ scope events -n 1000 -e 'sourcetype!="console" && source.indexOf("cribl.log") ==
 
 ### extract
 ---
-Outputs `libscope.so` and `scope.yml` to the provided directory. You can configure these files to instrument any application, and to output the data to any existing tool using simple TCP protocols.
+Outputs `libappview.so` and `appview.yml` to the provided directory. You can configure these files to instrument any application, and to output the data to any existing tool using simple TCP protocols.
 
-The `--*dest` flags accept file names like `/tmp/scope.log` or URLs like `file:///tmp/scope.log`. They may also
+The `--*dest` flags accept file names like `/tmp/appview.log` or URLs like `file:///tmp/appview.log`. They may also
 be set to sockets with `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
 
 #### Usage
 
-  `scope extract [flags] (<dir>)`
+  `appview extract [flags] (<dir>)`
 
 #### Aliases
   `extract`, `excrete`, `expunge`, `extricate`, `exorcise`
@@ -258,9 +258,9 @@ be set to sockets with `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://h
 #### Examples
 
 ```
-scope extract
-scope extract /opt/libscope
-scope extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 .
+appview extract
+appview extract /opt/libappview
+appview extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 .
 ```
 
 #### Flags
@@ -280,22 +280,22 @@ scope extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:100
 ### rules
 ---
 
-View or modify system-wide AppScope rules to automatically scope a set of processes. You can add or remove a single process at a time.
+View or modify system-wide AppView rules to automatically view a set of processes. You can add or remove a single process at a time.
 
 #### Usage
 
-`scope rules [flags]`
+`appview rules [flags]`
 
 #### Examples
 
 ```
-scope rules
-scope rules --rootdir /path/to/host/root --json
-scope rules --add nginx
-scope rules --add nginx < scope.yml
-scope rules --add java --arg myServer 
-scope rules --add firefox --rootdir /path/to/host/root
-scope rules --remove chromium
+appview rules
+appview rules --rootdir /path/to/host/root --json
+appview rules --add nginx
+appview rules --add nginx < appview.yml
+appview rules --add java --arg myServer 
+appview rules --add firefox --rootdir /path/to/host/root
+appview rules --remove chromium
 ```
 
 #### Flags
@@ -311,7 +311,7 @@ scope rules --remove chromium
   -h, --help                  help for rules
   -j, --json                  Output as newline delimited JSON
   -l, --librarypath string    Set path for dynamic libraries
-      --loglevel string       Set scope library log level (debug, warning, info, error, none)
+      --loglevel string       Set appview library log level (debug, warning, info, error, none)
   -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
       --metricformat string   Set format of metrics output (statsd|ndjson|prometheus) (default "ndjson")
   -n, --nobreaker             Set Cribl to not break streams into events.
@@ -320,8 +320,8 @@ scope rules --remove chromium
   -R, --rootdir string        Path to root filesystem of target namespace
       --source string         Source identifier for a rules entry
       --unixpath string       Path to the unix socket
-  -u, --userconfig string     Scope an application with a user specified config file; overrides all other settings.
-  -v, --verbosity int         Set scope metric verbosity (default 4)
+  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
+  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```
 
 ### flows
@@ -331,19 +331,19 @@ Displays observed flows from the given session. If run with payload capture on, 
 
 #### Usage
 
-<!-- TO-DO How should we notate ID arguments? see also scope events -->
+<!-- TO-DO How should we notate ID arguments? see also appview events -->
 
-`scope flows [flags] <sessionId>`
+`appview flows [flags] <sessionId>`
 
 #### Examples
 
 ```
-scope flows                # Displays all flows
-scope flows 124x3c         # Displays more info about the flow
-scope flows --in 124x3c    # Displays the inbound payload of that flow
-scope flows --out 124x3c   # Displays the outbound payload of that flow
-scope flows -p 0.0.0.0/24  # Displays flows in that subnet range
-scope flows --sort net_host_port --reverse  # Sort flows by ascending host port
+appview flows                # Displays all flows
+appview flows 124x3c         # Displays more info about the flow
+appview flows --in 124x3c    # Displays the inbound payload of that flow
+appview flows --out 124x3c   # Displays the outbound payload of that flow
+appview flows -p 0.0.0.0/24  # Displays flows in that subnet range
+appview flows --sort net_host_port --reverse  # Sort flows by ascending host port
 ```
 
 #### Flags
@@ -364,24 +364,24 @@ scope flows --sort net_host_port --reverse  # Sort flows by ascending host port
 ### help
 ---
 
-Displays help content for any AppScope subcommand. Just type `scope help [subcommand]` for full details.
+Displays help content for any AppView subcommand. Just type `appview help [subcommand]` for full details.
 
 #### Usage
 
-`scope help [subcommand] [flags]`
+`appview help [subcommand] [flags]`
 
 #### Examples
 
-`scope help run`
+`appview help run`
 
 ### history
 ---
 
-Prints information about sessions. Every time you scope a command, that is called an AppScope session. Each session has a directory which is referenced by a session ID. By default, the AppScope CLI stores all the information it collects during a given session in that session's directory. When you run `history`, you see a listing of sessions, one session per scoped command, along with information about when the session started, how many events were output during the session, and so on.
+Prints information about sessions. Every time you view a command, that is called an AppView session. Each session has a directory which is referenced by a session ID. By default, the AppView CLI stores all the information it collects during a given session in that session's directory. When you run `history`, you see a listing of sessions, one session per viewed command, along with information about when the session started, how many events were output during the session, and so on.
 
 #### Usage
 
-`scope history [flags]`
+`appview history [flags]`
 
 #### Aliases
 
@@ -390,13 +390,13 @@ Prints information about sessions. Every time you scope a command, that is calle
 #### Examples
 
 ```
-scope history                    # Displays session history
-scope hist                       # Shortcut for scope history
-scope hist -r                    # Displays running sessions
-scope hist --id 2                # Displays detailed information for session 2
-scope hist -n 50                 # Displays last 50 sessions
-scope hist -d                    # Displays directory for the last session
-cat $(scope hist -d)/args.json   # Outputs contents of args.json in the scope history directory for the current session
+appview history                    # Displays session history
+appview hist                       # Shortcut for appview history
+appview hist -r                    # Displays running sessions
+appview hist --id 2                # Displays detailed information for session 2
+appview hist -n 50                 # Displays last 50 sessions
+appview hist -d                    # Displays directory for the last session
+cat $(appview hist -d)/args.json   # Outputs contents of args.json in the appview history directory for the current session
 ```
 
 #### Flags
@@ -413,21 +413,21 @@ cat $(scope hist -d)/args.json   # Outputs contents of args.json in the scope hi
 ### inspect
 ---
 
-Returns information on scoped process identified by PID.
+Returns information on viewed process identified by PID.
 
 #### Usage
 
-`scope inspect [flags]`
+`appview inspect [flags]`
 
 #### Examples
 
 ```
-scope inspect
-scope inspect 1000
-scope inspect --all --json
-scope inspect 1000 --rootdir /path/to/host/mount
-scope inspect --all --rootdir /path/to/host/mount
-scope inspect --all --rootdir /path/to/host/mount/proc/<hostpid>/root
+appview inspect
+appview inspect 1000
+appview inspect --all --json
+appview inspect 1000 --rootdir /path/to/host/mount
+appview inspect --all --rootdir /path/to/host/mount
+appview inspect --all --rootdir /path/to/host/mount/proc/<hostpid>/root
 ```
 
 #### Flags
@@ -442,29 +442,29 @@ scope inspect --all --rootdir /path/to/host/mount/proc/<hostpid>/root
 ### k8s
 ---
 
-Prints configurations to pass to `kubectl`, which then automatically instruments newly-launched containers. This installs a mutating admission webhook, which adds an `initContainer` to each pod. The webhook also sets environment variables that install AppScope for all processes in that container.
+Prints configurations to pass to `kubectl`, which then automatically instruments newly-launched containers. This installs a mutating admission webhook, which adds an `initContainer` to each pod. The webhook also sets environment variables that install AppView for all processes in that container.
 
-The `--*dest` flags accept file names like `/tmp/scope.log`; URLs like `file:///tmp/scope.log`; or sockets specified with the pattern `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
+The `--*dest` flags accept file names like `/tmp/appview.log`; URLs like `file:///tmp/appview.log`; or sockets specified with the pattern `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
 
 #### Usage
 
-`scope k8s [flags]`
+`appview k8s [flags]`
 
 #### Examples
 
 ```
-scope k8s --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 | kubectl apply -f -
-kubectl label namespace default scope=enabled
+appview k8s --metricdest tcp://some.host:8125 --eventdest tcp://other.host:10070 | kubectl apply -f -
+kubectl label namespace default appview=enabled
 ```
 
 #### Flags
 
 ```
-      --app string            Name of the app in Kubernetes (default "scope")
+      --app string            Name of the app in Kubernetes (default "appview")
   -a, --authtoken string      Set AuthToken for Cribl Stream
       --certfile string       Certificate file for TLS in the container (mounted secret) (default "/etc/certs/tls.crt")
   -c, --cribldest string      Set Cribl Stream destination for metrics & events (host:port defaults to tls://)
-      --debug                 Turn on debug logging in the scope webhook container
+      --debug                 Turn on debug logging in the appview webhook container
   -e, --eventdest string      Set destination for events (host:port defaults to tls://)
   -h, --help                  Help for k8s
       --keyfile string        Private key file for TLS in the container (mounted secret) (default "/etc/certs/tls.key")
@@ -477,24 +477,24 @@ kubectl label namespace default scope=enabled
       --port int              Port to listen on (default 4443)
       --promport int          Specify StatsD to Prometheus Exporter port for Prometheus HTTP metrics requests (default 9090)
       --server                Run Webhook server
-      --signername string     Name of the signer used to sign the certificate request for the AppScope Admission Webhook (default "kubernetes.io/kubelet-serving")
-      --version string        Version of scope to deploy
+      --signername string     Name of the signer used to sign the certificate request for the AppView Admission Webhook (default "kubernetes.io/kubelet-serving")
+      --version string        Version of appview to deploy
 
 ```
 
 ### logs
 ---
 
-Displays internal AppScope logs for troubleshooting AppScope itself.
+Displays internal AppView logs for troubleshooting AppView itself.
 
 #### Usage
 
-`scope logs [flags]`
+`appview logs [flags]`
 
 #### Examples
 
 ```
-scope logs
+appview logs
 ```
 
 #### Flags
@@ -503,7 +503,7 @@ scope logs
   -h, --help             Help for logs
   -i, --id int           Display logs from specific from session ID (default -1)
   -n, --last int         Show last <n> lines (default 20)
-  -s, --scope            Show scope.log (from CLI) instead of ldscope.log (from library)
+  -s, --appview            Show appview.log (from CLI) instead of ldappview.log (from library)
   -S, --service string   Display logs from a systemd service instead of a session
  
 ```
@@ -515,14 +515,14 @@ Outputs metrics for a session.
 
 #### Usage
 
-`scope metrics [flags]`
+`appview metrics [flags]`
 
 #### Examples
 
 ```
-scope metrics
-scope metrics -m net.error,fs.error
-scope metrics -m net.tx -g
+appview metrics
+appview metrics -m net.error,fs.error
+appview metrics -m net.tx -g
 ```
 
 #### Flags
@@ -543,14 +543,14 @@ Prunes (deletes) one or more sessions from the history.
 
 #### Usage
 
-`scope prune [flags]`
+`appview prune [flags]`
 
 #### Examples
 
 ```
-scope prune -k 20
-scope prune -a
-scope prune -d 1
+appview prune -k 20
+appview prune -a
+appview prune -d 1
 ```
 
 #### Flags
@@ -568,19 +568,19 @@ Negative arguments are not allowed.
 ### ps
 ---
 
-Lists all scoped processes. This means processes whose functions AppScope is interposing (which means that the AppScope library was loaded, and the AppScope reporting thread is running, in those processes, too).
+Lists all viewed processes. This means processes whose functions AppView is interposing (which means that the AppView library was loaded, and the AppView reporting thread is running, in those processes, too).
 
 #### Usage
 
-`scope ps`
+`appview ps`
 
 #### Examples
 
 ```
-scope ps
-scope ps --json
-scope ps --rootdir /path/to/host/mount
-scope ps --rootdir /path/to/host/mount/proc/<hostpid>/root`,
+appview ps
+appview ps --json
+appview ps --rootdir /path/to/host/mount
+appview ps --rootdir /path/to/host/mount/proc/<hostpid>/root`,
 ```
 
 #### Flags
@@ -593,25 +593,25 @@ scope ps --rootdir /path/to/host/mount/proc/<hostpid>/root`,
 ### run
 ----
 
-Executes a scoped command. By default, calling `scope` with no subcommands will run the executables you pass as arguments to 
-`scope`. However, `scope` allows for additional arguments to be passed to `run`, to capture payloads or to increase metrics' 
-verbosity. Must be called with the `--` flag, e.g., `scope run -- <command>`, to prevent AppScope from attempting to parse flags passed to the executed command.
+Executes a viewed command. By default, calling `appview` with no subcommands will run the executables you pass as arguments to 
+`appview`. However, `appview` allows for additional arguments to be passed to `run`, to capture payloads or to increase metrics' 
+verbosity. Must be called with the `--` flag, e.g., `appview run -- <command>`, to prevent AppView from attempting to parse flags passed to the executed command.
 
-The `--*dest` flags accept file names like `/tmp/scope.log`; URLs like `file:///tmp/scope.log`; or sockets specified with the pattern `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
+The `--*dest` flags accept file names like `/tmp/appview.log`; URLs like `file:///tmp/appview.log`; or sockets specified with the pattern `unix:///var/run/mysock`, `tcp://hostname:port`, `udp://hostname:port`, or `tls://hostname:port`.
 
 #### Usage
 
-`scope run [flags] [command]`
+`appview run [flags] [command]`
 
 #### Examples
 
 ```
-scope run -- /bin/echo "foo"
-scope run -- perl -e 'print "foo\n"'
-scope run --payloads -- nc -lp 10001
-scope run -- curl https://wttr.in/94105
-scope run -c tcp://127.0.0.1:10091 -- curl https://wttr.in/94105
-scope run -c edge -- top
+appview run -- /bin/echo "foo"
+appview run -- perl -e 'print "foo\n"'
+appview run --payloads -- nc -lp 10001
+appview run -- curl https://wttr.in/94105
+appview run -c tcp://127.0.0.1:10091 -- curl https://wttr.in/94105
+appview run -c edge -- top
 ```
 
 #### Flags
@@ -624,29 +624,29 @@ scope run -c edge -- top
   -e, --eventdest string      Set destination for events (host:port defaults to tls://)
   -h, --help                  help for run
   -l, --librarypath string    Set path for dynamic libraries
-      --loglevel string       Set scope library log level (debug, warning, info, error, none)
+      --loglevel string       Set appview library log level (debug, warning, info, error, none)
   -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
       --metricformat string   Set format of metrics output (statsd|ndjson) (default "ndjson")
       --metricprefix string   Set prefix for StatsD metrics, ignored if metric format isn't statsd
   -n, --nobreaker             Set Cribl to not break streams into events.
   -p, --payloads              Capture payloads of network transactions
-  -u, --userconfig string     Scope an application with a user specified config file; overrides all other settings.
-  -v, --verbosity int         Set scope metric verbosity (default 4)
+  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
+  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```
 
 ### service
 ---
 
-Configures the specified `systemd`/`OpenRC` service to be scoped upon starting.
+Configures the specified `systemd`/`OpenRC` service to be viewed upon starting.
 
 #### Usage
 
-`scope service SERVICE [flags]`
+`appview service SERVICE [flags]`
 
 #### Examples
 
 ```
-scope service cribl -c tls://in.my-instance.cribl.cloud:10090
+appview service cribl -c tls://in.my-instance.cribl.cloud:10090
 ```
 
 #### Flags
@@ -668,11 +668,11 @@ scope service cribl -c tls://in.my-instance.cribl.cloud:10090
 ### snapshot
 ---
 
-Create a snapshot for a process. Snapshot file/s will be created in `/tmp/appscope/[PID]/`.
+Create a snapshot for a process. Snapshot file/s will be created in `/tmp/appview/[PID]/`.
 
 #### Usage
 
-`scope snapshot [PID] [flags]`
+`appview snapshot [PID] [flags]`
 
 #### Flags
 
@@ -681,19 +681,19 @@ Create a snapshot for a process. Snapshot file/s will be created in `/tmp/appsco
 ### start
 ---
 
-Install the AppScope library to:
-/usr/lib/appscope/<version>/ with admin privileges, or 
-/tmp/appscope/<version>/ otherwise
+Install the AppView library to:
+/usr/lib/appview/<version>/ with admin privileges, or 
+/tmp/appview/<version>/ otherwise
 
 #### Usage
 
-`scope start [flags]`
+`appview start [flags]`
 
 #### Examples
 
 ```
-scope start
-scope start --rootdir /hostfs
+appview start
+appview start --rootdir /hostfs
 ```
 
 #### Flags
@@ -707,24 +707,24 @@ scope start --rootdir /hostfs
 ---
 Performs the following actions:
 	- Removal of /etc/ld.so.preload contents
-	- Removal of the rules file from /usr/lib/appscope/scope_rules
-	- Detach from all currently scoped processes
+	- Removal of the rules file from /usr/lib/appview/appview_rules
+	- Detach from all currently viewed processes
 
-The command does not uninstall scope or libscope from /usr/lib/appscope or /tmp/appscope
+The command does not uninstall appview or libappview from /usr/lib/appview or /tmp/appview
 or remove any service configurations.
 
 #### Usage
 
-`scope stop [flags]`
+`appview stop [flags]`
 
 #### Examples
 
-`scope stop`
+`appview stop`
 
 #### Flags
 
 ```
-  -f, --force      Use this flag when you're sure you want to run scope stop
+  -f, --force      Use this flag when you're sure you want to run appview stop
   -R, --rootdir    Path to root filesystem of target namespace
   -h, --help       help for stop
 ```
@@ -732,20 +732,20 @@ or remove any service configurations.
 ### update
 ---
 
-Updates configuration of scoped process identified by PID.
+Updates configuration of viewed process identified by PID.
 
 #### Usage
 
-`scope update [flags]`
+`appview update [flags]`
 
 #### Examples
 
 ```
-scope update 1000 --config scope_cfg.yml
-scope update 1000 < scope_cfg.yml
-scope update 1000 --json < scope_cfg.yml
-scope update 1000 --rootdir /path/to/host/mount --config scope_cfg.yml
-scope update 1000 --rootdir /path/to/host/mount/proc/<hostpid>/root < scope_cfg.yml
+appview update 1000 --config appview_cfg.yml
+appview update 1000 < appview_cfg.yml
+appview update 1000 --json < appview_cfg.yml
+appview update 1000 --rootdir /path/to/host/mount --config appview_cfg.yml
+appview update 1000 --rootdir /path/to/host/mount/proc/<hostpid>/root < appview_cfg.yml
 ```
 
 #### Flags
@@ -766,15 +766,15 @@ Outputs version info.
 
 #### Usage
 
-`scope version [flags]`
+`appview version [flags]`
 
 #### Examples
 
 ```
-scope version
-scope version --date
-scope version --summary
-scope version --tag
+appview version
+appview version --date
+appview version --summary
+appview version --tag
 ```
 
 #### Flags
@@ -789,20 +789,20 @@ scope version --tag
 ### watch
 ---
 
-Executes a scoped command on an interval. Must be called with the `--` flag, e.g., `scope watch -- <command>`, to prevent AppScope from attempting to parse flags passed to the executed command.
+Executes a viewed command on an interval. Must be called with the `--` flag, e.g., `appview watch -- <command>`, to prevent AppView from attempting to parse flags passed to the executed command.
 
 #### Usage
 
-`scope watch [flags]`
+`appview watch [flags]`
 
 #### Examples
 
 ```
-scope watch -i 5s -- /bin/echo "foo"
-scope watch --interval=1m-- perl -e 'print "foo\n"'
-scope watch --interval=5s --payloads -- nc -lp 10001
-scope watch -i 1h -- curl https://wttr.in/94105
-scope watch --interval=10s -- curl https://wttr.in/94105
+appview watch -i 5s -- /bin/echo "foo"
+appview watch --interval=1m-- perl -e 'print "foo\n"'
+appview watch --interval=5s --payloads -- nc -lp 10001
+appview watch -i 1h -- curl https://wttr.in/94105
+appview watch --interval=10s -- curl https://wttr.in/94105
 ```
 
 #### Flags
@@ -816,12 +816,12 @@ scope watch --interval=10s -- curl https://wttr.in/94105
   -h, --help                  help for watch
   -i, --interval string       Run every <x>(s|m|h)
   -l, --librarypath string    Set path for dynamic libraries
-      --loglevel string       Set scope library log level (debug, warning, info, error, none)
+      --loglevel string       Set appview library log level (debug, warning, info, error, none)
   -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
       --metricformat string   Set format of metrics output (statsd|ndjson) (default "ndjson")
       --metricprefix string   Set prefix for StatsD metrics, ignored if metric format isn't statsd
   -n, --nobreaker             Set Cribl to not break streams into events.
   -p, --payloads              Capture payloads of network transactions
-  -u, --userconfig string     Scope an application with a user specified config file; overrides all other settings.
-  -v, --verbosity int         Set scope metric verbosity (default 4)
+  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
+  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```

@@ -7,7 +7,7 @@
         url: https://cribl.io/edge/
       - link: Cribl.Cloud
         url: https://cribl.io/cribl-cloud/
-      - link: AppScope
-        url: https://cribl.io/appscope/
+      - link: AppView
+        url: https://cribl.io/appview/
   - parent: About Cribl
     link: https://cribl.io/about-us

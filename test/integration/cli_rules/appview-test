@@ -1,0 +1,259 @@
+#! /bin/bash
+DEBUG=0  # set this to 1 to capture the EVT_FILE for each test
+
+FAILED_TEST_LIST=""
+FAILED_TEST_COUNT=0
+
+APPVIEW_VERSION_TYPE="dev"
+
+fail() { ERR+=1; echo >&2 "fail:" $@; }
+
+starttest(){
+    CURRENT_TEST=$1
+    echo "==============================================="
+    echo "             Testing $CURRENT_TEST             "
+    echo "==============================================="
+    ERR=0
+}
+
+evaltest(){
+    echo "             Evaluating $CURRENT_TEST"
+}
+
+endtest(){
+    if [ $ERR -eq "0" ]; then
+        RESULT=PASSED
+    else
+        RESULT=FAILED
+        FAILED_TEST_LIST+=$CURRENT_TEST
+        FAILED_TEST_LIST+=" "
+        FAILED_TEST_COUNT=$(($FAILED_TEST_COUNT + 1))
+    fi
+
+    echo "*************** $CURRENT_TEST $RESULT ***************"
+    echo ""
+    echo ""
+}
+
+viewedProcessNumber() {
+    local procFound=$(($(appview ps | wc -l) - 1 ))
+
+    echo $procFound
+}
+
+# wait maximum 30 seconds
+waitForCmdviewedProcessNumber() {
+    local expViewed=$1
+    local retry=0
+    local maxRetry=30
+    local delay=1
+    until [ "$retry" -ge "$maxRetry" ]
+    do
+        count=$(viewedProcessNumber)
+        if [ "$count" -ge "$expViewed" ] ; then
+            return
+        fi
+        retry=$((retry+1)) 
+        sleep "$delay"
+    done
+    echo "FAIL: waiting for the number $expViewed viewed process $count"
+    ERR+=1
+}
+
+cleanupAfterStart() {
+    if [ -f "/etc/profile.d/appview.sh" ] ; then
+        rm "/etc/profile.d/appview.sh"
+    fi
+
+    if [ -d "/usr/lib/appview" ] ; then
+        rm -r "/usr/lib/appview"
+    fi
+
+    if [ -d "/tmp/appview" ] ; then
+        rm -r "/tmp/appview"
+    fi
+}
+
+# Identify if version used in this test is official or not
+# based on IsVersionDev method -> version.go
+APPVIEW_VERSION=$(appview version --summary)
+APPVIEW_TAG=$(appview version --tag)
+if [ "${APPVIEW_VERSION:1}" = "$APPVIEW_TAG" ]; then
+    APPVIEW_VERSION_TYPE="official"
+    echo "INFO: AppView version $APPVIEW_VERSION will be tested as an official version."
+else
+    echo "INFO: AppView version $APPVIEW_VERSION will be tested as a developer version."
+fi
+
+
+########## Tests Begin ########## 
+
+#
+# appview start
+#
+starttest appview_start
+
+appview start
+if [ $? -ne "0" ]; then
+    fail "appview start failed"
+fi
+
+# Check libappview.so is installed
+LIBAPPVIEW_PATH=$(find /usr/lib/appview/ -name libappview.so)
+if [ ! -f $LIBAPPVIEW_PATH ]; then
+    fail "missing $LIBAPPVIEW_PATH"
+fi
+# Check libappview.so.musl is installed
+LIBAPPVIEW_PATH=$(find /usr/lib/appview/ -name libappview.so.musl)
+if [ ! -f $LIBAPPVIEW_PATH ]; then
+    fail "missing $LIBAPPVIEW_PATH"
+fi
+# Check libappview.so.glibc is installed
+LIBAPPVIEW_PATH=$(find /usr/lib/appview/ -name libappview.so.glibc)
+if [ ! -f $LIBAPPVIEW_PATH ]; then
+    fail "missing $LIBAPPVIEW_PATH"
+fi
+
+cleanupAfterStart
+
+sleep 3
+
+endtest
+
+
+#
+# appview stop
+#
+starttest appview_stop
+
+# Start processes
+memcached -u root &
+redis-server &
+
+sleep 2
+
+cd /opt/
+appview rules --add memcached
+appview rules --add redis-server
+appview rules --add nginx
+
+# Start one more process
+nginx &
+
+sleep 2
+
+appview stop -f
+if [ $? -ne "0" ]; then
+    fail "appview stop failed"
+fi
+
+sleep 5
+
+# Check rules file is empty
+count=$(grep "allow" "/usr/lib/appview/appview_rules" | wc -l)
+if [ $count -gt 0 ] ; then
+    fail "/usr/lib/appview/appview_rules not empty"
+fi
+
+# Check ld.so.preload file is empty
+count=$(grep "libappview" "/etc/ld.so.preload" | wc -l)
+if [ $count -gt 0 ] ; then
+    fail "ld.so.preload not empty"
+fi
+
+# Check appview ps shows no processes viewed
+waitForCmdviewedProcessNumber 0
+
+cleanupAfterStart
+pkill -9 memcached
+pkill -9 redis-server
+pkill -9 nginx
+
+sleep 2
+
+endtest
+
+
+#
+# appview rules
+#
+starttest appview_rules
+
+# Start processes
+memcached -u root &
+redis-server &
+
+sleep 2
+
+cd /opt/
+appview rules --add memcached
+appview rules --add redis-server
+appview rules --add nginx
+
+# Start one more process
+nginx &
+
+sleep 2
+
+# Compare the rules file
+#cmp -s /usr/lib/appview/appview_rules /opt/test-runner/appview_rules1.yml
+#if [ $? -ne "0" ]; then
+#    fail "mismatch /usr/lib/appview/appview_rules and appview_rules1.yml"
+#fi
+
+# Check libappview.so is installed
+LIBAPPVIEW_PATH=$(find /usr/lib/appview/ -name libappview.so)
+if [ ! -f $LIBAPPVIEW_PATH ]; then
+    fail "missing $LIBAPPVIEW_PATH"
+fi
+
+# Check rules file contains processes
+count=$(grep "memcached" "/usr/lib/appview/appview_rules" | wc -l)
+if [ $count -ne 1 ] ; then
+    fail "/usr/lib/appview/appview_rules does not contain process memcached"
+fi
+count=$(grep "redis-server" "/usr/lib/appview/appview_rules" | wc -l)
+if [ $count -ne 1 ] ; then
+    fail "/usr/lib/appview/appview_rules does not contain process redis-server"
+fi
+count=$(grep "nginx" "/usr/lib/appview/appview_rules" | wc -l)
+if [ $count -ne 1 ] ; then
+    fail "/usr/lib/appview/appview_rules does not contain process nginx"
+fi
+
+# Check ld.so.preload file is set
+count=$(grep "libappview" "/etc/ld.so.preload" | wc -l)
+if [ $count -lt 1 ] ; then
+    fail "ld.so.preload not set"
+fi
+
+# Check appview ps shows all processes viewed
+# nginx(>1) memcached(1) redis-server(1)
+waitForCmdviewedProcessNumber 3
+
+cleanupAfterStart
+pkill -9 memcached
+pkill -9 redis-server
+pkill -9 nginx
+
+sleep 2
+
+endtest
+
+
+########## Tests Finish ########## 
+
+if (( $FAILED_TEST_COUNT == 0 )); then
+    echo ""
+    echo ""
+    echo "*************** ALL TESTS PASSED ***************"
+else
+    echo "*************** SOME TESTS FAILED ***************"
+    echo "Failed tests: $FAILED_TEST_LIST"
+    echo "Refer to these files for more info:"
+    for FAILED_TEST in $FAILED_TEST_LIST; do
+        echo "  $EVT_FILE.$FAILED_TEST"
+    done
+fi
+
+exit ${FAILED_TEST_COUNT}

@@ -22,28 +22,28 @@
 #include "loader.h"
 #include "nsfile.h"
 #include "patch.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "setup.h"
 
-#ifndef SCOPE_VER
-#error "Missing SCOPE_VER"
+#ifndef APPVIEW_VER
+#error "Missing APPVIEW_VER"
 #endif
 
-#ifndef SCOPE_LIBSCOPE_SO
-#define SCOPE_LIBSCOPE_SO "libscope.so"
+#ifndef APPVIEW_LIBAPPVIEW_SO
+#define APPVIEW_LIBAPPVIEW_SO "libappview.so"
 #endif
 
-#ifndef SCOPE_DYN_NAME
-#define SCOPE_DYN_NAME "scopedyn"
+#ifndef APPVIEW_DYN_NAME
+#define APPVIEW_DYN_NAME "appviewdyn"
 #endif
 
-#ifndef SCOPE_NAME
-#define SCOPE_NAME "scope"
+#ifndef APPVIEW_NAME
+#define APPVIEW_NAME "appview"
 #endif
 
-#define SCOPE_NAME_SIZE (16)
-#define LIBSCOPE "github.com/criblio/scope/run._buildLibscopeSo"
-#define SCOPEDYN "github.com/criblio/scope/run._buildScopedyn"
+#define APPVIEW_NAME_SIZE (16)
+#define LIBAPPVIEW "github.com/appview-team/appview/run._buildLibappviewSo"
+#define APPVIEWDYN "github.com/appview-team/appview/run._buildViewedyn"
 
 // private global state
 static struct
@@ -52,31 +52,31 @@ static struct
     char install_base[PATH_MAX]; // full path to the desired install base directory
     char tmp_base[PATH_MAX];     // full path to the desired tmp base directory
 } g_libdir_info = {
-    .ver = SCOPE_VER,                    // default version
-    .install_base = "/usr/lib/appscope", // default install base
-    .tmp_base = "/tmp/appscope",         // default tmp base
+    .ver = APPVIEW_VER,                    // default version
+    .install_base = "/usr/lib/appview", // default install base
+    .tmp_base = "/tmp/appview",         // default tmp base
 };
 
 // internal state object structure
-struct scope_obj_state{
-    char binaryName[SCOPE_NAME_SIZE];    // name of the binary
-    char binaryBasepath[PATH_MAX];       // full path to the actual binary base directory i.e. /tmp/appscope or /usr/lib/appscope
-    char binaryPath[PATH_MAX];           // full path to the actual binary file i.e. /tmp/appscope/dev/libscope.so
+struct appview_obj_state{
+    char binaryName[APPVIEW_NAME_SIZE];    // name of the binary
+    char binaryBasepath[PATH_MAX];       // full path to the actual binary base directory i.e. /tmp/appview or /usr/lib/appview
+    char binaryPath[PATH_MAX];           // full path to the actual binary file i.e. /tmp/appview/dev/libappview.so
 };
 
 // internal state for library
-static struct scope_obj_state libscopeState = {
-    .binaryName = SCOPE_LIBSCOPE_SO,
+static struct appview_obj_state libappviewState = {
+    .binaryName = APPVIEW_LIBAPPVIEW_SO,
 };
 
 // internal state for loader
-static struct scope_obj_state scopedynState = {
-    .binaryName = SCOPE_DYN_NAME,
+static struct appview_obj_state appviewdynState = {
+    .binaryName = APPVIEW_DYN_NAME,
 };
 
 // internal state for loader
-static struct scope_obj_state scopeState = {
-    .binaryName = SCOPE_NAME,
+static struct appview_obj_state appviewState = {
+    .binaryName = APPVIEW_NAME,
 };
 
 // Representation of the .note.gnu.build-id ELF segment
@@ -94,18 +94,18 @@ typedef struct
 // Internal
 // ----------------------------------------------------------------------------
 
-static struct scope_obj_state *
+static struct appview_obj_state *
 getObjState(libdirfile_t objFileType)
 {
     switch (objFileType) {
     case LIBRARY_FILE:
-        return &libscopeState;
+        return &libappviewState;
         break;
     case STATIC_LOADER_FILE:
-        return &scopeState;
+        return &appviewState;
         break;
     case LOADER_FILE:
-        return &scopedynState;
+        return &appviewdynState;
         break;
     }
     // unreachable
@@ -126,7 +126,7 @@ getAsset(libdirfile_t objFileType, unsigned char **start)
     uint64_t *libsym;
     unsigned char *libptr;
     elf_buf_t *ebuf = NULL;
-    size_t scopeSize;
+    size_t appviewSize;
     char path[PATH_MAX] = {0};
 
     if ((ebuf = getElf("/proc/self/exe")) == NULL) {
@@ -136,27 +136,27 @@ getAsset(libdirfile_t objFileType, unsigned char **start)
 
     switch (objFileType) {
     case LIBRARY_FILE:
-        if ((libsym = getSymbol(ebuf->buf, LIBSCOPE))) {
+        if ((libsym = getSymbol(ebuf->buf, LIBAPPVIEW))) {
             libptr = (unsigned char *)*libsym;
         } else {
-            fprintf(stderr, "%s:%d no addr for _buildLibscopeSo\n", __FUNCTION__, __LINE__);
+            fprintf(stderr, "%s:%d no addr for _buildLibappviewSo\n", __FUNCTION__, __LINE__);
             goto out;
         }
 
         *start = (unsigned char *)libptr;
-        len =  g_libscopesz;
+        len =  g_libappviewsz;
         break;
 
     case LOADER_FILE:
-        if ((libsym = getSymbol(ebuf->buf, SCOPEDYN))) {
+        if ((libsym = getSymbol(ebuf->buf, APPVIEWDYN))) {
             libptr = (unsigned char *)*libsym;
         } else {
-            fprintf(stderr, "%s:%d no addr for _buildScopedyn\n", __FUNCTION__, __LINE__);
+            fprintf(stderr, "%s:%d no addr for _buildViewedyn\n", __FUNCTION__, __LINE__);
             goto out;
         }
 
         *start = (unsigned char *)libptr;
-        len =  g_scopedynsz;
+        len =  g_appviewdynsz;
         break;
 
     case STATIC_LOADER_FILE:
@@ -164,13 +164,13 @@ getAsset(libdirfile_t objFileType, unsigned char **start)
             fprintf(stderr, "%s:%d readlink failed\n", __FUNCTION__, __LINE__);
             goto out;
         }
-        libptr = (unsigned char *)setupLoadFileIntoMem(&scopeSize, path);
+        libptr = (unsigned char *)setupLoadFileIntoMem(&appviewSize, path);
         if (libptr == NULL) {
             goto out;
         }
 
         *start = libptr;
-        len = scopeSize;
+        len = appviewSize;
         break;
 
     default:
@@ -325,8 +325,8 @@ int
 libdirInitTest(const char *installBase, const char *tmpBase, const char *rawVersion)
 {
     memset(&g_libdir_info, 0, sizeof(g_libdir_info));
-    memset(&libscopeState, 0, sizeof(libscopeState));
-    strcpy(libscopeState.binaryName, SCOPE_LIBSCOPE_SO);
+    memset(&libappviewState, 0, sizeof(libappviewState));
+    strcpy(libappviewState.binaryName, APPVIEW_LIBAPPVIEW_SO);
           
     if (installBase) {
         int len = strlen(installBase);
@@ -336,7 +336,7 @@ libdirInitTest(const char *installBase, const char *tmpBase, const char *rawVers
         }
         strncpy(g_libdir_info.install_base, installBase, len);
     } else {
-        strcpy(g_libdir_info.install_base, "/usr/lib/appscope");
+        strcpy(g_libdir_info.install_base, "/usr/lib/appview");
     }
 
     if (tmpBase) {
@@ -347,7 +347,7 @@ libdirInitTest(const char *installBase, const char *tmpBase, const char *rawVers
         }
         strncpy(g_libdir_info.tmp_base, tmpBase, len);
     } else {
-        strcpy(g_libdir_info.tmp_base, "/tmp/appscope");
+        strcpy(g_libdir_info.tmp_base, "/tmp/appview");
     }
 
     if (rawVersion) {
@@ -358,7 +358,7 @@ libdirInitTest(const char *installBase, const char *tmpBase, const char *rawVers
         }
         strncpy(g_libdir_info.ver, rawVersion, len);
     } else {
-        strcpy(g_libdir_info.ver, SCOPE_VER);
+        strcpy(g_libdir_info.ver, APPVIEW_VER);
     }
 
     return 0;
@@ -440,14 +440,14 @@ end:
 //  <base_dir>/<version>/<library_name>
 // The <version> and <library_name> is set internally by this function
 // E.g:
-//  for /usr/lib/appscope/dev/libscope.so:
-//    - <base_dir> - "/usr/lib/appscope"
+//  for /usr/lib/appview/dev/libappview.so:
+//    - <base_dir> - "/usr/lib/appview"
 //    - <version> - "dev"
-//    - <library_name> - "libscope.so"
-//  for /tmp/appscope/1.2.0/libscope.so:
+//    - <library_name> - "libappview.so"
+//  for /tmp/appview/1.2.0/libappview.so:
 //    - <base_dir> - "/tmp"
 //    - <version> - "1.2.0"
-//    - <library_name> - "libscope.so"
+//    - <library_name> - "libappview.so"
 // Returns 0 if the full path to a library is accessible
 int
 libdirSetLibraryBase(const char *base)
@@ -455,7 +455,7 @@ libdirSetLibraryBase(const char *base)
     const char *normVer = libverNormalizedVersion(g_libdir_info.ver);
     char tmp_path[PATH_MAX] = {0};
 
-    int pathLen = snprintf(tmp_path, PATH_MAX, "%s/%s/%s", base, normVer, SCOPE_LIBSCOPE_SO);
+    int pathLen = snprintf(tmp_path, PATH_MAX, "%s/%s/%s", base, normVer, APPVIEW_LIBAPPVIEW_SO);
     if (pathLen < 0) {
         fprintf(stderr, "error: snprintf() failed.\n");
         return -1;
@@ -466,7 +466,7 @@ libdirSetLibraryBase(const char *base)
     }
 
     if (!access(tmp_path, R_OK)) {
-        strncpy(libscopeState.binaryBasepath, base, PATH_MAX);
+        strncpy(libappviewState.binaryBasepath, base, PATH_MAX);
         return 0;
     }
 
@@ -474,7 +474,7 @@ libdirSetLibraryBase(const char *base)
 }
 
 /*
-* Retrieve the full absolute path of the specified binary libscope.so.
+* Retrieve the full absolute path of the specified binary libappview.so.
 * Returns path for the specified binary, NULL in case of failure.
 */
 const char *
@@ -482,7 +482,7 @@ libdirGetPath(libdirfile_t objFileType)
 {
     const char *normVer = libverNormalizedVersion(g_libdir_info.ver);
 
-    struct scope_obj_state *state = getObjState(objFileType);
+    struct appview_obj_state *state = getObjState(objFileType);
     if (!state) {
         return NULL;
     }
@@ -513,13 +513,13 @@ libdirGetPath(libdirfile_t objFileType)
 //    const char *cribl_home = getenv("CRIBL_HOME");
 //    if (cribl_home) {
 //        char tmp_path[PATH_MAX] = {0};
-//        int pathLen = snprintf(tmp_path, PATH_MAX, "%s/appscope/%s/%s", cribl_home, normVer, state->binaryName);
+//        int pathLen = snprintf(tmp_path, PATH_MAX, "%s/appview/%s/%s", cribl_home, normVer, state->binaryName);
 //        if (pathLen < 0) {
-//            fprintf(stderr, "error: libdirGetPath: $CRIBL_HOME/appscope/... snprintf() failed.\n");
+//            fprintf(stderr, "error: libdirGetPath: $CRIBL_HOME/appview/... snprintf() failed.\n");
 //            return NULL;
 //        }
 //        if (pathLen >= PATH_MAX) {
-//            fprintf(stderr, "error: libdirGetPath: $CRIBL_HOME/appscope/... path too long.\n");
+//            fprintf(stderr, "error: libdirGetPath: $CRIBL_HOME/appview/... path too long.\n");
 //            return NULL;
 //        }
 //
@@ -532,10 +532,10 @@ libdirGetPath(libdirfile_t objFileType)
     if (g_libdir_info.install_base[0]) {
         // Check install base next
         if (objFileType == LIBRARY_FILE) {
-            // Special case for the library when we're dealing with the install path. It exists at /usr/lib/libscope.so.
+            // Special case for the library when we're dealing with the install path. It exists at /usr/lib/libappview.so.
             // Check symlink to the library exists and is valid, and if so, return it
-            if (!access(SCOPE_LIBSCOPE_PATH, R_OK)) {
-                strncpy(state->binaryPath, SCOPE_LIBSCOPE_PATH, PATH_MAX);
+            if (!access(APPVIEW_LIBAPPVIEW_PATH, R_OK)) {
+                strncpy(state->binaryPath, APPVIEW_LIBAPPVIEW_PATH, PATH_MAX);
                 return state->binaryPath;
             }
         } else {
@@ -578,7 +578,7 @@ libdirGetPath(libdirfile_t objFileType)
 }
 
 /*
-* Extract (physically create) libscope.so to the filesystem.
+* Extract (physically create) libappview.so to the filesystem.
 * The extraction will not be performed:
 * - if the file is present and it is official version
 * - if the custom path was specified before by `libdirSetLibraryBase`
@@ -596,55 +596,55 @@ libdirExtract(unsigned char *asset_file, size_t asset_file_len, uid_t nsUid, gid
     mkdir_status_t res;
     bool useTmpPath = FALSE;
 
-    // Which version of AppScope are we dealing with (official or dev)
-    const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
+    // Which version of AppView are we dealing with (official or dev)
+    const char *loaderVersion = libverNormalizedVersion(APPVIEW_VER);
     bool isDevVersion = libverIsNormVersionDev(loaderVersion);
     bool overwrite = isDevVersion;
 
     // Create the destination directory if it does not exist
     
-//    // Try to create $CRIBL_HOME/appscope (if set)
+//    // Try to create $CRIBL_HOME/appview (if set)
 //    const char *cribl_home = getenv("CRIBL_HOME");
 //    if (cribl_home) {
-//        int pathLen = snprintf(path, PATH_MAX, "/%s/appscope/%s/", cribl_home, loaderVersion);
+//        int pathLen = snprintf(path, PATH_MAX, "/%s/appview/%s/", cribl_home, loaderVersion);
 //        if (pathLen < 0) {
-//            fprintf(stderr, "error: libdirExtract: $CRIBL_HOME/appscope/... snprintf() failed.\n");
+//            fprintf(stderr, "error: libdirExtract: $CRIBL_HOME/appview/... snprintf() failed.\n");
 //            return -1;
 //        }
 //        if (pathLen >= PATH_MAX) {
-//            fprintf(stderr, "error: libdirExtract: $CRIBL_HOME/appscope/... path too long.\n");
+//            fprintf(stderr, "error: libdirExtract: $CRIBL_HOME/appview/... path too long.\n");
 //            return -1;
 //        }
 //        res = libdirCreateDirIfMissing(path, mode, nsUid, nsGid);
 //    }
 
-    // If CRIBL_HOME not defined, or there was an error, create usr/lib/appscope
+    // If CRIBL_HOME not defined, or there was an error, create usr/lib/appview
 //    if (!cribl_home || res > MKDIR_STATUS_EXISTS) {
         memset(path, 0, PATH_MAX);
-        int pathLen = snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
+        int pathLen = snprintf(path, PATH_MAX, "/usr/lib/appview/%s/", loaderVersion);
         if (pathLen < 0) {
-            fprintf(stderr, "error: libdirExtract: usr/lib/appscope/... snprintf() failed.\n");
+            fprintf(stderr, "error: libdirExtract: usr/lib/appview/... snprintf() failed.\n");
             return -1;
         }
         if (pathLen >= PATH_MAX) {
-            fprintf(stderr, "error: libdirExtract: /usr/lib/appscope/... path too long.\n");
+            fprintf(stderr, "error: libdirExtract: /usr/lib/appview/... path too long.\n");
             return -1;
         }
         res = libdirCreateDirIfMissing(path, mode, nsUid, nsGid);
 //    }
 
-    // If all else fails, create /tmp/appscope
+    // If all else fails, create /tmp/appview
     if (res > MKDIR_STATUS_EXISTS) {
         useTmpPath = TRUE;
         mode = 0777;
         memset(path, 0, PATH_MAX);
-        int pathLen = snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
+        int pathLen = snprintf(path, PATH_MAX, "/tmp/appview/%s/", loaderVersion);
         if (pathLen < 0) {
-            fprintf(stderr, "error: libdirExtract: /tmp/appscope/... snprintf() failed.\n");
+            fprintf(stderr, "error: libdirExtract: /tmp/appview/... snprintf() failed.\n");
             return -1;
         }
         if (pathLen >= PATH_MAX) {
-            fprintf(stderr, "error: libdirExtract: /tmp/appscope/... path too long.\n");
+            fprintf(stderr, "error: libdirExtract: /tmp/appview/... path too long.\n");
             return -1;
         }
         res = libdirCreateDirIfMissing(path, mode, nsUid, nsGid);
@@ -661,23 +661,23 @@ libdirExtract(unsigned char *asset_file, size_t asset_file_len, uid_t nsUid, gid
     case LIBRARY_FILE:
         pathlen = strlen(path);
 
-        // Extract libscope.so.glibc (bundled libscope defaults to glibc loader)
+        // Extract libappview.so.glibc (bundled libappview defaults to glibc loader)
         strncpy(path_glibc, path, pathlen);
-        strncat(path_glibc, "libscope.so.glibc", sizeof(path_glibc) - 1);
+        strncat(path_glibc, "libappview.so.glibc", sizeof(path_glibc) - 1);
         if (libdirCreateFileIfMissing(asset_file, asset_file_len, objFileType, path_glibc, overwrite, mode, nsUid, nsGid)) {
             fprintf(stderr, "libdirExtract: saving %s failed\n", path_glibc);
             return -1;
         }
 
-        // Extract libscope.so.musl
+        // Extract libappview.so.musl
         strncpy(path_musl, path, pathlen);
-        strncat(path_musl, "libscope.so.musl", sizeof(path_musl) - 1);
+        strncat(path_musl, "libappview.so.musl", sizeof(path_musl) - 1);
         if (libdirCreateFileIfMissing(asset_file, asset_file_len, objFileType, path_musl, overwrite, mode, nsUid, nsGid)) {
             fprintf(stderr, "libdirExtract: saving %s failed\n", path);
             return -1;
         }
 
-        // Patch the libscope.so.musl file for musl
+        // Patch the libappview.so.musl file for musl
         patch_status_t patch_res;
         if ((patch_res = patchLibrary(path_musl, TRUE)) == PATCH_FAILED) {
             fprintf(stderr, "libdirExtract: patch %s failed\n", path_musl);
@@ -691,12 +691,12 @@ libdirExtract(unsigned char *asset_file, size_t asset_file_len, uid_t nsUid, gid
 
         // Determine where it should be created
         if (useTmpPath) {
-            // Symlink to be created at /tmp/appscope/<ver>/libscope.so
-            strncat(path, "libscope.so", sizeof(path) - 1);
+            // Symlink to be created at /tmp/appview/<ver>/libappview.so
+            strncat(path, "libappview.so", sizeof(path) - 1);
         } else {
-            // Symlink to be created at /usr/lib/libscope.so
+            // Symlink to be created at /usr/lib/libappview.so
             memset(path, 0, PATH_MAX);
-            int pathLen = snprintf(path, PATH_MAX, SCOPE_LIBSCOPE_PATH);
+            int pathLen = snprintf(path, PATH_MAX, APPVIEW_LIBAPPVIEW_PATH);
             if (pathLen < 0) {
                 fprintf(stderr, "error: libdirExtract: snprintf() failed.\n");
                 return -1;
@@ -722,7 +722,7 @@ libdirExtract(unsigned char *asset_file, size_t asset_file_len, uid_t nsUid, gid
 
     case LOADER_FILE:
         // Create the dynamic loader file if it does not exist; or needs to be overwritten
-        strncat(path, "scopedyn", sizeof(path) - 1);
+        strncat(path, "appviewdyn", sizeof(path) - 1);
         if (libdirCreateFileIfMissing(asset_file, asset_file_len, objFileType, path, overwrite, mode, nsUid, nsGid)) {
             fprintf(stderr, "libdirExtract: saving %s failed\n", path);
             return -1;
@@ -731,7 +731,7 @@ libdirExtract(unsigned char *asset_file, size_t asset_file_len, uid_t nsUid, gid
 
     case STATIC_LOADER_FILE:
         // Create the loader file if it does not exist; or needs to be overwritten
-        strncat(path, "scope", sizeof(path) - 1);
+        strncat(path, "appview", sizeof(path) - 1);
         if (libdirCreateFileIfMissing(asset_file, asset_file_len, objFileType, path, overwrite, mode, nsUid, nsGid)) {
             fprintf(stderr, "libdirExtract: saving %s failed\n", path);
             return -1;

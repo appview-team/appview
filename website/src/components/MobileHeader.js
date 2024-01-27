@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Tabs, Tab, Navbar, Nav, NavDropdown } from "react-bootstrap";
 import { useStaticQuery, graphql } from "gatsby";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import logo from "../images/logo-appscope.svg";
+import logo from "../images/logo-appview.svg";
 import criblLogo from "../images/logo-cribl-new.svg";
 
 import "../scss/_mobileNav.scss";
@@ -50,10 +50,10 @@ export default function MobileHeader() {
           setBurgerMenu(burgerMenu ? false : true);
         }}
       />
-      <Tabs defaultActiveKey="AppScope" id="uncontrolled-tab-example">
+      <Tabs defaultActiveKey="AppView" id="uncontrolled-tab-example">
         <Tab
-          eventKey="AppScope"
-          title={<img src={logo} alt="Appscope" style={{ width: 100 }} />}
+          eventKey="AppView"
+          title={<img src={logo} alt="Appappview" style={{ width: 100 }} />}
           className={burgerMenu ? "menuActive" : "menuInactive"}
         >
           <Navbar expand="lg">
@@ -73,7 +73,7 @@ export default function MobileHeader() {
           title={
             <img
               src={criblLogo}
-              alt="Appscope"
+              alt="Appappview"
               style={{ width: 80, color: "#000" }}
             />
           }

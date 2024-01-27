@@ -14,7 +14,7 @@
 #include "evtutils.h"
 #include "fn.h"
 #include "state.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "utils.h"
 
 #define FS_ENTRIES 1024
@@ -38,12 +38,12 @@ typedef struct {
 
 struct _ctl_t
 {
-    // This transport serves two purposes. When AppScope is configured to
+    // This transport serves two purposes. When AppView is configured to
     // connect to LogStream, this is is that connection. Otherwise, this is
     // the event connection.
     transport_t *transport;
 
-    // This is the transport for payloads when AppScope is configured to
+    // This is the transport for payloads when AppView is configured to
     // connect to LogStream. Otherwise, this isn't used because we handle
     // payloads differently - to separate local files.
     transport_t *paytrans;
@@ -149,7 +149,7 @@ grab_supplemental_for_set_cfg(cJSON * json_root, request_t *req)
 
     if (!json_root || !req) goto error;
 
-    // This expects a json version of our scope.yml file
+    // This expects a json version of our appview.yml file
     // See cfgReadGoodJson() in test/cfgutilstest.c or
     // ctlParseRxMsgSetCfg() in test/ctltest.c for an example
     // of what we expect to find in the "body" json node.
@@ -162,7 +162,7 @@ grab_supplemental_for_set_cfg(cJSON * json_root, request_t *req)
 
     // Feed the string to the yaml parser to get a cfg
     req->cfg = cfgFromString(string);
-    scope_free(string);
+    appview_free(string);
 
     if (!req->cfg) goto error;
 
@@ -191,7 +191,7 @@ grab_supplemental_for_switch(cJSON *json_root, request_t *req)
 
     // search switch_map for commands we handle
     for (map=switch_map; map->str; map++) {
-        if (!scope_strcmp(string, map->str)) {
+        if (!appview_strcmp(string, map->str)) {
             req->action = map->action;
             break;
         }
@@ -221,14 +221,14 @@ grab_supplemental_for_def_protocol(cJSON * json_root, request_t *req)
     body = cJSON_GetObjectItem(json_root, "body");
     if (!body || !cJSON_IsObject(body)) goto err;
 
-    if ((prot = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
+    if ((prot = appview_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
 
     req->protocol = prot;
 
     json = cJSON_GetObjectItem(body, "binary");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    if (scope_strncmp("false", str, scope_strlen(str)) == 0) {
+    if (appview_strncmp("false", str, appview_strlen(str)) == 0) {
         prot->binary = FALSE;
     } else {
         prot->binary = TRUE;
@@ -245,20 +245,20 @@ grab_supplemental_for_def_protocol(cJSON * json_root, request_t *req)
     json = cJSON_GetObjectItem(body, "regex");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->regex = scope_strdup(str);
+    prot->regex = appview_strdup(str);
 
     json = cJSON_GetObjectItem(body, "pname");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->protname = scope_strdup(str);
+    prot->protname = appview_strdup(str);
 
     return;
 
 err:
     if (req) req->cmd=REQ_PARAM_ERR;
-    if (prot && prot->regex) scope_free(prot->regex);
-    if (prot && prot->protname) scope_free(prot->protname);
-    if (prot) scope_free(prot);
+    if (prot && prot->regex) appview_free(prot->regex);
+    if (prot && prot->protname) appview_free(prot->protname);
+    if (prot) appview_free(prot);
 }
 
 static void
@@ -274,21 +274,21 @@ grab_supplemental_for_del_protocol(cJSON * json_root, request_t *req)
     body = cJSON_GetObjectItem(json_root, "body");
     if (!body || !cJSON_IsObject(body)) goto err;
 
-    if ((prot = scope_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
+    if ((prot = appview_calloc(1, sizeof(protocol_def_t))) == NULL) goto err;
 
     req->protocol = prot;
 
     json = cJSON_GetObjectItem(body, "pname");
     if (!json) goto err;
     if (!(str = cJSON_GetStringValue(json))) goto err;
-    prot->protname = scope_strdup(str);
+    prot->protname = appview_strdup(str);
 
     return;
 
 err:
     if (req) req->cmd=REQ_PARAM_ERR;
-    if (prot && prot->protname) scope_free(prot->protname);
-    if (prot) scope_free(prot);
+    if (prot && prot->protname) appview_free(prot->protname);
+    if (prot) appview_free(prot);
 }
 
 request_t *
@@ -299,7 +299,7 @@ ctlParseRxMsg(const char *msg)
     char *str;
     cmd_map_t *map;
 
-    request_t *req = scope_calloc(1, sizeof(request_t));
+    request_t *req = appview_calloc(1, sizeof(request_t));
     if (!req) {
         DBG(NULL);
         goto out;
@@ -334,13 +334,13 @@ ctlParseRxMsg(const char *msg)
     json = cJSON_GetObjectItem(json_root, "req");
     if (!json) goto out;
     if (!(str = cJSON_GetStringValue(json))) goto out;
-    req->cmd_str = scope_strdup(str);
+    req->cmd_str = appview_strdup(str);
 
     // verify that type field exists, with required value "req"
     json = cJSON_GetObjectItem(json_root, "type");
     if (!json) goto out;
     if (!(str = cJSON_GetStringValue(json))) goto out;
-    if (scope_strcmp(str, "req")) goto out;
+    if (appview_strcmp(str, "req")) goto out;
 
     //
     // phase 3, interpret what we grabbed
@@ -349,7 +349,7 @@ ctlParseRxMsg(const char *msg)
 
     // make sure that the req field is a value we expect
     for (map=cmd_map; map->str; map++) {
-        if (!scope_strcmp(req->cmd_str, map->str)) {
+        if (!appview_strcmp(req->cmd_str, map->str)) {
             req->cmd = map->cmd;
             break;
         }
@@ -403,10 +403,10 @@ destroyReq(request_t **request)
 
     request_t *req = *request;
 
-    if (req->cmd_str) scope_free(req->cmd_str);
+    if (req->cmd_str) appview_free(req->cmd_str);
     if (req->cfg) cfgDestroy(&req->cfg);
     // Note: don't mess with the protocol object here
-    scope_free(req);
+    appview_free(req);
 
     *request=NULL;
 }
@@ -505,7 +505,7 @@ create_evt_json(upload_t *upld)
     if (!cJSON_AddStringToObjLN(json_root, "type", "evt")) goto err;
     if (upld->proc && !cJSON_AddStringToObjLN(json_root, ID, upld->proc->id)) goto err;
     if (upld->uid) {
-        if (scope_snprintf(numbuf, sizeof(numbuf), "%llu", upld->uid) < 0) goto err;
+        if (appview_snprintf(numbuf, sizeof(numbuf), "%llu", upld->uid) < 0) goto err;
         if (!cJSON_AddStringToObjLN(json_root, CHANNEL, numbuf)) goto err;
     } else {
         if (!cJSON_AddStringToObjLN(json_root, CHANNEL, "none")) goto err;
@@ -530,12 +530,12 @@ prepMessage(upload_t *upld)
     if (!streamMsg) return NULL;
 
     // Add the newline delimiter to the msg.
-    int strsize = scope_strlen(streamMsg);
-    char *temp = scope_realloc(streamMsg, strsize+2); // room for "\n\0"
+    int strsize = appview_strlen(streamMsg);
+    char *temp = appview_realloc(streamMsg, strsize+2); // room for "\n\0"
     if (!temp) {
         DBG(NULL);
-        scopeLogInfo("CTL scope_realloc error");
-        scope_free(streamMsg);
+        appviewLogInfo("CTL appview_realloc error");
+        appview_free(streamMsg);
         return NULL;
     }
 
@@ -580,7 +580,7 @@ out:
 ctl_t *
 ctlCreate(void)
 {
-    ctl_t *ctl = scope_calloc(1, sizeof(ctl_t));
+    ctl_t *ctl = appview_calloc(1, sizeof(ctl_t));
     if (!ctl) {
         DBG(NULL);
         goto err;
@@ -588,11 +588,11 @@ ctlCreate(void)
 
     size_t buf_size = DEFAULT_CBUF_SIZE;
     char *qlen_str;
-    if ((qlen_str = fullGetEnv("SCOPE_QUEUE_LENGTH")) != NULL) {
+    if ((qlen_str = fullGetEnv("APPVIEW_QUEUE_LENGTH")) != NULL) {
         unsigned long qlen;
-        scope_errno = 0;
-        qlen = scope_strtoul(qlen_str, NULL, 10);
-        if (!scope_errno && qlen) {
+        appview_errno = 0;
+        qlen = appview_strtoul(qlen_str, NULL, 10);
+        if (!appview_errno && qlen) {
             buf_size = qlen;
         }
     }
@@ -616,10 +616,10 @@ ctlCreate(void)
     ctl->stop_aggregating = FALSE;
 
     ctl->payload.status = PAYLOAD_STATUS_DISABLE;
-    ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? scope_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+    ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? appview_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
     ctl->payload.dirRepr = NULL;
     if (DEFAULT_PAYLOAD_DIR_REPR) {
-        if (scope_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
+        if (appview_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
             ctl->payload.dirRepr = NULL;
         }
     }
@@ -654,10 +654,10 @@ ctlDestroy(ctl_t **ctl)
     cbufFree((*ctl)->events);
 
     if ((*ctl)->payload.dir) {
-        scope_free((*ctl)->payload.dir);
+        appview_free((*ctl)->payload.dir);
     }
     if ((*ctl)->payload.dirRepr) {
-        scope_free((*ctl)->payload.dirRepr);
+        appview_free((*ctl)->payload.dirRepr);
     }
 
     cbufFree((*ctl)->payload.ringbuf);
@@ -666,7 +666,7 @@ ctlDestroy(ctl_t **ctl)
     transportDestroy(&(*ctl)->paytrans);
     evtFormatDestroy(&(*ctl)->evt);
 
-    scope_free(*ctl);
+    appview_free(*ctl);
     *ctl = NULL;
 }
 
@@ -675,14 +675,14 @@ ctlSendMsg(ctl_t *ctl, char *msg)
 {
     if (!msg) return;
     if (!ctl) {
-        scope_free(msg);
+        appview_free(msg);
         return;
     }
 
     if (cbufPut(ctl->msgbuf, (uint64_t)msg) == -1) {
         // Full; drop and ignore
         DBG(NULL);
-        scope_free(msg);
+        appview_free(msg);
     }
 }
 
@@ -702,13 +702,13 @@ ctlSendJson(ctl_t *ctl, cJSON *json, which_transport_t who)
 
     if (msg && ((msg = msgAddNewLine(msg)) != NULL)) {
         if (who == CFG_LS) {
-            rc = transportSend(ctl->paytrans, msg, scope_strlen(msg));
+            rc = transportSend(ctl->paytrans, msg, appview_strlen(msg));
         } else {
-            rc = transportSend(ctl->transport, msg, scope_strlen(msg));
+            rc = transportSend(ctl->transport, msg, appview_strlen(msg));
         }
     }
 
-    if (msg) scope_free(msg);
+    if (msg) appview_free(msg);
     cJSON_Delete(json);
     return rc;
 }
@@ -772,8 +772,8 @@ ctlSendHttp(ctl_t *ctl, event_t *evt, uint64_t uid, proc_id_t *proc)
     upld.proc = proc;
     streamMsg = prepMessage(&upld);
 
-    rc = transportSend(ctl->transport, streamMsg, scope_strlen(streamMsg));
-    if (streamMsg) scope_free(streamMsg);
+    rc = transportSend(ctl->transport, streamMsg, appview_strlen(streamMsg));
+    if (streamMsg) appview_free(streamMsg);
     return rc;
 }
 
@@ -798,8 +798,8 @@ ctlSendEvent(ctl_t *ctl, event_t *evt, uint64_t uid, proc_id_t *proc)
     upld.proc = proc;
     streamMsg = prepMessage(&upld);
 
-    rc = transportSend(ctl->transport, streamMsg, scope_strlen(streamMsg));
-    if (streamMsg) scope_free(streamMsg);
+    rc = transportSend(ctl->transport, streamMsg, appview_strlen(streamMsg));
+    if (streamMsg) appview_free(streamMsg);
     return rc;
 
 }
@@ -825,22 +825,22 @@ ctlPostEvent(ctl_t *ctl, char *event)
 static log_event_t *
 createInternalLogEvent(int fd, const char *path, const void *buf, size_t count, uint64_t uid, proc_id_t *proc, watch_t logType, regex_t *valfilter)
 {
-    log_event_t *event = scope_calloc(1, sizeof(*event));
-    char *data = scope_malloc(count);
-    char *src = scope_strdup(path);
+    log_event_t *event = appview_calloc(1, sizeof(*event));
+    char *data = appview_malloc(count);
+    char *src = appview_strdup(path);
 
     if (!event || !data || !path) {
         DBG("event = %p, data = %p, src = %p", event, data, src);
-        if (event) scope_free(event);
-        if (data) scope_free(data);
-        if (src) scope_free(src);
+        if (event) appview_free(event);
+        if (data) appview_free(data);
+        if (src) appview_free(src);
         return NULL;
     }
 
-    scope_memcpy(data, buf, count);
+    appview_memcpy(data, buf, count);
 
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     event->fd = fd;
     event->id.uid = uid;
     event->id.timestamp = tv.tv_sec + tv.tv_usec/1e6;
@@ -860,9 +860,9 @@ destroyInternalLogEvent(log_event_t **eventptr)
     if (!eventptr || !*eventptr) return;
 
     log_event_t *event = *eventptr;
-    if (event->id.path) scope_free(event->id.path);
-    if (event->data)    scope_free(event->data);
-    if (event)          scope_free(event);
+    if (event->id.path) appview_free(event->id.path);
+    if (event->data)    appview_free(event->data);
+    if (event)          appview_free(event);
     *eventptr = NULL;
 }
 
@@ -873,7 +873,7 @@ is_data_binary(const void *buf, size_t count)
     size_t min_len = (count < DEFAULT_BINARY_DATA_SAMPLE_SIZE) ? count : DEFAULT_BINARY_DATA_SAMPLE_SIZE;
     size_t i;
     for (i = 0; i < min_len; i++) {
-        if (!scope_isprint(b_buf[i]) && !scope_isspace(b_buf[i]) && b_buf[i] != ESC_CHARACTER) {
+        if (!appview_isprint(b_buf[i]) && !appview_isspace(b_buf[i]) && b_buf[i] != ESC_CHARACTER) {
             return TRUE;
         }
     }
@@ -950,7 +950,7 @@ createLogEventJson(ctl_t *ctl, streambuf_t *stmbuf)
     event.uid = stmbuf->id.uid;
     event.sourcetype = stmbuf->id.sourcetype;
 
-    scope_fclose(stmbuf->stream);  // updates stmbuf->buf, stmbuf->bufsize
+    appview_fclose(stmbuf->stream);  // updates stmbuf->buf, stmbuf->bufsize
     stmbuf->stream = NULL;
 
     if (!(root = cJSON_CreateObject())) goto out;
@@ -974,8 +974,8 @@ out:
         cJSON_Delete(root);
         root = NULL;
     }
-    scope_free(stmbuf->buf);
-    scope_free(stmbuf->id.path);
+    appview_free(stmbuf->buf);
+    appview_free(stmbuf->id.path);
 
     return root;
 }
@@ -990,11 +990,11 @@ sendBufferedMessages(ctl_t *ctl)
 
             // Add the newline delimiter to the msg.
             {
-                int strsize = scope_strlen(msg);
-                char* temp = scope_realloc(msg, strsize+2); // room for "\n\0"
+                int strsize = appview_strlen(msg);
+                char* temp = appview_realloc(msg, strsize+2); // room for "\n\0"
                 if (!temp) {
                     DBG(NULL);
-                    scope_free(msg);
+                    appview_free(msg);
                     msg = NULL;
                     continue;
                 }
@@ -1002,8 +1002,8 @@ sendBufferedMessages(ctl_t *ctl)
                 msg[strsize] = '\n';
                 msg[strsize+1] = '\0';
             }
-            transportSend(ctl->transport, msg, scope_strlen(msg));
-            scope_free(msg);
+            transportSend(ctl->transport, msg, appview_strlen(msg));
+            appview_free(msg);
         }
     }
 }
@@ -1026,8 +1026,8 @@ sendAggregatedLogData(ctl_t *ctl, streambuf_t *stmbuf)
     if (!msg) return;
 
     // Send it.
-    transportSend(ctl->transport, msg, scope_strlen(msg));
-    scope_free(msg);
+    transportSend(ctl->transport, msg, appview_strlen(msg));
+    appview_free(msg);
 }
 
 static void
@@ -1082,7 +1082,7 @@ ctlFlushLog(ctl_t *ctl)
                 stmbuf->buf = NULL;
                 stmbuf->bufsize = 0;
                 stmbuf->tot_size = 0;
-                stmbuf->stream = scope_open_memstream(&stmbuf->buf, &stmbuf->bufsize);
+                stmbuf->stream = appview_open_memstream(&stmbuf->buf, &stmbuf->bufsize);
                 if (!stmbuf->stream) {
                     DBG("log buffer create error for fd %d, path %s", event->fd, event->id.path);
                 } else {
@@ -1093,7 +1093,7 @@ ctlFlushLog(ctl_t *ctl)
 
             // Append the current event data onto the stream buffer
             if (stmbuf->stream) {
-                size_t actual = scope_fwrite(event->data, 1, event->datalen, stmbuf->stream);
+                size_t actual = appview_fwrite(event->data, 1, event->datalen, stmbuf->stream);
                 stmbuf->tot_size += actual;
                 if (event->datalen != actual) {
                     DBG("log buffer write error for fd %d, path %s. tried to "
@@ -1321,24 +1321,24 @@ ctlPayDirSet(ctl_t *ctl, const char *dir)
 {
     if (!ctl) return;
     if (ctl->payload.dir) {
-        scope_free(ctl->payload.dir);
+        appview_free(ctl->payload.dir);
     }
     if (ctl->payload.dirRepr) {
-        scope_free(ctl->payload.dirRepr);
+        appview_free(ctl->payload.dirRepr);
     }
     if (!dir || (dir[0] == '\0')) {
-        ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? scope_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
+        ctl->payload.dir = (DEFAULT_PAYLOAD_DIR) ? appview_strdup(DEFAULT_PAYLOAD_DIR) : NULL;
         ctl->payload.dirRepr = NULL;
         if (DEFAULT_PAYLOAD_DIR_REPR) {
-            if (scope_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
+            if (appview_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
                 ctl->payload.dirRepr = NULL;
             }
         }
         return;
     }
 
-    ctl->payload.dir = scope_strdup(dir);
-    if (scope_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
+    ctl->payload.dir = appview_strdup(dir);
+    if (appview_asprintf(&ctl->payload.dirRepr, "dir://%s", ctl->payload.dir) < 0) {
         ctl->payload.dirRepr = NULL;
     }
 }

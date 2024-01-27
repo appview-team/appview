@@ -1,4 +1,4 @@
-This README provides instructions for testing the scope k8s functionality with containers that do not have a shell (distroless).
+This README provides instructions for testing the appview k8s functionality with containers that do not have a shell (distroless).
 This directory contains the example distroless Docker image (`Dockerfile`) with k8s deployment definition (`deploy.yaml`).
 
 ### Building the example Docker Image

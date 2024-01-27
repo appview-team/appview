@@ -1,5 +1,5 @@
 - hero:
     header: Instrument, Collect, Observe
-    subText: AppScope provides application-centric instrumentation and data collection. With one instrumentation approach for all runtimes, AppScope offers ubiquitous, unified instrumentation of any unmodified Linux executable for single-user troubleshooting or distributed deployments. 
+    subText: AppView provides application-centric instrumentation and data collection. With one instrumentation approach for all runtimes, AppView offers ubiquitous, unified instrumentation of any unmodified Linux executable for single-user troubleshooting or distributed deployments. 
     ctaText: Get Started
 

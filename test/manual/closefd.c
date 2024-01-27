@@ -11,7 +11,7 @@
    avoid leaking file descritors during subsequent fork/exec sequences.
 
    So, it's possible that the file descriptors for  g_mtc, g_log, and
-   g_ctl can get closed out from under the libscope.so library.
+   g_ctl can get closed out from under the libappview.so library.
 
    This was written to help verify that we correctly detect that our
    file descriptor was closed (errno of EBADF), and that we reestablish
@@ -21,7 +21,7 @@
 
 
 int
-closeScopeFds() {
+closeAppViewFds() {
     int fd;
     for (fd=200; fd<1000; fd++) {
         close(fd);
@@ -39,10 +39,10 @@ main()
     for (i=0; i<45000; i++) {
         // After at least 6s, close the file descriptors.
         // Repeat a while later...
-        if ((i % 15000) == 6000) closeScopeFds();
+        if ((i % 15000) == 6000) closeAppViewFds();
 
         // Create arbitrary ongoing "activity"
-        int fd=open("/tmp/scope.test.out", O_APPEND|O_CREAT, 0666);
+        int fd=open("/tmp/appview.test.out", O_APPEND|O_CREAT, 0666);
         if (fd != -1) close(fd);
 
         // sleep for 10 ms each loop (in addition to the time open/close takes)

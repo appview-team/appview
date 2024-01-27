@@ -1,5 +1,5 @@
 # ---
-# Cribl AppScope™ - Build under Docker
+# Cribl AppView™ - Build under Docker
 #
 # by Paul Dugas <paul@dugas.cc>
 #
@@ -87,18 +87,18 @@ RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) && \
     echo "alias l='ls -CF'" >> /home/builder/.bashrc && \
     echo "alias h='history'" >> /home/builder/.bashrc && \
     \
-    echo "#set environment LD_PRELOAD=/home/builder/appscope/lib/linux/libscope.so" >> /home/builder/.gdbinit && \
+    echo "#set environment LD_PRELOAD=/home/builder/appview/lib/linux/libappview.so" >> /home/builder/.gdbinit && \
     echo "set follow-fork-mode child" >> /home/builder/.gdbinit && \
     echo "set breakpoint pending on" >> /home/builder/.gdbinit && \
-    echo "set directories /home/builder/appscope" >> /home/builder/.gdbinit && \
+    echo "set directories /home/builder/appview" >> /home/builder/.gdbinit && \
     \
-    mkdir /home/builder/appscope
+    mkdir /home/builder/appview
 
 # ---
-# The local git clone of the project is mounted as /home/builder/appscope. See Makefile.
+# The local git clone of the project is mounted as /home/builder/appview. See Makefile.
 #
-#     docker run -v $(pwd):/home/builder/appscope ...
+#     docker run -v $(pwd):/home/builder/appview ...
 #
-WORKDIR /home/builder/appscope
+WORKDIR /home/builder/appview
 
 # fini

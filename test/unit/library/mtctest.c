@@ -66,7 +66,7 @@ mtcSendForNullMessageDoesntCrash(void** state)
 {
     mtc_t* mtc = mtcCreate();
     assert_non_null(mtc);
-    transport_t* t = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t = transportCreateUnix("/var/run/appview.sock");
     assert_non_null(t);
     mtcTransportSet(mtc, t);
     assert_int_equal(mtcSend(mtc, NULL), -1);
@@ -80,7 +80,7 @@ mtcTransportSetAndMtcSend(void** state)
     mtc_t* mtc = mtcCreate();
     assert_non_null(mtc);
     transport_t* t1 = transportCreateUdp("127.0.0.1", "12345");
-    transport_t* t2 = transportCreateUnix("/var/run/scope.sock");
+    transport_t* t2 = transportCreateUnix("/var/run/appview.sock");
     transport_t* t3 = transportCreateFile(file_path, CFG_BUFFER_FULLY);
     mtcTransportSet(mtc, t1);
     mtcTransportSet(mtc, t2);

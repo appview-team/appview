@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/ipc"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/ipc"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/process"
@@ -20,7 +20,7 @@ import (
 type snapshot struct {
 	// Source: self
 	Time    time.Time
-	Version string // AppScope Cli Version
+	Version string // AppView Cli Version
 
 	// Source: /proc or linux (or eBPF signal)
 	Username      string   `json:",omitempty"`
@@ -46,9 +46,9 @@ type snapshot struct {
 	// Static or Dynamically linked(?)
 	// Application version(?)
 	// Application and .so elf files
-	// AppScope Log Output
-	// scope ps output
-	// scope history output
+	// AppView Log Output
+	// appview ps output
+	// appview history output
 	// Container Impl (docker, podman...)
 	// Container Name/Version?
 	// SELinux or AppArmor enforcing?
@@ -67,8 +67,8 @@ type snapshot struct {
 // - backtrace (where available)
 func GenFiles(sig, errno, pid, uid, gid uint32, sigHandler uint64, procName, procArgs string) error {
 	// TODO: If session directory exists, write to sessiondir/snapshot/
-	// If not, write to /tmp/appscope/pid/
-	dir := fmt.Sprintf("/tmp/appscope/%d", pid)
+	// If not, write to /tmp/appview/pid/
+	dir := fmt.Sprintf("/tmp/appview/%d", pid)
 	syscall.Umask(0)
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		log.Error().Err(err).Msgf("error creating snapshot directory")
@@ -151,7 +151,7 @@ func GenFiles(sig, errno, pid, uid, gid uint32, sigHandler uint64, procName, pro
 		}
 
 		// File origins
-		nsDir := fmt.Sprintf("/proc/%d/root/tmp/appscope/%d", pid, nsPid)
+		nsDir := fmt.Sprintf("/proc/%d/root/tmp/appview/%d", pid, nsPid)
 		nsHostnameFile := fmt.Sprintf("/proc/%d/root/etc/hostname", pid)
 
 		files, err := os.ReadDir(nsDir)

@@ -25,7 +25,7 @@
 //
 // To see this yourself, outside of the test, this lists all functions that
 // the linux library publishes for interposition:
-//      nm lib/linux/libscope.so | grep " T "
+//      nm lib/linux/libappview.so | grep " T "
 //
 // And, similarly this lists all external functions from an example .o file:
 //      nm test/selfinterpose/cfgutils.o | grep " U "
@@ -186,7 +186,7 @@ checkObjectFile(fn_list_t* interpose_list, const char* file, test_state_t* s)
         if (contains(used_list, interpose->name)) {
             s->errCount++;
             int i = sprintf(&s->failMsgs[s->failMsgPos],
-                            "  %s contains %s (Check libscope.map?) \n", file, interpose->name);
+                            "  %s contains %s (Check libappview.map?) \n", file, interpose->name);
             if (i > 0) s->failMsgPos += i;
             if ((strcmp(interpose->name, "puts")) || (strcmp(interpose->name, "putchar"))) {
                 fputs("FYI: a self interposed test failure due to puts or putchar can be due to using printf\nwith a constant string, resulting in puts being referenced, or printf using a single character,\nresulting in putc being referenced. You may need to change how printf is being used.\n", stderr);
@@ -209,9 +209,9 @@ testNoInterposedSymbolIsUsed(void** state)
     os = "macOS";
 #endif // __APPLE__
 #if defined(__x86_64__)
-    snprintf(cmdbuf, sizeof(cmdbuf), "nm ./lib/%s/x86_64/libscope.so", os);
+    snprintf(cmdbuf, sizeof(cmdbuf), "nm ./lib/%s/x86_64/libappview.so", os);
 #elif defined(__aarch64__)
-    snprintf(cmdbuf, sizeof(cmdbuf), "nm ./lib/%s/aarch64/libscope.so", os);
+    snprintf(cmdbuf, sizeof(cmdbuf), "nm ./lib/%s/aarch64/libappview.so", os);
 #else
 #error Unsupported architecture!
 #endif

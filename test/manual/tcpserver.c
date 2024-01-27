@@ -5,13 +5,13 @@
  * options: -t, --tls       use TLSv1.3
  *
  * Build Dynamically: (requires: libssl-dev)
- * gcc -g test/manual/tcpserver.c -DSCOPE_SSL_write=SSL_write -Icontrib/build/openssl/include -Icontrib/openssl/include -L contrib/build/openssl -Wl,-R$PWD/contrib/build/openssl -lpthread -lssl -lcrypto -o tcpserver
+ * gcc -g test/manual/tcpserver.c -DAPPVIEW_SSL_write=SSL_write -Icontrib/build/openssl/include -Icontrib/openssl/include -L contrib/build/openssl -Wl,-R$PWD/contrib/build/openssl -lpthread -lssl -lcrypto -o tcpserver
  *
  * generate unencrypted TLS key and certificate:
  * openssl req -nodes -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem
  *
- * example scope client usage:
- * SCOPE_CRIBL_TLS_VALIDATE_SERVER=false scope run -c tls://127.0.0.1:9000 -- top
+ * example appview client usage:
+ * APPVIEW_CRIBL_TLS_VALIDATE_SERVER=false appview run -c tls://127.0.0.1:9000 -- top
  */
 
 #include <stdio.h>
@@ -549,7 +549,7 @@ tcp_ssl(int socket)
 
                             fprintf(stderr, "%s:%d cmdfd=%d rc %d\n%s\n", __FUNCTION__, __LINE__,
                                     cmdfd, rc, cmd);
-                            if (SCOPE_SSL_write(ssl, cmd, rc) < 0) { // MSG_DONTWAIT
+                            if (APPVIEW_SSL_write(ssl, cmd, rc) < 0) { // MSG_DONTWAIT
                                 perror("send");
                             }
 

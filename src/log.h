@@ -1,6 +1,6 @@
 #ifndef __LOG_H__
 #define __LOG_H__
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "transport.h"
 
 typedef struct _log_t log_t;

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	linuxproc "github.com/c9s/goprocinfo/linux"
-	"github.com/criblio/scope/ipc"
+	"github.com/appview-team/appview/ipc"
 )
 
 // Process is a unix process
@@ -18,12 +18,12 @@ type Process struct {
 	ID      int    `json:"id"`
 	Pid     int    `json:"pid"`
 	User    string `json:"user"`
-	Scoped  bool   `json:"scoped"`
+	Viewed  bool   `json:"viewed"`
 	Command string `json:"command"`
 }
 
-// PidScopeMap is a map of Pid and Scope state
-type PidScopeMapState map[int]bool
+// PidAppViewMap is a map of Pid and AppView state
+type PidAppViewMapState map[int]bool
 
 // Processes is an array of Process
 type Processes []Process
@@ -62,9 +62,9 @@ func searchPidByCmdLine(rootdir string, pid int, inputArg string) bool {
 
 type searchFunc func(string, int, string) bool
 
-// pidScopeMapSearch returns an map of processes that met conditions in searchFunc
-func pidScopeMapSearch(rootdir, inputArg string, sF searchFunc) (PidScopeMapState, error) {
-	pidMap := make(PidScopeMapState)
+// pidAppViewMapSearch returns an map of processes that met conditions in searchFunc
+func pidAppViewMapSearch(rootdir, inputArg string, sF searchFunc) (PidAppViewMapState, error) {
+	pidMap := make(PidAppViewMapState)
 
 	procs, err := pidProcDirsNames(rootdir)
 	if err != nil {
@@ -84,7 +84,7 @@ func pidScopeMapSearch(rootdir, inputArg string, sF searchFunc) (PidScopeMapStat
 		}
 
 		if sF(rootdir, pid, inputArg) {
-			status, err := PidScopeStatus(rootdir, pid)
+			status, err := PidAppViewStatus(rootdir, pid)
 			if err != nil {
 				continue
 			}
@@ -95,14 +95,14 @@ func pidScopeMapSearch(rootdir, inputArg string, sF searchFunc) (PidScopeMapStat
 	return pidMap, nil
 }
 
-// PidScopeMapByProcessName returns an map of processes name that are found by process name match
-func PidScopeMapByProcessName(rootdir, procname string) (PidScopeMapState, error) {
-	return pidScopeMapSearch(rootdir, procname, searchPidByProcName)
+// PidAppViewMapByProcessName returns an map of processes name that are found by process name match
+func PidAppViewMapByProcessName(rootdir, procname string) (PidAppViewMapState, error) {
+	return pidAppViewMapSearch(rootdir, procname, searchPidByProcName)
 }
 
-// PidScopeMapByCmdLine returns an map of processes that are found by cmdLine submatch
-func PidScopeMapByCmdLine(rootdir, cmdLine string) (PidScopeMapState, error) {
-	return pidScopeMapSearch(rootdir, cmdLine, searchPidByCmdLine)
+// PidAppViewMapByCmdLine returns an map of processes that are found by cmdLine submatch
+func PidAppViewMapByCmdLine(rootdir, cmdLine string) (PidAppViewMapState, error) {
+	return pidAppViewMapSearch(rootdir, cmdLine, searchPidByCmdLine)
 }
 
 // pidProcDirsNames returns a list with process directory names
@@ -117,7 +117,7 @@ func pidProcDirsNames(rootdir string) ([]string, error) {
 	return procDir.Readdirnames(0)
 }
 
-// Returns all processes that match the name, only if scope is attached
+// Returns all processes that match the name, only if appview is attached
 // ProcessesByNameToDetach returns an array of processes to detach that match a given name
 func ProcessesByNameToDetach(rootdir, name, procArg string, exactMatch bool) (Processes, error) {
 	return processesByName(rootdir, name, procArg, true, exactMatch)
@@ -175,7 +175,7 @@ func processesByName(rootdir, name, procArg string, activeOnly, exactMatch bool)
 			continue
 		}
 
-		status, err := PidScopeStatus(rootdir, pid)
+		status, err := PidAppViewStatus(rootdir, pid)
 		if err != nil {
 			continue
 		}
@@ -188,7 +188,7 @@ func processesByName(rootdir, name, procArg string, activeOnly, exactMatch bool)
 						ID:      i,
 						Pid:     pid,
 						User:    userName,
-						Scoped:  status == Active,
+						Viewed:  status == Active,
 						Command: cmdLine,
 					})
 					i++
@@ -199,8 +199,8 @@ func processesByName(rootdir, name, procArg string, activeOnly, exactMatch bool)
 	return processes, nil
 }
 
-// ProcessesScoped returns an array of processes that are currently being scoped
-func ProcessesScoped(rootdir string) (Processes, error) {
+// ProcessesViewed returns an array of processes that are currently being viewed
+func ProcessesViewed(rootdir string) (Processes, error) {
 	processes := make([]Process, 0)
 
 	procs, err := pidProcDirsNames(rootdir)
@@ -231,8 +231,8 @@ func ProcessesScoped(rootdir string) (Processes, error) {
 			continue
 		}
 
-		// Add process if is is scoped
-		status, err := PidScopeStatus(rootdir, pid)
+		// Add process if is is viewed
+		status, err := PidAppViewStatus(rootdir, pid)
 		if err != nil {
 			continue
 		}
@@ -241,7 +241,7 @@ func ProcessesScoped(rootdir string) (Processes, error) {
 				ID:      i,
 				Pid:     pid,
 				User:    userName,
-				Scoped:  true,
+				Viewed:  true,
 				Command: cmdLine,
 			})
 			i++
@@ -283,17 +283,17 @@ func ProcessesToDetach(rootdir string) (Processes, error) {
 		}
 
 		// Detach the process in case the situation we are not able to retrieve the info
-		status, err := PidScopeStatus(rootdir, pid)
+		status, err := PidAppViewStatus(rootdir, pid)
 		if err != nil && !errors.Is(err, ipc.ErrConsumerTimeout) {
 			continue
 		}
-		// Add process if is is actively scoped
+		// Add process if is is actively viewed
 		if status == Active || errors.Is(err, ipc.ErrConsumerTimeout) {
 			processes = append(processes, Process{
 				ID:      i,
 				Pid:     pid,
 				User:    userName,
-				Scoped:  true,
+				Viewed:  true,
 				Command: cmdLine,
 			})
 			i++
@@ -321,8 +321,8 @@ func PidUser(rootdir string, pid int) (string, error) {
 	return user.Username, nil
 }
 
-// PidScopeLibInMaps checks if a process specified by PID contains libscope in memory mappings.
-func PidScopeLibInMaps(rootdir string, pid int) (bool, error) {
+// PidAppViewLibInMaps checks if a process specified by PID contains libappview in memory mappings.
+func PidAppViewLibInMaps(rootdir string, pid int) (bool, error) {
 	pidMapFile, err := os.ReadFile(fmt.Sprintf("%s/proc/%v/maps", rootdir, pid))
 	if err != nil {
 		// Process or do not exist or we do not have permissions to read a map file
@@ -330,11 +330,11 @@ func PidScopeLibInMaps(rootdir string, pid int) (bool, error) {
 	}
 
 	pidMap := string(pidMapFile)
-	return strings.Contains(pidMap, "libscope"), nil
+	return strings.Contains(pidMap, "libappview"), nil
 }
 
-// PidScopeStatus checks a Scope Status if a process specified by PID.
-func PidScopeStatus(rootdir string, pid int) (ScopeStatus, error) {
+// PidAppViewStatus checks a AppView Status if a process specified by PID.
+func PidAppViewStatus(rootdir string, pid int) (AppViewStatus, error) {
 	if !PidExists(rootdir, pid) {
 		return Disable, errPidMissing
 	}
@@ -346,22 +346,22 @@ func PidScopeStatus(rootdir string, pid int) (ScopeStatus, error) {
 	}
 
 	pidMap := string(pidMapFile)
-	if !strings.Contains(pidMap, "libscope") {
-		// Process does not contain libscope library in maps
+	if !strings.Contains(pidMap, "libappview") {
+		// Process does not contain libappview library in maps
 		return Disable, nil
 	}
 
-	// Ignore scopedyn processes
+	// Ignore appviewdyn processes
 	// TODO: Still intended?
 	command, err := PidCommand(rootdir, pid)
 	if err != nil {
 		return Disable, nil
 	}
-	if command == "scopedyn" {
+	if command == "appviewdyn" {
 		return Disable, nil
 	}
 
-	// Check shmem does not exist (if scope_anon does not exist the proc is scoped)
+	// Check shmem does not exist (if appview_anon does not exist the proc is viewed)
 	files, err := os.ReadDir(fmt.Sprintf("%s/proc/%v/fd", rootdir, pid))
 	if err != nil {
 		// Process or do not exist or we do not have permissions to read a fd file
@@ -374,13 +374,13 @@ func PidScopeStatus(rootdir string, pid int) (ScopeStatus, error) {
 		if err != nil {
 			continue
 		}
-		if strings.Contains(resolvedFileName, "scope_anon") {
+		if strings.Contains(resolvedFileName, "appview_anon") {
 			return Setup, nil
 		}
 	}
 
 	// Retrieve information from IPC
-	return getScopeStatus(rootdir, pid)
+	return getAppViewStatus(rootdir, pid)
 }
 
 // PidCommand gets the command used to start the process specified by PID
@@ -491,7 +491,7 @@ func containerPids(rootdir string) []int {
 }
 
 // PidGetRefPidForMntNamespace returns reference PID of mnt namespace,
-// Returns -1 if the refrence PID is the same as the scope client PID
+// Returns -1 if the refrence PID is the same as the appview client PID
 func PidGetRefPidForMntNamespace(rootdir string, targetPid int) int {
 	targetInfo, err := os.Readlink(fmt.Sprintf("%s/proc/%d/ns/mnt", rootdir, targetPid))
 	if err != nil {
@@ -571,7 +571,7 @@ func HandleInputArg(id, procArg, rootdir string, choose, confirm, attach, exactM
 				return nil, err
 			}
 		} else {
-			// Get a list of all processes that match the name and scope is actively attached
+			// Get a list of all processes that match the name and appview is actively attached
 			if procs, err = ProcessesByNameToDetach(rootdir, id, procArg, exactMatch); err != nil {
 				return nil, err
 			}
@@ -583,7 +583,7 @@ func HandleInputArg(id, procArg, rootdir string, choose, confirm, attach, exactM
 					{Name: "ID", Field: "id"},
 					{Name: "Pid", Field: "pid"},
 					{Name: "User", Field: "user"},
-					{Name: "Scoped", Field: "scoped"},
+					{Name: "Viewed", Field: "viewed"},
 					{Name: "Command", Field: "command"},
 				}, procs)
 			}

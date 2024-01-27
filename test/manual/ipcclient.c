@@ -1,12 +1,12 @@
 /*
  * ipcclient - IPC client
  *
- * A simple program to test communication between scoped process using 
+ * A simple program to test communication between viewed process using 
  * gcc -g test/manual/ipcclient.c -lrt -o ipcclient
- * Connect to the scoped process
- * ./ipcclient -p <scoped_PID>
- * Connect to the scoped process and switch IPC namespace
- * ./ipcclient -p <scoped_PID> -i
+ * Connect to the viewed process
+ * ./ipcclient -p <viewed_PID>
+ * Connect to the viewed process and switch IPC namespace
+ * ./ipcclient -p <viewed_PID> -i
  */
 
 #define _GNU_SOURCE
@@ -43,14 +43,14 @@ typedef struct {
 
 // Helper function to create message in format supported by IPC
 static ipc_msg_t *
-createIpcMessage(const char *metadata, const char *scopeData) {
+createIpcMessage(const char *metadata, const char *appviewData) {
     ipc_msg_t * msg = malloc(sizeof(ipc_msg_t));
     size_t metaDataLen = strlen(metadata) + 1;
-    size_t scopeDataLen = strlen(scopeData) + 1;
-    msg->fullLen = metaDataLen + scopeDataLen;
+    size_t appviewDataLen = strlen(appviewData) + 1;
+    msg->fullLen = metaDataLen + appviewDataLen;
     msg->full = calloc(1, sizeof(char) * (msg->fullLen));
     strcpy(msg->full, metadata);
-    strcpy(msg->full + metaDataLen, scopeData);
+    strcpy(msg->full + metaDataLen, appviewData);
     return msg;
 }
 
@@ -154,8 +154,8 @@ cleanupMqDesc(void) {
 
 static int
 printUsageAndExit(const char *cmd) {
-    printf("Usage: %s -p <pid_scope_process> [-i]\n", cmd);
-    printf("p - PID of scoped process\n");
+    printf("Usage: %s -p <pid_appview_process> [-i]\n", cmd);
+    printf("p - PID of viewed process\n");
     printf("i - switch IPC namespace during the communication\n");
     return EXIT_FAILURE;
 }
@@ -165,7 +165,7 @@ printMsgInfo(void) {
     printf("\nChoose message, type choice to stdin\n");
     printf("quit - stop sending\n");
     printf("cmds - get information about supported cmd\n");
-    printf("status - get information about scope status\n");
+    printf("status - get information about appview status\n");
     printf("details - get information about process details\n");
 }
 
@@ -240,11 +240,11 @@ int main(int argc, char **argv) {
         if (!switchIPCNamespace(pid)) {
             return res;
         }
-        snprintf(writerMqName, sizeof(writerMqName), "/ScopeIPCIn.%d", nsPid);
-        snprintf(readerMqName, sizeof(readerMqName), "/ScopeIPCOut.%d", nsPid);
+        snprintf(writerMqName, sizeof(writerMqName), "/AppViewIPCIn.%d", nsPid);
+        snprintf(readerMqName, sizeof(readerMqName), "/AppViewIPCOut.%d", nsPid);
     } else {
-        snprintf(writerMqName, sizeof(writerMqName), "/ScopeIPCIn.%d", pid);
-        snprintf(readerMqName, sizeof(readerMqName), "/ScopeIPCOut.%d", pid);
+        snprintf(writerMqName, sizeof(writerMqName), "/AppViewIPCIn.%d", pid);
+        snprintf(readerMqName, sizeof(readerMqName), "/AppViewIPCOut.%d", pid);
     }
 
     atexit(cleanupMqDesc);
@@ -277,7 +277,7 @@ int main(int argc, char **argv) {
             break;
         }
 
-        // Send message to scoped process
+        // Send message to viewed process
         if (mq_send(writeMqDesc, msg->full, msg->fullLen, 0) == -1) {
             perror("!mq_send writeMqDesc failed");
             goto end_iteration;

@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Cribl AppScope Command-Line Option Tests
+# AppView Command-Line Option Tests
 #
 
 declare -i ERR=0
@@ -41,187 +41,187 @@ echo "================================="
 
 ### Constructor Option Handling ###
 
-run ./bin/linux/${ARCH}/scope -a 
+run ./bin/linux/${ARCH}/appview -a 
 outputs "error: missing required value for -a option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --ldattach
+run ./bin/linux/${ARCH}/appview --ldattach
 outputs "error: missing required value for -a option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -d 
+run ./bin/linux/${ARCH}/appview -d 
 outputs "error: missing required value for -d option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --lddetach
+run ./bin/linux/${ARCH}/appview --lddetach
 outputs "error: missing required value for -d option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -n
+run ./bin/linux/${ARCH}/appview -n
 outputs "error: missing required value for -n option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --namespace
+run ./bin/linux/${ARCH}/appview --namespace
 outputs "error: missing required value for -n option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -s
+run ./bin/linux/${ARCH}/appview -s
 outputs "error: missing required value for -s option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --service
+run ./bin/linux/${ARCH}/appview --service
 outputs "error: missing required value for -s option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -l 
+run ./bin/linux/${ARCH}/appview -l 
 outputs "error: missing required value for -l option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --libbasedir
+run ./bin/linux/${ARCH}/appview --libbasedir
 outputs "error: missing required value for -l option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -p 
+run ./bin/linux/${ARCH}/appview -p 
 outputs "error: missing required value for -p option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --patch
+run ./bin/linux/${ARCH}/appview --patch
 outputs "error: missing required value for -p option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -z 
+run ./bin/linux/${ARCH}/appview -z 
 outputs "could not find or execute command"
 returns 1
 
-run ./bin/linux/${ARCH}/scope --passthrough
+run ./bin/linux/${ARCH}/appview --passthrough
 outputs "could not find or execute command"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -z ps
+run ./bin/linux/${ARCH}/appview -z ps
 outputs "PID"
 returns 0
 
-run ./bin/linux/${ARCH}/scope -z ps -ef
+run ./bin/linux/${ARCH}/appview -z ps -ef
 outputs "UID"
 returns 0
 
-run ./bin/linux/${ARCH}/scope -z -- ps
+run ./bin/linux/${ARCH}/appview -z -- ps
 outputs "PID"
 returns 0
 
-run ./bin/linux/${ARCH}/scope -z -- ps -ef
+run ./bin/linux/${ARCH}/appview -z -- ps -ef
 outputs "UID"
 returns 0
 
-run ./bin/linux/${ARCH}/scope -a 1 -d 1
+run ./bin/linux/${ARCH}/appview -a 1 -d 1
 outputs "error: --ldattach and --lddetach cannot be used together"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -s nginx -v nginx
+run ./bin/linux/${ARCH}/appview -s nginx -v nginx
 outputs "error: --service and --unservice cannot be used together"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -a 1 -z echo
+run ./bin/linux/${ARCH}/appview -a 1 -z echo
 outputs "error: --passthrough cannot be used with --ldattach/--lddetach or --namespace or --service/--unservice"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -n 1 ls
+run ./bin/linux/${ARCH}/appview -n 1 ls
 outputs "error: --namespace option requires --service/--unservice or --mount option"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -a dummy_service_value -s 1
+run ./bin/linux/${ARCH}/appview -a dummy_service_value -s 1
 outputs "error: --ldattach/--lddetach and --service/--unservice cannot be used together"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -l /does_not_exist echo 
+run ./bin/linux/${ARCH}/appview -l /does_not_exist echo 
 returns 1
 
-run ./bin/linux/${ARCH}/scope --libbasedir /does_not_exist echo 
+run ./bin/linux/${ARCH}/appview --libbasedir /does_not_exist echo 
 returns 1
 
-run ./bin/linux/${ARCH}/scope -f /does_not_exist echo 
+run ./bin/linux/${ARCH}/appview -f /does_not_exist echo 
 returns 1
 
-run ./bin/linux/${ARCH}/scope -a not_a_pid
+run ./bin/linux/${ARCH}/appview -a not_a_pid
 outputs "invalid --ldattach PID: not_a_pid"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -d not_a_pid
+run ./bin/linux/${ARCH}/appview -d not_a_pid
 outputs "invalid --lddetach PID: not_a_pid"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -a -999
+run ./bin/linux/${ARCH}/appview -a -999
 outputs "invalid --ldattach PID: -999"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -d -999
+run ./bin/linux/${ARCH}/appview -d -999
 outputs "invalid --lddetach PID: -999"
 returns 1
 
-run ./bin/linux/${ARCH}/scope -a 999999999
+run ./bin/linux/${ARCH}/appview -a 999999999
 outputs "error: --ldattach, --lddetach PID not a current process"
 returns 1
 
-export SCOPE_LIB_PATH=./lib/linux/${ARCH}/libscope.so
-run ./bin/linux/${ARCH}/scope echo
+export APPVIEW_LIB_PATH=./lib/linux/${ARCH}/libappview.so
+run ./bin/linux/${ARCH}/appview echo
 returns 0
-export -n SCOPE_LIB_PATH
+export -n APPVIEW_LIB_PATH
 
-export SCOPE_LIB_PATH=./lib/linux/${ARCH}/libscope.so
-run ./bin/linux/${ARCH}/scope -a 999999999
+export APPVIEW_LIB_PATH=./lib/linux/${ARCH}/libappview.so
+run ./bin/linux/${ARCH}/appview -a 999999999
 outputs "error: --ldattach, --lddetach PID not a current process: 999999999"
 returns 1
-export -n SCOPE_LIB_PATH
+export -n APPVIEW_LIB_PATH
 
 
 
 ### Main Option Handling ###
 
-run ./bin/linux/${ARCH}/scope echo foo
+run ./bin/linux/${ARCH}/appview echo foo
 outputs foo
 returns 0
 
-run ./bin/linux/${ARCH}/scope run -- echo foo
+run ./bin/linux/${ARCH}/appview run -- echo foo
 outputs foo
 returns 0
 
-run ./bin/linux/${ARCH}/scope run -- ps -ef # doesn't work without the '--' (-ef parsed by cli instead) and never did
+run ./bin/linux/${ARCH}/appview run -- ps -ef # doesn't work without the '--' (-ef parsed by cli instead) and never did
 outputs UID
 returns 0
 
-run ./bin/linux/${ARCH}/scope run -a some_auth_token -- echo foo
+run ./bin/linux/${ARCH}/appview run -a some_auth_token -- echo foo
 outputs foo
 returns 0
 
-run ./bin/linux/${ARCH}/scope 
-outputs Cribl AppScope Command Line Interface
+run ./bin/linux/${ARCH}/appview 
+outputs AppView Command Line Interface
 returns 0
 
-run ./bin/linux/${ARCH}/scope -h
-outputs Cribl AppScope Command Line Interface
+run ./bin/linux/${ARCH}/appview -h
+outputs AppView Command Line Interface
 returns 0
 
-run ./bin/linux/${ARCH}/scope --help
-outputs Cribl AppScope Command Line Interface
+run ./bin/linux/${ARCH}/appview --help
+outputs AppView Command Line Interface
 returns 0
 
-run ./bin/linux/${ARCH}/scope logs -h
-outputs Displays internal AppScope logs for troubleshooting AppScope itself.
+run ./bin/linux/${ARCH}/appview logs -h
+outputs Displays internal AppView logs for troubleshooting AppView itself.
 returns 0
 
-run ./bin/linux/${ARCH}/scope logs --help
-outputs Displays internal AppScope logs for troubleshooting AppScope itself.
+run ./bin/linux/${ARCH}/appview logs --help
+outputs Displays internal AppView logs for troubleshooting AppView itself.
 returns 0
 
-run ./bin/linux/${ARCH}/scope run
+run ./bin/linux/${ARCH}/appview run
 outputs Usage:
 returns 1
 
-run ./bin/linux/${ARCH}/scope attach
+run ./bin/linux/${ARCH}/appview attach
 outputs Usage:
 returns 1
 
-run ./bin/linux/${ARCH}/scope run -a
+run ./bin/linux/${ARCH}/appview run -a
 outputs error: missing required value for -a option
 returns 1
 

@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/criblio/scope/events"
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/metrics"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/events"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/metrics"
+	"github.com/appview-team/appview/util"
 	"github.com/mum4k/termdash"
 	"github.com/mum4k/termdash/align"
 	"github.com/mum4k/termdash/cell"
@@ -41,9 +41,9 @@ import (
 // dashCmd represents the dash command
 var dashCmd = &cobra.Command{
 	Use:     "dash [flags]",
-	Short:   "Display scope dashboard for a previous or active session",
+	Short:   "Display appview dashboard for a previous or active session",
 	Long:    `Displays an interactive dashboard with an overview of what's happening with the selected session.`,
-	Example: `  scope dash`,
+	Example: `  appview dash`,
 	Args:    cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		id, _ := cmd.Flags().GetInt("id")
@@ -195,7 +195,7 @@ func readEvents(workDir string, w *widgets) {
 	}
 
 	tr := util.NewTailReader(file)
-	in := make(chan libscope.EventBody)
+	in := make(chan libappview.EventBody)
 	eventCount, _ := util.CountLines(eventsPath)
 	termWidth, _, err := terminal.GetSize(0)
 	if err != nil {
@@ -320,7 +320,7 @@ func runDashboard(ctx context.Context, cancel context.CancelFunc, w *widgets) {
 	c, err := container.New(t,
 		container.ID(rootID),
 		container.Border(linestyle.Light),
-		container.BorderTitle("AppScope "+internal.GetVersion()))
+		container.BorderTitle("AppView "+internal.GetVersion()))
 	if err != nil {
 		panic(err)
 	}

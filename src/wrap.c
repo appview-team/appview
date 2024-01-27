@@ -30,8 +30,8 @@
 #include "os.h"
 #include "plattime.h"
 #include "report.h"
-#include "scopeelf.h"
-#include "scopetypes.h"
+#include "appviewelf.h"
+#include "appviewtypes.h"
 #include "state.h"
 #include "utils.h"
 #include "wrap.h"
@@ -39,7 +39,7 @@
 #include "javaagent.h"
 #include "ipc.h"
 #include "snapshot.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "../contrib/libmusl/musl.h"
 #include "notify.h"
 
@@ -71,7 +71,7 @@ static got_list_t inject_hook_list[];
 static void inspectGotTables(void);
 
 #ifdef __linux__
-extern unsigned long scope_fs;
+extern unsigned long appview_fs;
 
 extern void initGoHook(elf_buf_t*);
 
@@ -79,7 +79,7 @@ typedef struct
 {
     char *in_symbol;
     void *out_addr;
-    int   after_scope;
+    int   after_appview;
 } param_t;
 
 void
@@ -92,18 +92,18 @@ doAndReplaceConfig(void *data) {
     }
     g_staticfg = cfg;
     g_cfg.staticfg = g_staticfg;
-    scope_free(g_cfg.cfgStr);
+    appview_free(g_cfg.cfgStr);
     g_cfg.cfgStr = jsonStringFromCfg(g_staticfg);
 }
 
 // When used with dl_iterate_phdr(), this has a similar result to
-// scope_dlsym(RTLD_NEXT, ).  But, unlike scope_dlsym(RTLD_NEXT, )
+// appview_dlsym(RTLD_NEXT, ).  But, unlike appview_dlsym(RTLD_NEXT, )
 // it will never return a symbol in our library.  This is
 // particularly useful for finding symbols in shared libraries
 // that are dynamically loaded after our constructor has run.
 // Not to point fingers, but I'm looking at you python.
 //
-static void *wrap_scope_dlsym(void *, const char *, void *);
+static void *wrap_appview_dlsym(void *, const char *, void *);
 
 static int
 findSymbol(struct dl_phdr_info *info, size_t size, void *data)
@@ -111,9 +111,9 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
     param_t* param = (param_t*)data;
 
     // Don't bother looking inside libraries until after we've seen our library.
-    if (!param->after_scope) {
-        param->after_scope = (scope_strstr(info->dlpi_name, "libscope") != NULL) ||
-            (scope_strstr(info->dlpi_name, "/proc/") != NULL);
+    if (!param->after_appview) {
+        param->after_appview = (appview_strstr(info->dlpi_name, "libappview") != NULL) ||
+            (appview_strstr(info->dlpi_name, "/proc/") != NULL);
         return 0;
     }
 
@@ -134,15 +134,15 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
 #define WRAP_CHECK(func, rc)                                           \
     if (g_fn.func == NULL ) {                                          \
        if (!g_ctl) {                                                   \
-         if ((g_fn.func = wrap_scope_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
-             scopeLogError("ERROR: "#func":NULL\n");         \
+         if ((g_fn.func = wrap_appview_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
+             appviewLogError("ERROR: "#func":NULL\n");         \
              return rc;                                                \
          }                                                             \
        } else {                                                        \
         param_t param = {.in_symbol = #func, .out_addr = NULL,         \
-                         .after_scope = FALSE};                        \
+                         .after_appview = FALSE};                        \
         if (!dl_iterate_phdr(findSymbol, &param)) {                    \
-            scopeLogError("ERROR: "#func":NULL\n");          \
+            appviewLogError("ERROR: "#func":NULL\n");          \
             return rc;                                                 \
         }                                                              \
         g_fn.func = param.out_addr;                                    \
@@ -153,15 +153,15 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
 #define WRAP_CHECK_VOID(func)                                          \
     if (g_fn.func == NULL ) {                                          \
        if (!g_ctl) {                                                   \
-         if ((g_fn.func = wrap_scope_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
-             scopeLogError("ERROR: "#func":NULL\n");         \
+         if ((g_fn.func = wrap_appview_dlsym(RTLD_NEXT, #func, func)) == NULL) {  \
+             appviewLogError("ERROR: "#func":NULL\n");         \
              return;                                                   \
          }                                                             \
        } else {                                                        \
         param_t param = {.in_symbol = #func, .out_addr = NULL,         \
-                         .after_scope = FALSE};                        \
+                         .after_appview = FALSE};                        \
         if (!dl_iterate_phdr(findSymbol, &param)) {                    \
-            scopeLogError("ERROR: "#func":NULL\n");          \
+            appviewLogError("ERROR: "#func":NULL\n");          \
             return;                                                    \
         }                                                              \
         g_fn.func = param.out_addr;                                    \
@@ -173,7 +173,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
     int retval;                                                        \
     if (g_fn.func == NULL) {                                           \
         param_t param = {.in_symbol = #func, .out_addr = NULL,         \
-                         .after_scope = FALSE};                        \
+                         .after_appview = FALSE};                        \
         if (dl_iterate_phdr(findSymbol, &param)) {                     \
             g_fn.func = param.out_addr;                                \
         }                                                              \
@@ -187,7 +187,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
 #define WRAP_CHECK(func, rc)                                           \
     if (g_fn.func == NULL ) {                                          \
         if ((g_fn.func = dlsym(RTLD_NEXT, #func)) == NULL) {           \
-            scopeLogError("ERROR: "#func":NULL\n");          \
+            appviewLogError("ERROR: "#func":NULL\n");          \
             return rc;                                                 \
        }                                                               \
     }                                                                  \
@@ -196,7 +196,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
 #define WRAP_CHECK_VOID(func)                                          \
     if (g_fn.func == NULL ) {                                          \
         if ((g_fn.func = dlsym(RTLD_NEXT, #func)) == NULL) {           \
-            scopeLogError("ERROR: "#func":NULL\n");          \
+            appviewLogError("ERROR: "#func":NULL\n");          \
             return;                                                    \
        }                                                               \
     }                                                                  \
@@ -220,7 +220,7 @@ findSymbol(struct dl_phdr_info *info, size_t size, void *data)
  * the warning.
  */
 static int
-wrap_scope_dirfd(DIR *dirp)
+wrap_appview_dirfd(DIR *dirp)
 {
     if (!dirp) return -1;
     return dirfd(dirp);
@@ -232,7 +232,7 @@ wrap_scope_dirfd(DIR *dirp)
  * implementation where stream is derefrenced without a check for null.
  */
 static int
-wrap_scope_fileno(FILE *stream)
+wrap_appview_fileno(FILE *stream)
 {
     if (!stream) return -1;
     return fileno(stream);
@@ -245,9 +245,9 @@ freeNssEntry(void *data)
     nss_list *nssentry = data;
 
     if (!nssentry) return;
-    if (nssentry->ssl_methods) scope_free(nssentry->ssl_methods);
-    if (nssentry->ssl_int_methods) scope_free(nssentry->ssl_int_methods);
-    scope_free(nssentry);
+    if (nssentry->ssl_methods) appview_free(nssentry->ssl_methods);
+    if (nssentry->ssl_int_methods) appview_free(nssentry->ssl_int_methods);
+    appview_free(nssentry);
 }
 
 static time_t
@@ -258,14 +258,14 @@ fileModTime(const char *path)
 
     if (!path) return 0;
 
-    if ((fd = scope_open(path, O_RDONLY)) == -1) return 0;
+    if ((fd = appview_open(path, O_RDONLY)) == -1) return 0;
     
-    if (scope_fstat(fd, &statbuf) < 0) {
-        scope_close(fd);
+    if (appview_fstat(fd, &statbuf) < 0) {
+        appview_close(fd);
         return 0;
     }
 
-    scope_close(fd);
+    appview_close(fd);
     // STATMODTIME from os.h as timespec names are different between OSs
     return STATMODTIME(statbuf);
 }
@@ -288,10 +288,10 @@ hookAll(struct dl_phdr_info *info, size_t size, void *data)
     int rsz = 0;
     bool *rules = data;
 
-    scopeLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
+    appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
 
-    // don't hook funcs from libscope or ld.so
-    if (scope_strstr(info->dlpi_name, "libscope") || scope_strstr(info->dlpi_name, "ld-")) {
+    // don't hook funcs from libappview or ld.so
+    if (appview_strstr(info->dlpi_name, "libappview") || appview_strstr(info->dlpi_name, "ld-")) {
         return FALSE;
     }
 
@@ -314,10 +314,10 @@ hookAll(struct dl_phdr_info *info, size_t size, void *data)
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
-            if (((*rules == TRUE) || scope_strstr(inject_hook_list[i].symbol, "execve")) &&
+            if (((*rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
                 if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                    appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
                 }
             }
@@ -340,10 +340,10 @@ hookAllAttach(struct dl_phdr_info *info, size_t size, void *data)
     int rsz = 0;
     bool *rules = data;
 
-    scopeLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
+    appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
 
-    // don't hook funcs from libscope or ld.so
-    if (scope_strstr(info->dlpi_name, "libscope") || scope_strstr(info->dlpi_name, "ld-")) {
+    // don't hook funcs from libappview or ld.so
+    if (appview_strstr(info->dlpi_name, "libappview") || appview_strstr(info->dlpi_name, "ld-")) {
         return FALSE;
     }
 
@@ -355,10 +355,10 @@ hookAllAttach(struct dl_phdr_info *info, size_t size, void *data)
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
-            if (((*rules == TRUE) || scope_strstr(inject_hook_list[i].symbol, "execve")) &&
+            if (((*rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
                 if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                    appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
                 }
             }
@@ -386,10 +386,10 @@ hookMain(bool rules)
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
-            if (((rules == TRUE) || scope_strstr(inject_hook_list[i].symbol, "execve")) &&
+            if (((rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
                 if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from main", inject_hook_list[i].symbol);
+                    appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from main", inject_hook_list[i].symbol);
                 }
             }
         }
@@ -413,10 +413,10 @@ unHookAll(struct dl_phdr_info *info, size_t size, void *data)
     char *str = NULL;
     int rsz = 0;
 
-    scopeLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
+    appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
 
-    // don't hook funcs from libscope or ld.so
-    if (scope_strstr(info->dlpi_name, "libscope") || scope_strstr(info->dlpi_name, "ld-")) return FALSE;
+    // don't hook funcs from libappview or ld.so
+    if (appview_strstr(info->dlpi_name, "libappview") || appview_strstr(info->dlpi_name, "ld-")) return FALSE;
 
     void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
     if (handle == NULL) return FALSE;
@@ -425,7 +425,7 @@ unHookAll(struct dl_phdr_info *info, size_t size, void *data)
     if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
             if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, FALSE) != -1) {
-                scopeLog(CFG_LOG_DEBUG, "\tGOT detached %s from shared obj %s",
+                appviewLog(CFG_LOG_DEBUG, "\tGOT detached %s from shared obj %s",
                          inject_hook_list[i].symbol, info->dlpi_name);
             }
         }
@@ -440,7 +440,7 @@ cmdDetach(void)
 {
     if (!g_cfg.funcs_attached) return TRUE;
 
-    scopeLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
+    appviewLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
     dl_iterate_phdr(unHookAll, NULL);
     g_cfg.funcs_attached = FALSE;
     return TRUE;
@@ -452,7 +452,7 @@ cmdAttach(void)
     if (g_cfg.funcs_attached) return TRUE;
 
     bool rules = TRUE;
-    scopeLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
+    appviewLog(CFG_LOG_DEBUG, "%s:%d", __FUNCTION__, __LINE__);
 
     dl_iterate_phdr(hookAllAttach, &rules);
     hookMain(rules);
@@ -469,7 +469,7 @@ cmdAttach(void)
      * The thread likely should be started
      */
     if (g_proc.smfd > 0) {
-        scope_close(g_proc.smfd);   // deletes the SM segment
+        appview_close(g_proc.smfd);   // deletes the SM segment
         g_proc.smfd = 0;
 
         if (g_thread.once == FALSE) {
@@ -494,7 +494,7 @@ ipcCommunication(void) {
     * - check if it exists
     * - check if there are message request on it
     */
-    scope_snprintf(name, sizeof(name), "/ScopeIPCIn.%d", g_proc.pid);
+    appview_snprintf(name, sizeof(name), "/AppViewIPCIn.%d", g_proc.pid);
     mqd_t mqRequestDesc  = ipcOpenConnection(name, O_RDONLY | O_NONBLOCK);
 
     if (ipcIsActive(mqRequestDesc, &appMqSize, &msgCount) == FALSE) {
@@ -510,12 +510,12 @@ ipcCommunication(void) {
     * Handle output message queue
     * - check if it exists
     */
-    scope_memset(name, 0, sizeof(name));
-    scope_snprintf(name, sizeof(name), "/ScopeIPCOut.%d", g_proc.pid);
+    appview_memset(name, 0, sizeof(name));
+    appview_snprintf(name, sizeof(name), "/AppViewIPCOut.%d", g_proc.pid);
 
     mqd_t mqResponseDesc = ipcOpenConnection(name, O_WRONLY | O_NONBLOCK);
     if (ipcIsActive(mqResponseDesc, &cliMqSize, &msgCount) == FALSE) {
-        scopeLogError("%s is not active.", name);
+        appviewLogError("%s is not active.", name);
         goto cleanupReqMq;
     }
 
@@ -524,25 +524,25 @@ ipcCommunication(void) {
     */
     req_parse_status_t parseStatus = REQ_PARSE_GENERIC_ERROR;
     int uniqReq = -1;
-    void *scopeReq = ipcRequestHandler(mqRequestDesc, appMqSize, &parseStatus, &uniqReq);
+    void *appviewReq = ipcRequestHandler(mqRequestDesc, appMqSize, &parseStatus, &uniqReq);
 
     /*
     * Handle outcoming message queue response (all frames or till first error)
     */
     ipc_resp_result_t res;
     if (parseStatus == REQ_PARSE_OK) {
-        res = ipcSendSuccessfulResponse(mqResponseDesc, cliMqSize, scopeReq, uniqReq);
+        res = ipcSendSuccessfulResponse(mqResponseDesc, cliMqSize, appviewReq, uniqReq);
     } else {
         res = ipcSendFailedResponse(mqResponseDesc, cliMqSize, parseStatus, uniqReq);
     }
 
     if (res != RESP_RESULT_OK) {
-        scopeLogError("ipcCommunication Error sending response to %s failed res %d, parseStatus %d, uniqReq %d", name, res, parseStatus, uniqReq);
+        appviewLogError("ipcCommunication Error sending response to %s failed res %d, parseStatus %d, uniqReq %d", name, res, parseStatus, uniqReq);
     }
 
-    scope_free(scopeReq);
+    appview_free(appviewReq);
     
-    // scopeLogError("OK: Sending answer to %s for cmd %d", name, cmd);
+    // appviewLogError("OK: Sending answer to %s for cmd %d", name, cmd);
 
     ipcCloseConnection(mqResponseDesc);
 
@@ -562,7 +562,7 @@ remoteConfig(void)
     
     // to be clear; a 1ms timeout
     timeout = 1;
-    scope_memset(&fds, 0x0, sizeof(fds));
+    appview_memset(&fds, 0x0, sizeof(fds));
 
     // We want to accept incoming requests on TCP, unix, and edge.
     // However, we don't currently support receiving on TLS connections.
@@ -571,7 +571,7 @@ remoteConfig(void)
 
     fds.fd = ctlConnection(g_ctl, CFG_CTL);
 
-    rc = scope_poll(&fds, 1, timeout);
+    rc = appview_poll(&fds, 1, timeout);
 
     /*
      * Error from poll;
@@ -589,23 +589,23 @@ remoteConfig(void)
     if ((rc == 0) || (fds.revents == 0) || ((fds.revents & POLLIN) == 0) ||
         ((fds.revents & POLLHUP) != 0) || ((fds.revents & POLLNVAL) != 0)) return;
 
-    scope_snprintf(path, sizeof(path), "/tmp/cfg.%d", g_proc.pid);
-    if ((fs = scope_fopen(path, "a+")) == NULL) {
+    appview_snprintf(path, sizeof(path), "/tmp/cfg.%d", g_proc.pid);
+    if ((fs = appview_fopen(path, "a+")) == NULL) {
         DBG(NULL);
-        scopeLogError("ERROR: remoteConfig:fopen");
+        appviewLogError("ERROR: remoteConfig:fopen");
         return;
     }
 
-    success = rc = scope_errno = numtries = 0;
+    success = rc = appview_errno = numtries = 0;
     do {
         numtries++;
-        rc = scope_recv(fds.fd, buf, sizeof(buf), MSG_DONTWAIT);
+        rc = appview_recv(fds.fd, buf, sizeof(buf), MSG_DONTWAIT);
         if (rc <= 0) {
             // Something has happened to this incoming message
             break;
         }
 
-        if (scope_fwrite(buf, rc, (size_t)1, fs) <= 0) {
+        if (appview_fwrite(buf, rc, (size_t)1, fs) <= 0) {
             DBG(NULL);
             break;
         } else {
@@ -616,7 +616,7 @@ remoteConfig(void)
              * and we receive a viable EOM.
              */
             // EOM
-            if (scope_strchr((const char *)buf, '\n') != NULL) {
+            if (appview_strchr((const char *)buf, '\n') != NULL) {
                 success = 1;
                 break;
             } else {
@@ -633,25 +633,25 @@ remoteConfig(void)
         struct stat sb;
         request_t *req;
 
-        if (scope_fflush(fs) != 0) DBG(NULL);
-        scope_rewind(fs);
-        if (scope_lstat(path, &sb) == -1) {
+        if (appview_fflush(fs) != 0) DBG(NULL);
+        appview_rewind(fs);
+        if (appview_lstat(path, &sb) == -1) {
             sb.st_size = DEFAULT_CONFIG_SIZE;
         }
 
-        cmd = scope_calloc(1, sb.st_size);
+        cmd = appview_calloc(1, sb.st_size);
         if (!cmd) {
-            scope_fclose(fs);
-            scope_unlink(path);
-            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Memory error in scope receive.");
+            appview_fclose(fs);
+            appview_unlink(path);
+            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Memory error in appview receive.");
             return;
         }
         
-        if (scope_fread(cmd, sb.st_size, 1, fs) == 0) {
-            scope_fclose(fs);
-            scope_unlink(path);
-            scope_free(cmd);
-            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Read error in scope.");
+        if (appview_fread(cmd, sb.st_size, 1, fs) == 0) {
+            appview_fclose(fs);
+            appview_unlink(path);
+            appview_free(cmd);
+            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Read error in appview.");
             return;
         }
         
@@ -711,16 +711,16 @@ remoteConfig(void)
             cmdSendResponse(g_ctl, req, body);
             destroyReq(&req);
         } else {
-            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Memory error in scope parsing.");
+            cmdSendInfoStr(g_ctl, "Error in receive from stream.  Memory error in appview parsing.");
         }
 
-        scope_free(cmd);
+        appview_free(cmd);
     } else {
-        cmdSendInfoStr(g_ctl, "Error in receive from stream.  Scope receive retries exhausted.");
+        cmdSendInfoStr(g_ctl, "Error in receive from stream.  AppView receive retries exhausted.");
     }
 
-    scope_fclose(fs);
-    scope_unlink(path);
+    appview_fclose(fs);
+    appview_unlink(path);
 }
 
 static void
@@ -739,7 +739,7 @@ doConfig(config_t *cfg)
     setReportingInterval(cfgMtcPeriod(cfg));
     if (!g_thread.startTime) {
         struct timeval tv;
-        scope_gettimeofday(&tv, NULL);
+        appview_gettimeofday(&tv, NULL);
         g_thread.startTime = tv.tv_sec + g_thread.interval;
     }
 
@@ -782,8 +782,8 @@ dynConfig(void)
     char clipath[PATH_MAX];
     static time_t modtime = 0;
 
-    scope_snprintf(userpath, sizeof(userpath), "%s/%s.%d", g_cmddir, DYN_CONFIG_PREFIX, g_proc.pid);
-    scope_snprintf(clipath, sizeof(clipath), "%s/%s.%d", DYN_CONFIG_CLI_DIR, DYN_CONFIG_CLI_PREFIX, g_proc.pid);
+    appview_snprintf(userpath, sizeof(userpath), "%s/%s.%d", g_cmddir, DYN_CONFIG_PREFIX, g_proc.pid);
+    appview_snprintf(clipath, sizeof(clipath), "%s/%s.%d", DYN_CONFIG_CLI_DIR, DYN_CONFIG_CLI_PREFIX, g_proc.pid);
 
     // Is there a command file for this pid
     if (osIsFilePresent(userpath) != -1) {
@@ -798,25 +798,25 @@ dynConfig(void)
     now = fileModTime(path);
     if (now == modtime) {
         // Been there, try to remove the file and we're done
-        scope_unlink(path);
+        appview_unlink(path);
         return 0;
     }
 
     modtime = now;
 
     // Open the command file
-    if ((fs = scope_fopen(path, "r")) == NULL) return -1;
+    if ((fs = appview_fopen(path, "r")) == NULL) return -1;
 
     // Modify the static config from the command file
     cfgProcessCommands(g_staticfg, fs);
 
-    scope_fclose(fs);
-    scope_unlink(path);
+    appview_fclose(fs);
+    appview_unlink(path);
 
     // Apply the config
     doConfig(g_staticfg);
     g_cfg.staticfg = g_staticfg;
-    scope_free(g_cfg.cfgStr);
+    appview_free(g_cfg.cfgStr);
     g_cfg.cfgStr = jsonStringFromCfg(g_staticfg);
 
     return 0;
@@ -831,7 +831,7 @@ threadNow(int sig, siginfo_t *info, void *secret)
     * Verify the origin of the SIGUSR2 signal:
     * Applications can use the SIGUSR2 signal for their own purposes.
     * The code below will call the application's handler if the signal
-    * is not recognized as one created by the AppScope library.
+    * is not recognized as one created by the AppView library.
     */
     if (sig == SIGUSR2) {
         if (osCallAppSigaction(sig, info, secret) == TRUE) {
@@ -851,7 +851,7 @@ threadNow(int sig, siginfo_t *info, void *secret)
 
     if (g_fn.pthread_create &&
         (g_fn.pthread_create(&g_thread.periodicTID, NULL, periodic, NULL) != 0)) {
-        scopeLogError("ERROR: threadNow:pthread_create");
+        appviewLogError("ERROR: threadNow:pthread_create");
         if (!atomicCasU64(&serialize, 1ULL, 0ULL)) DBG(NULL);
         return;
     }
@@ -907,13 +907,13 @@ threadNow(int sig, siginfo_t *info, void *secret)
 static void
 threadInit(void)
 {
-    // for debugging... if SCOPE_NO_SIGNAL is defined, then don't create
+    // for debugging... if APPVIEW_NO_SIGNAL is defined, then don't create
     // a signal handler, nor a timer to send a signal.
-    if (fullGetEnv("SCOPE_NO_SIGNAL")) return;
+    if (fullGetEnv("APPVIEW_NO_SIGNAL")) return;
     if (!g_ctl) return;
 
     if (osThreadInit(threadNow, g_thread.interval) == FALSE) {
-        scopeLogError("ERROR: threadInit:osThreadInit");
+        appviewLogError("ERROR: threadInit:osThreadInit");
     }
 }
 
@@ -939,7 +939,7 @@ doThread(void)
      * Shouldn't hurt anything else.
      */
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     if (tv.tv_sec >= g_thread.startTime) {
         threadNow(0, NULL, NULL);
     }
@@ -960,32 +960,32 @@ setProcId(proc_id_t *proc)
 {
     if (!proc) return;
 
-    proc->pid = scope_getpid();
-    proc->ppid = scope_getppid();
-    if (scope_gethostname(proc->hostname, sizeof(proc->hostname)) != 0) {
-        scopeLogError("ERROR: gethostname");
+    proc->pid = appview_getpid();
+    proc->ppid = appview_getppid();
+    if (appview_gethostname(proc->hostname, sizeof(proc->hostname)) != 0) {
+        appviewLogError("ERROR: gethostname");
     }
     osGetProcname(proc->procname, sizeof(proc->procname));
 
     // free old value of cmd, if an old value exists
-    if (proc->cmd) scope_free(proc->cmd);
+    if (proc->cmd) appview_free(proc->cmd);
     proc->cmd = NULL;
     osGetCmdline(proc->pid, &proc->cmd);
 
     if (proc->hostname && proc->procname && proc->cmd) {
         // limit amount of cmd used in id
-        int cmdlen = scope_strlen(proc->cmd);
+        int cmdlen = appview_strlen(proc->cmd);
         char *ptr = (cmdlen < DEFAULT_CMD_SIZE) ? proc->cmd : &proc->cmd[cmdlen-DEFAULT_CMD_SIZE];
-        scope_snprintf(proc->id, sizeof(proc->id), "%s-%s-%s", proc->hostname, proc->procname, ptr);
+        appview_snprintf(proc->id, sizeof(proc->id), "%s-%s-%s", proc->hostname, proc->procname, ptr);
     } else {
-        scope_snprintf(proc->id, sizeof(proc->id), "badid");
+        appview_snprintf(proc->id, sizeof(proc->id), "badid");
     }
 
-    proc->uid = scope_getuid();
-    if (proc->username) scope_free(proc->username);
+    proc->uid = appview_getuid();
+    if (proc->username) appview_free(proc->username);
     proc->username = osGetUserName(proc->uid);
-    proc->gid = scope_getgid();
-    if (proc->groupname) scope_free(proc->groupname);
+    proc->gid = appview_getgid();
+    if (proc->groupname) appview_free(proc->groupname);
     proc->groupname = osGetGroupName(proc->gid);
     if (osGetCgroup(proc->pid, proc->cgroup, MAX_CGROUP) == FALSE) {
         proc->cgroup[0] = '\0';
@@ -999,7 +999,7 @@ doReset(void)
     setPidEnv(g_proc.pid);
 
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     g_thread.once = 0;
     g_thread.startTime = tv.tv_sec + g_thread.interval;
 
@@ -1096,7 +1096,7 @@ handleExit(void)
         // This exists as a safeguard to prevent a hang or crash
         // of our periodic thread from hanging a process at exit.
         struct timespec expiration_time, current_time = {0};
-        scope_clock_gettime(CLOCK_MONOTONIC, &expiration_time);
+        appview_clock_gettime(CLOCK_MONOTONIC, &expiration_time);
         expiration_time.tv_sec += MAX_TLS_CONNECT_SECONDS + 1;
 
         struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000}; // 10 us
@@ -1104,7 +1104,7 @@ handleExit(void)
         // let the periodic thread finish
         while (!atomicCasU64(&reentrancy_guard, 0ULL, 1ULL)) {
             sigSafeNanosleep(&ts);
-            scope_clock_gettime(CLOCK_MONOTONIC, &current_time);
+            appview_clock_gettime(CLOCK_MONOTONIC, &current_time);
             if (current_time.tv_sec > expiration_time.tv_sec) {
                 return; // We can't safely do anything else (below)
             }
@@ -1114,11 +1114,11 @@ handleExit(void)
     struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; // 1 s
 
     char *wait;
-    if ((wait = fullGetEnv("SCOPE_CONNECT_TIMEOUT_SECS")) != NULL) {
+    if ((wait = fullGetEnv("APPVIEW_CONNECT_TIMEOUT_SECS")) != NULL) {
         // wait for a connection to be established 
         // before we emit data
         int wait_time;
-        wait_time = scope_strtoul(wait, NULL, 10);
+        wait_time = appview_strtoul(wait, NULL, 10);
         if ((wait_time != 0) && (wait_time != ULONG_MAX)) {
             for (int i = 0; i < wait_time; i++) {
                 if (doConnection() == TRUE) break;
@@ -1148,12 +1148,12 @@ logOurConnectionStatus(transport_status_t status, const char *name)
 
     // Output reason for failure if we're able.
     if (status.failureString) {
-        scopeLog(CFG_LOG_WARN, "%s destination (%s) not connected. messages dropped: "
+        appviewLog(CFG_LOG_WARN, "%s destination (%s) not connected. messages dropped: "
             "%"PRIu64 " connection attempts: %"PRIu64 " reason for failure: %s",
             name, status.configString, g_cbuf_drop_count,
             status.connectAttemptCount, status.failureString);
     } else {
-        scopeLog(CFG_LOG_WARN, "%s destination (%s) not connected. messages dropped: "
+        appviewLog(CFG_LOG_WARN, "%s destination (%s) not connected. messages dropped: "
             "%"PRIu64 " connection attempts: %"PRIu64,
             name, status.configString, g_cbuf_drop_count,
             status.connectAttemptCount);
@@ -1168,7 +1168,7 @@ snapshotErrorsSignals[] = {SIGSEGV, SIGBUS, SIGILL, SIGFPE};
 
 /*
 * Determine if the snapshot feature is enabled and
-* register the AppScope signal handler if it is enabled
+* register the AppView signal handler if it is enabled
 */
 static void
 enableSnapshot(config_t *cfg) {
@@ -1212,10 +1212,10 @@ periodic(void *arg)
     // the only reasonable solution seems to be masking the signals for this thread
 
     sigset_t mask;
-    scope_sigfillset(&mask);
+    appview_sigfillset(&mask);
     if (snapshotIsEnabled() == TRUE) {
         for (int i = 0; i < ARRAY_SIZE(snapshotErrorsSignals); ++i) {
-            scope_sigdelset(&mask, snapshotErrorsSignals[i]);
+            appview_sigdelset(&mask, snapshotErrorsSignals[i]);
         }
     }
 
@@ -1224,7 +1224,7 @@ periodic(void *arg)
     static time_t summaryTime, logReportTime;
 
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     logReportTime = summaryTime = tv.tv_sec + g_thread.interval;
 
     perf = checkEnv(PRESERVE_PERF_REPORTING, "true");
@@ -1235,7 +1235,7 @@ periodic(void *arg)
             while (1) sched_yield();
         }
 
-        scope_gettimeofday(&tv, NULL);
+        appview_gettimeofday(&tv, NULL);
         if (tv.tv_sec >= summaryTime) {
             // Process dynamic config changes, if any
             dynConfig();
@@ -1257,7 +1257,7 @@ periodic(void *arg)
                 atomicCasU64(&reentrancy_guard, 1ULL, 0ULL);
             }
 
-            scope_gettimeofday(&tv, NULL);
+            appview_gettimeofday(&tv, NULL);
             summaryTime = tv.tv_sec + g_thread.interval;
 
             if (tv.tv_sec >= logReportTime) {
@@ -1298,7 +1298,7 @@ ssl_read_hook(SSL *ssl, void *buf, int num)
     WRAP_CHECK(SSL_read, -1);
     if (g_cfg.funcs_attached == FALSE) return g_fn.SSL_read(ssl, buf, num);
 
-    scopeLog(CFG_LOG_TRACE, "ssl_read_hook");
+    appviewLog(CFG_LOG_TRACE, "ssl_read_hook");
     rc = g_fn.SSL_read(ssl, buf, num);
     if (rc > 0) {
         int fd = -1;
@@ -1318,7 +1318,7 @@ ssl_write_hook(SSL *ssl, void *buf, int num)
     WRAP_CHECK(SSL_write, -1);
     if (g_cfg.funcs_attached == FALSE) return g_fn.SSL_write(ssl, buf, num);
 
-    scopeLog(CFG_LOG_TRACE, "ssl_write_hook");
+    appviewLog(CFG_LOG_TRACE, "ssl_write_hook");
     rc = g_fn.SSL_write(ssl, buf, num);
     if (rc > 0) {
         int fd = -1;
@@ -1337,7 +1337,7 @@ load_func(const char *module, const char *func)
     
     void *handle = g_fn.dlopen(module, RTLD_LAZY | RTLD_NOLOAD);
     if (handle == NULL) {
-        scopeLog(CFG_LOG_DEBUG,"%s: Could not open file %s.\n",
+        appviewLog(CFG_LOG_DEBUG,"%s: Could not open file %s.\n",
                                __FUNCTION__, module ? module : "(null)");
         return NULL;
     }
@@ -1346,11 +1346,11 @@ load_func(const char *module, const char *func)
     dlclose(handle);
 
     if (addr == NULL) {
-        scopeLog(CFG_LOG_DEBUG,"%s: Could not get function address of %s.\n", __FUNCTION__, func);
+        appviewLog(CFG_LOG_DEBUG,"%s: Could not get function address of %s.\n", __FUNCTION__, func);
         return NULL;
     }
 
-    scopeLog(CFG_LOG_DEBUG,"%s: %s found at %p\n", __FUNCTION__, func, addr);
+    appviewLog(CFG_LOG_DEBUG,"%s: %s found at %p\n", __FUNCTION__, func, addr);
     return addr;
 }
 
@@ -1367,7 +1367,7 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
     find_sym_t *find = (find_sym_t *)data;
     *(find->out_addr) = NULL;
 
-    if (scope_strstr(info->dlpi_name, find->library)) {
+    if (appview_strstr(info->dlpi_name, find->library)) {
 
         void *handle = g_fn.dlopen(info->dlpi_name, RTLD_NOW);
         if (!handle) return 0;
@@ -1400,26 +1400,26 @@ findLibSym(struct dl_phdr_info *info, size_t size, void *data)
  * that is not our interposed function.
  *
  * We start by getting the address of SSL_read from
- * libscope.so by locating the path to this lib, then
+ * libappview.so by locating the path to this lib, then
  * get a handle and lookup the symbol.
  */
 static ssize_t __write_libc(int, const void *, size_t);
 static ssize_t __write_pthread(int, const void *, size_t);
-static ssize_t wrap_scope_write(int, const void *, size_t);
+static ssize_t wrap_appview_write(int, const void *, size_t);
 static int internal_sendmmsg(int, struct mmsghdr *, unsigned int, int);
 static ssize_t internal_sendto(int, const void *, size_t, int, const struct sockaddr *, socklen_t);
 static ssize_t internal_recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
 static size_t __stdio_write(struct MUSL_IO_FILE *, const unsigned char *, size_t);
-static long wrap_scope_syscall(long, ...);
+static long wrap_appview_syscall(long, ...);
 
 static int 
-findLibscopePath(struct dl_phdr_info *info, size_t size, void *data)
+findLibappviewPath(struct dl_phdr_info *info, size_t size, void *data)
 {
-    int len = scope_strlen(info->dlpi_name);
-    int libscope_so_len = 11;
+    int len = appview_strlen(info->dlpi_name);
+    int libappview_so_len = 11;
 
-    if (len > libscope_so_len &&
-        !scope_strcmp(info->dlpi_name + len - libscope_so_len, "libscope.so")) {
+    if (len > libappview_so_len &&
+        !appview_strcmp(info->dlpi_name + len - libappview_so_len, "libappview.so")) {
         *(char **)data = (char *) info->dlpi_name;
         return 1;
     }
@@ -1444,14 +1444,14 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
     int rsz = 0;
     const char *libname = NULL;
 
-    // don't attempt to hook libscope.so, libc*.so, ld-*.so
+    // don't attempt to hook libappview.so, libc*.so, ld-*.so
     // where libc*.so is for example libc.so.6 or libc.musl-x86_64.so.1
     // where ld-*.so is for example ld-linux-x86-64.so.2 or ld-musl-x86_64.so.1
     // if opening the main exec, name is NULL, else use the full lib name
-    if (scope_strstr(info->dlpi_name, ".so")) {
-        if (scope_strstr(info->dlpi_name, "libc") ||
-            scope_strstr(info->dlpi_name, "ld-") ||
-            scope_strstr(info->dlpi_name, "libscope")) {
+    if (appview_strstr(info->dlpi_name, ".so")) {
+        if (appview_strstr(info->dlpi_name, "libc") ||
+            appview_strstr(info->dlpi_name, "ld-") ||
+            appview_strstr(info->dlpi_name, "libappview")) {
             return FALSE;
         }
         libname = info->dlpi_name;
@@ -1466,7 +1466,7 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
 
             if ((dlsym(handle, inject_hook_list[i].symbol)) &&
                 (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
+                    appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
             }
         }
@@ -1484,14 +1484,14 @@ hookInject(void)
 {
     char *full_path;
 
-    if (dl_iterate_phdr(findLibscopePath, &full_path)) {
-        void *libscopeHandle = g_fn.dlopen(full_path, RTLD_NOW);
-        if (libscopeHandle == NULL) {
+    if (dl_iterate_phdr(findLibappviewPath, &full_path)) {
+        void *libappviewHandle = g_fn.dlopen(full_path, RTLD_NOW);
+        if (libappviewHandle == NULL) {
             return FALSE;
         }
 
-        dl_iterate_phdr(hookSharedObjs, libscopeHandle);
-        dlclose(libscopeHandle);
+        dl_iterate_phdr(hookSharedObjs, libappviewHandle);
+        dlclose(libappviewHandle);
 
         return TRUE;
     }
@@ -1499,20 +1499,20 @@ hookInject(void)
 }
 
 static void
-initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
+initHook(int attachedFlag, bool viewedFlag, elf_buf_t *ebuf, char *full_path)
 {
     int rc;
     bool should_we_patch = FALSE;
     funchook_t *funchook;
 
     // env vars are not always set as needed, be explicit here
-    // this is duplicated if we were started from the scope exec
+    // this is duplicated if we were started from the appview exec
     if (g_isstatic == FALSE && g_isgo == TRUE) {
-        // Avoid running initGoHook if we are scopedyn
-        // Note: g_isgo is true for scopedyn but we don't want to call initGoHook
-        // Because we now execute scopedyn from memory it's path is memfd:...
-        // If executed from the filesystem it's path will be scopedyn
-        if (full_path && (scope_strstr(full_path, "scopedyn") == NULL) && (scope_strstr(full_path, "memfd") == NULL)) {
+        // Avoid running initGoHook if we are appviewdyn
+        // Note: g_isgo is true for appviewdyn but we don't want to call initGoHook
+        // Because we now execute appviewdyn from memory it's path is memfd:...
+        // If executed from the filesystem it's path will be appviewdyn
+        if (full_path && (appview_strstr(full_path, "appviewdyn") == NULL) && (appview_strstr(full_path, "memfd") == NULL)) {
             if (!ebuf) return;
             initGoHook(ebuf);
             threadNow(0, NULL, NULL);
@@ -1525,8 +1525,8 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
         hookInject();
     } else {
         // GOT hooking all interposed funcs
-        dl_iterate_phdr(hookAll, &scopedFlag);
-        hookMain(scopedFlag);
+        dl_iterate_phdr(hookAll, &viewedFlag);
+        hookMain(viewedFlag);
     }
 
     // libmusl
@@ -1555,9 +1555,9 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
     }
 
     // if we are not hooking all, then we're done
-    if (scopedFlag == FALSE) return;
+    if (viewedFlag == FALSE) return;
 
-    if (full_path && dl_iterate_phdr(findLibscopePath, &full_path)) {
+    if (full_path && dl_iterate_phdr(findLibappviewPath, &full_path)) {
         void *handle = g_fn.dlopen(full_path, RTLD_NOW);
         if (handle == NULL) {
             return;
@@ -1593,7 +1593,7 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
     // directly. So, we hook these in order to get DNS detail. We check
     // to see which distro is used so as to hook only what is needed.
     // We use the fact that on a musl distro the ld lib env var is set to
-    // a dir with a libscope-ver string. If that exists in the env var
+    // a dir with a libappview-ver string. If that exists in the env var
     // then we assume musl.
     if (should_we_patch || g_fn.__write_libc || g_fn.__write_pthread ||
         ((g_ismusl == FALSE) && g_fn.sendmmsg) ||
@@ -1605,13 +1605,13 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
         * using (PROT_WRITE + PROT_EXEC) flags
         */
         size_t testSize = 16;
-        void *ptr = scope_malloc(testSize);
+        void *ptr = appview_malloc(testSize);
         if (osMemPermAllow(ptr, testSize, PROT_READ | PROT_WRITE, PROT_EXEC) == FALSE) {
-            scope_free(ptr);
-            scopeLogError("The system is not allowing processes related to DNS or console I/O to be scoped. Try setting MemoryDenyWriteExecute to false for the %s service.", g_proc.procname);
+            appview_free(ptr);
+            appviewLogError("The system is not allowing processes related to DNS or console I/O to be viewed. Try setting MemoryDenyWriteExecute to false for the %s service.", g_proc.procname);
             return;
         }
-        scope_free(ptr);
+        appview_free(ptr);
 
 
         funchook = funchook_create();
@@ -1637,7 +1637,7 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
         }
 
         if (g_fn.syscall) {
-            rc = funchook_prepare(funchook, (void**)&g_fn.syscall, wrap_scope_syscall);
+            rc = funchook_prepare(funchook, (void**)&g_fn.syscall, wrap_appview_syscall);
         }
 
         if ((g_ismusl == TRUE) && g_fn.sendto) {
@@ -1663,14 +1663,14 @@ initHook(int attachedFlag, bool scopedFlag, elf_buf_t *ebuf, char *full_path)
 
             // We want to be able to use g_fn.write without
             // accidentally interposing this function.  This resolves
-            // https://github.com/criblio/appscope/issues/472
-            g_fn.write = wrap_scope_write;
+            // https://github.com/criblio/appview/issues/472
+            g_fn.write = wrap_appview_write;
         }
 
         // hook 'em
         rc = funchook_install(funchook, 0);
         if (rc != 0) {
-            scopeLogError("ERROR: failed to install funchook. (%s)\n",
+            appviewLogError("ERROR: failed to install funchook. (%s)\n",
                         funchook_error_message(funchook));
             funchook_destroy(funchook);
             return;
@@ -1686,16 +1686,16 @@ initEnv(int *attachedFlag)
 
     // build the full path of the .env file
     char path[128];
-    int  pathLen = scope_snprintf(path, sizeof(path), "/dev/shm/attach_%d.env", scope_getpid());
+    int  pathLen = appview_snprintf(path, sizeof(path), "/dev/shm/attach_%d.env", appview_getpid());
     if (pathLen < 0 || pathLen >= sizeof(path)) {
-        scopeLog(CFG_LOG_DEBUG, "ERROR: snprintf(scope_attach_PID.env) failed");
+        appviewLog(CFG_LOG_DEBUG, "ERROR: snprintf(appview_attach_PID.env) failed");
         return;
     }
 
     // open it
-    FILE *fd = scope_fopen(path, "r");
+    FILE *fd = appview_fopen(path, "r");
     if (fd == NULL) {
-        scopeLog(CFG_LOG_DEBUG, "ERROR: fopen(scope_attach_PID.env) failed");
+        appviewLog(CFG_LOG_DEBUG, "ERROR: fopen(appview_attach_PID.env) failed");
         return;
     }
 
@@ -1704,29 +1704,29 @@ initEnv(int *attachedFlag)
 
     // read "KEY=VALUE\n" lines and add them to the environment
     char line[8192];
-    while (scope_fgets(line, sizeof(line), fd)) {
-        int len = scope_strlen(line);
+    while (appview_fgets(line, sizeof(line), fd)) {
+        int len = appview_strlen(line);
         if (line[len-1] == '\n') line[len-1] = '\0';
-        char *key = scope_strtok(line, "=");
+        char *key = appview_strtok(line, "=");
         if (key) {
-            char *val = scope_strtok(NULL, "=");
+            char *val = appview_strtok(NULL, "=");
             if (val) {
                 fullSetenv(key, val, 1);
             } else {
-                scopeLog(CFG_LOG_DEBUG, "ERROR: strtok(val) failed");
+                appviewLog(CFG_LOG_DEBUG, "ERROR: strtok(val) failed");
             }
         } else {
-            scopeLog(CFG_LOG_DEBUG, "ERROR: strtok(key) failed");
+            appviewLog(CFG_LOG_DEBUG, "ERROR: strtok(key) failed");
         }
     }
 
     // done
-    scope_fclose(fd);
+    appview_fclose(fd);
 }
 
 // Used this command on ubuntu 20.04 and 22.04 as a starting point:
 // ps -ef | grep -v "\["
-static const char *const doNotScopeList[] = {
+static const char *const doNotAppViewList[] = {
 // systemd
     "30-systemd-environment-d-generator",
     "init",
@@ -1846,7 +1846,7 @@ static const char *const allowList[] = {
 /*
  * When a rules file has not been found, all processes have the
  * potential to be interposed. This function prohibits a process in the
- * doNotScopeList list from being interposed as it otherwise would.
+ * doNotAppViewList list from being interposed as it otherwise would.
  *
  * It returns FALSE if the current process, by name, should not be interposed.
  */
@@ -1858,8 +1858,8 @@ doImplicitDeny(void)
 
     int i;
 
-    for (i=0; i < ARRAY_SIZE(doNotScopeList); i++) {
-        if (!scope_strcmp(procName, doNotScopeList[i])) return FALSE;
+    for (i=0; i < ARRAY_SIZE(doNotAppViewList); i++) {
+        if (!appview_strcmp(procName, doNotAppViewList[i])) return FALSE;
     }
 
     return TRUE;
@@ -1880,7 +1880,7 @@ doImplicitAllow(void)
     int i;
 
     for (i=0; i < ARRAY_SIZE(allowList); i++) {
-        if (!scope_strcmp(procName, allowList[i])) return TRUE;
+        if (!appview_strcmp(procName, allowList[i])) return TRUE;
     }
 
     return FALSE;
@@ -1892,10 +1892,10 @@ typedef struct {
 } settings_t;
 
 /*
-* We actively scope applications:
+* We actively appview applications:
 * - when we are attaching
 * - when the rules file is not valid or does not exist and 
-*   process does not match `doNotScopeList`
+*   process does not match `doNotAppViewList`
 * - when process match the allow list
 */
 static settings_t
@@ -1903,37 +1903,37 @@ getSettings(bool attachedFlag)
 {
     config_t *cfg = NULL;
     const char *rulesFilePath = NULL;
-    bool scopedFlag = FALSE;
+    bool viewedFlag = FALSE;
     bool readCfgFile = TRUE;
 
     if (attachedFlag) {
-        scopedFlag = TRUE;
+        viewedFlag = TRUE;
     } else if (!(rulesFilePath = cfgRulesFilePath())){
         // The rules file does not exist, or shouldn't be used.
-        // Set scopedFlag true unless it's on our doNotScopeList
-        scopedFlag = doImplicitDeny();
+        // Set viewedFlag true unless it's on our doNotAppViewList
+        viewedFlag = doImplicitDeny();
     } else {
         // A rules file exists. Before using it, check for an implicit allow
         if (doImplicitAllow() == TRUE) {
-            scopedFlag = TRUE;
+            viewedFlag = TRUE;
         } else {
             // A rules file exists!  Use it.
             cfg = cfgCreateDefault();
             rules_status_t res = cfgRulesStatus(g_proc.procname, g_proc.cmd, rulesFilePath, cfg);
             switch (res) {
-            case RULES_SCOPED:
-                scopedFlag = TRUE;
+            case RULES_APPVIEWD:
+                viewedFlag = TRUE;
                 break;
-            case RULES_SCOPED_WITH_CFG:
-                scopedFlag = TRUE;
+            case RULES_APPVIEWD_WITH_CFG:
+                viewedFlag = TRUE;
                 readCfgFile = FALSE;
                 break;
-            case RULES_NOT_SCOPED:
-                scopedFlag = FALSE;
+            case RULES_NOT_APPVIEWD:
+                viewedFlag = FALSE;
                 break;
             case RULES_ERROR:
             default:
-                scopedFlag = FALSE;
+                viewedFlag = FALSE;
                 DBG(NULL);
                 break;
             }
@@ -1945,11 +1945,11 @@ getSettings(bool attachedFlag)
         path = cfgPath();
         if (cfg) cfgDestroy(&cfg);
         cfg = cfgRead(path);
-        if (path) scope_free(path);
+        if (path) appview_free(path);
     }
     cfgProcessEnvironment(cfg);
 
-    settings_t settings = {.isActive = scopedFlag,
+    settings_t settings = {.isActive = viewedFlag,
                           .cfg = cfg};
     return settings;
 }
@@ -1963,14 +1963,14 @@ fileNameFromAddr(uint64_t addr)
     char str[256];
     char *returnval = NULL;
 
-    if ((fd = scope_fopen("/proc/self/maps", "r")) == NULL) {
-        scopeLogDebug("fopen(/proc/self/maps) failed");
+    if ((fd = appview_fopen("/proc/self/maps", "r")) == NULL) {
+        appviewLogDebug("fopen(/proc/self/maps) failed");
         return NULL;
     }
 
-    while(scope_fgets(line, sizeof(line), fd) != NULL) {
-// 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libscope.so
-        scope_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
+    while(appview_fgets(line, sizeof(line), fd) != NULL) {
+// 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libappview.so
+        appview_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
         if ((addr >= addr_begin) && (addr < addr_end)) {
             break;
         }
@@ -1980,10 +1980,10 @@ fileNameFromAddr(uint64_t addr)
 
     // Found it!
     if (addr_begin && addr_end) {
-        returnval = scope_strdup(str);
+        returnval = appview_strdup(str);
     }
 
-    scope_fclose(fd);
+    appview_fclose(fd);
     return returnval;
 }
 
@@ -2017,8 +2017,8 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          *   locally defined external symbols (resolve to text section)
          */
         char *file_from_maps_file = fileNameFromAddr(got_value);
-        char *file_from_link_map = scope_realpath(info->dlpi_name, NULL);
-        int found_locally = file_from_link_map && !scope_strcmp(file_from_maps_file, file_from_link_map);
+        char *file_from_link_map = appview_realpath(info->dlpi_name, NULL);
+        int found_locally = file_from_link_map && !appview_strcmp(file_from_maps_file, file_from_link_map);
         if (found_locally) goto next;
 
         // get info that comes from libdl
@@ -2031,7 +2031,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          * If the function name and address from the link map matches
          * the function name and address from dladdr1 info, continue on.
          */
-        if (dl_info.dli_sname && !scope_strcmp(fname, dl_info.dli_sname) &&
+        if (dl_info.dli_sname && !appview_strcmp(fname, dl_info.dli_sname) &&
             ((void*)got_value == dl_info.dli_saddr)) goto next;
 
         /*
@@ -2048,24 +2048,24 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          * From libpthread.
          *   name missmatches that aren't meaningful __pthread_barrier_init->pthread_barrier_init
          *
-         * From libscope.
+         * From libappview.
          *   It's us and we modifiy the GOT.
          */
-        if (scope_strstr(file_from_maps_file, "/libc-") ||
-            scope_strstr(file_from_maps_file, "/libc.") ||
-            scope_strstr(file_from_maps_file, "libscope") ||
-            scope_strstr(file_from_maps_file, "/libpthread") ||
-            !scope_strcmp(file_from_maps_file, "[vdso]")) goto next;
+        if (appview_strstr(file_from_maps_file, "/libc-") ||
+            appview_strstr(file_from_maps_file, "/libc.") ||
+            appview_strstr(file_from_maps_file, "libappview") ||
+            appview_strstr(file_from_maps_file, "/libpthread") ||
+            !appview_strcmp(file_from_maps_file, "[vdso]")) goto next;
 
         const char *exe_or_lib_name = info->dlpi_name[0] ? info->dlpi_name : g_proc.procname;
         char msg[256];
-        scope_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
+        appview_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
         gotSecurity(fname, msg, exe_or_lib_name, file_from_maps_file);
         notify(NOTIFY_LIBS, msg);
 
 next:
-        scope_free(file_from_maps_file);
-        scope_free(file_from_link_map);
+        appview_free(file_from_maps_file);
+        appview_free(file_from_link_map);
     }
 
     dlclose(handle);
@@ -2095,18 +2095,18 @@ inspectGotTables(void)
 __attribute__((constructor)) void
 init(void)
 {
-    scope_init_vdso_ehdr();
+    appview_init_vdso_ehdr();
     char *full_path = NULL;
     elf_buf_t *ebuf = NULL;
 
     // Bootstrapping...  we need to know if we're in musl so we can
     // call the right initFn function...
 
-    if (osGetExePath(scope_getpid(), &full_path) != -1) {
+    if (osGetExePath(appview_getpid(), &full_path) != -1) {
         if ((ebuf = getElf(full_path))) {
-            // SCOPE_APP_TYPE will be set by scopedyn
-            // Therefore we are setting isgo to TRUE if we are a go app OR we are scopedyn (not actually a go app)
-            g_isgo = (is_go(ebuf->buf) || (checkEnv("SCOPE_APP_TYPE", "go") == TRUE));
+            // APPVIEW_APP_TYPE will be set by appviewdyn
+            // Therefore we are setting isgo to TRUE if we are a go app OR we are appviewdyn (not actually a go app)
+            g_isgo = (is_go(ebuf->buf) || (checkEnv("APPVIEW_APP_TYPE", "go") == TRUE));
             g_isstatic = is_static(ebuf->buf);
             g_ismusl = is_musl(ebuf->buf);
         }
@@ -2131,7 +2131,7 @@ init(void)
                 g_fn.uv__read = (void*)((uint64_t)(g_fn.uv__read) + base_addr);
             }
         }
-        scopeLog(CFG_LOG_TRACE, "%s:%d uv__read at %p", __FUNCTION__, __LINE__, g_fn.uv__read);
+        appviewLog(CFG_LOG_TRACE, "%s:%d uv__read at %p", __FUNCTION__, __LINE__, g_fn.uv__read);
     }
 
     setProcId(&g_proc);
@@ -2140,9 +2140,9 @@ init(void)
     setUUID(g_proc.uuid);
 
     // logging inside constructor start from this line
-    g_constructor_debug_enabled = checkEnv("SCOPE_ALLOW_CONSTRUCT_DBG", "true");
+    g_constructor_debug_enabled = checkEnv("APPVIEW_ALLOW_CONSTRUCT_DBG", "true");
 
-    // initEnv() will set this TRUE if it detects `scope_attach_PID.env` in
+    // initEnv() will set this TRUE if it detects `appview_attach_PID.env` in
     // `/dev/shm` with our PID indicating we were injected into a running
     // process.
     int attachedFlag = 0;
@@ -2155,7 +2155,7 @@ init(void)
     initTime();
 
     // settings contain isActive and cfg fields which depend on the existance and
-    // contents of a rules file, env vars, scope.yml, etc.
+    // contents of a rules file, env vars, appview.yml, etc.
     settings_t settings = getSettings(attachedFlag);
 
     /*
@@ -2203,7 +2203,7 @@ init(void)
      * We start the thread for now so that we can respond to
      * dynamic and remote commands. This allows a re-attach
      * command, for example, to be executed on a process that
-     * was previously not scoped.
+     * was previously not viewed.
      */
     if (g_cfg.funcs_attached == TRUE) {
         reportProcessStart(g_ctl, TRUE, CFG_WHICH_MAX);
@@ -2216,7 +2216,7 @@ init(void)
         }
     } else {
         /*
-         * When libscope is loaded and we are not interposing
+         * When libappview is loaded and we are not interposing
          * we don't start the thread. Rather, we create the
          * SM segment to enable a reattach command.
          */
@@ -2236,7 +2236,7 @@ init(void)
     inspectGotTables();
 
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
-    if (full_path) scope_free(full_path);
+    if (full_path) appview_free(full_path);
 }
 
 EXPORTOFF sighandler_t
@@ -2245,7 +2245,7 @@ signal(int signum, sighandler_t handler) {
 
     if (signum == SIGUSR2) {
         // Our handler was already installed
-        if (osIsScopeHandlerActive() == TRUE) {
+        if (osIsAppViewHandlerActive() == TRUE) {
             // grab the old
             struct sigaction oldact = { 0 };
             osGetAppSigaction(&oldact);
@@ -2292,9 +2292,9 @@ sigaction(int signum, const struct sigaction *act, struct sigaction *oldact)
     WRAP_CHECK(sigaction, -1);
 
     if (signum == SIGUSR2) {
-        if (osIsScopeHandlerActive() == TRUE) {
+        if (osIsAppViewHandlerActive() == TRUE) {
             /*
-            * If scope handler was already installed installed, just save the incoming one.
+            * If appview handler was already installed installed, just save the incoming one.
             * If no handler, they may just be checking for the current handler.
             */
             if (act == NULL) {
@@ -2392,7 +2392,7 @@ EXPORTOFF int
 closedir(DIR *dirp)
 {
     WRAP_CHECK(closedir, -1);
-    int fd = wrap_scope_dirfd(dirp);
+    int fd = wrap_appview_dirfd(dirp);
     int rc = g_fn.closedir(dirp);
 
     doCloseAndReportFailures(fd, (rc != -1), "closedir");
@@ -2404,7 +2404,7 @@ EXPORTOFF struct dirent *
 readdir(DIR *dirp)
 {
     WRAP_CHECK(readdir, NULL);
-    int fd = wrap_scope_dirfd(dirp);
+    int fd = wrap_appview_dirfd(dirp);
     int errsave = errno;
     uint64_t initialTime = getTime();
 
@@ -2413,7 +2413,7 @@ readdir(DIR *dirp)
 
     doRead(fd, initialTime, (errno != 0), NULL, sizeof(struct dirent), "readdir", BUF, 0);
 
-    // DR: no longer necessary with scope_errno?
+    // DR: no longer necessary with appview_errno?
     // dirfd is documengted not to set errno.
     // If readdir modified errno, leave the errno value alone.
     // Otherwise, restore the saved errno value (before we set it to zero.)
@@ -2846,7 +2846,7 @@ __fread_unlocked_chk(void *ptr, size_t ptrlen, size_t size, size_t nmemb, FILE *
 
     size_t rc = g_fn.__fread_unlocked_chk(ptr, ptrlen, size, nmemb, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "__fread_unlocked_chk", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "__fread_unlocked_chk", NONE, 0);
 
     return rc;
 }
@@ -2935,7 +2935,7 @@ fseeko64(FILE *stream, off64_t offset, int whence)
 
     int rc = g_fn.fseeko64(stream, offset, whence);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "fseeko64");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "fseeko64");
 
     return rc;
 }
@@ -2947,7 +2947,7 @@ ftello64(FILE *stream)
 
     off64_t rc = g_fn.ftello64(stream);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "ftello64");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "ftello64");
 
     return rc;
 }
@@ -2980,7 +2980,7 @@ fsetpos64(FILE *stream, const fpos64_t *pos)
     WRAP_CHECK(fsetpos64, -1);
     int rc = g_fn.fsetpos64(stream, pos);
 
-    doSeek(wrap_scope_fileno(stream), (rc == 0), "fsetpos64");
+    doSeek(wrap_appview_fileno(stream), (rc == 0), "fsetpos64");
 
     return rc;
 }
@@ -3188,7 +3188,7 @@ gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen,
     time.duration = getDuration(time.initial);
 
     if ((rc == 0) && (result != NULL)) {
-        scopeLog(CFG_LOG_DEBUG, "gethostbyname_r");
+        appviewLog(CFG_LOG_DEBUG, "gethostbyname_r");
         doUpdateState(DNS, -1, time.duration, NULL, name);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, name);
     }  else {
@@ -3212,7 +3212,7 @@ gethostbyname2_r(const char *name, int af, struct hostent *ret, char *buf,
     time.duration = getDuration(time.initial);
 
     if ((rc == 0) && (result != NULL)) {
-        scopeLog(CFG_LOG_DEBUG, "gethostbyname2_r");
+        appviewLog(CFG_LOG_DEBUG, "gethostbyname2_r");
         doUpdateState(DNS, -1, time.duration, NULL, name);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, name);
     }  else {
@@ -3284,10 +3284,10 @@ prctl(int option, ...)
 
     if (option == PR_SET_SECCOMP) {
         char msg[128];
-        scope_snprintf(msg, sizeof(msg), "modifying security policy using SECCOMP");
+        appview_snprintf(msg, sizeof(msg), "modifying security policy using SECCOMP");
         notify(NOTIFY_FUNC, msg);
 
-        scopeLog(CFG_LOG_DEBUG, "prctl: PR_SET_SECCOMP - opt out from prctl.");
+        appviewLog(CFG_LOG_DEBUG, "prctl: PR_SET_SECCOMP - opt out from prctl.");
         return 0;
     }
 
@@ -3309,7 +3309,7 @@ getPreload(char **envp)
     char **envinst;
 
     for (envinst = envp, i = 0; envinst[i]; i++) {
-        if (scope_strstr(envinst[i], "LD_PRELOAD")) {
+        if (appview_strstr(envinst[i], "LD_PRELOAD")) {
             // LD_PRELOAD exists, done.
             return TRUE;
         }
@@ -3323,7 +3323,7 @@ setPreload(char **envp)
 {
     char *lib_path;
 
-    if (dl_iterate_phdr(findLibscopePath, &lib_path) == 0) {
+    if (dl_iterate_phdr(findLibappviewPath, &lib_path) == 0) {
         return NULL;
     }
 
@@ -3334,30 +3334,30 @@ setPreload(char **envp)
 
     char *ldp, **newenvp;
     size_t i, plen;
-    size_t ldplen = scope_strlen("LD_PRELOAD");
+    size_t ldplen = appview_strlen("LD_PRELOAD");
     char **envinst;
 
     for (envinst = envp, i = 0; envinst[i]; i++) {
-        if (scope_strstr(envinst[i], "LD_PRELOAD")) {
+        if (appview_strstr(envinst[i], "LD_PRELOAD")) {
             // LD_PRELOAD exists, done.
             return NULL;
         }
     }
 
-    plen = scope_strlen(lib_path) + ldplen + 2;
-    if ((ldp = scope_calloc(1, plen)) == NULL) {
+    plen = appview_strlen(lib_path) + ldplen + 2;
+    if ((ldp = appview_calloc(1, plen)) == NULL) {
         sysprint("%s:%d WARN: calloc\n", __FUNCTION__, __LINE__);
         return NULL;
     }
 
-    scope_snprintf(ldp, plen, "LD_PRELOAD=%s", lib_path);
+    appview_snprintf(ldp, plen, "LD_PRELOAD=%s", lib_path);
 
-    if ((newenvp = scope_calloc(1, sizeof(char *) * (i+2))) == NULL) {
-        scope_free(ldp);
+    if ((newenvp = appview_calloc(1, sizeof(char *) * (i+2))) == NULL) {
+        appview_free(ldp);
         sysprint("%s:%d WARN: calloc\n", __FUNCTION__, __LINE__);
         return NULL;
     }
-    scope_memmove(newenvp, envp, sizeof(char *) * (i+2));
+    appview_memmove(newenvp, envp, sizeof(char *) * (i+2));
 
     newenvp[i] = ldp;
     newenvp[i + 1] = NULL;
@@ -3376,16 +3376,16 @@ copyArgv(char **argv)
     // Total length of all args
     int total_length = 0;
     for (i = 0; i < nargs; i++) {
-        total_length += scope_strlen(argv[i]) + 1;
+        total_length += appview_strlen(argv[i]) + 1;
     }
 
-    if ((args = scope_calloc(1, total_length)) == NULL) return NULL;
+    if ((args = appview_calloc(1, total_length)) == NULL) return NULL;
 
     // Copy argv arguments
     for (i = 0; i < nargs; i++) {
-        scope_strcat(args, argv[i]);
+        appview_strcat(args, argv[i]);
         if (i != nargs - 1) {
-            scope_strcat(args, " ");  // Add a space between arguments
+            appview_strcat(args, " ");  // Add a space between arguments
         }
     }
 
@@ -3400,10 +3400,10 @@ copyArgv(char **argv)
  * an exec is interposed.
  */
 static char *
-getScopeExec(const char *pathname, char **argv, char **envp)
+getAppViewExec(const char *pathname, char **argv, char **envp)
 {
     bool isstat = FALSE, isgo = FALSE;
-    char *scopexec = NULL, *path = NULL;
+    char *appviewxec = NULL, *path = NULL;
     const char *rulesFilePath = NULL;
     elf_buf_t *ebuf;
     config_t *cfg;
@@ -3414,15 +3414,15 @@ getScopeExec(const char *pathname, char **argv, char **envp)
      * or the env var disables exec behavior
      * then done.
      */
-    if (scope_strstr(g_proc.procname, "scope") ||
-        ((pathname != NULL) && scope_strstr(pathname, "scope")) ||
-        checkEnv("SCOPE_EXECVE", "false")) {
+    if (appview_strstr(g_proc.procname, "appview") ||
+        ((pathname != NULL) && appview_strstr(pathname, "appview")) ||
+        checkEnv("APPVIEW_EXECVE", "false")) {
         return NULL;
     }
 
     // if we have a rules file and the proc to be exec'd is not allowed, done.
     if (((rulesFilePath = cfgRulesFilePath())) &&
-        (pathname != NULL) && ((path = scope_strdup(pathname)))) {
+        (pathname != NULL) && ((path = appview_strdup(pathname)))) {
         char *args = NULL;
 
         if ((args = copyArgv(argv)) == NULL) {
@@ -3431,12 +3431,12 @@ getScopeExec(const char *pathname, char **argv, char **envp)
         }
 
         cfg = cfgCreateDefault();
-        rules_status_t res = cfgRulesStatus(scope_basename(path), args, rulesFilePath, cfg);
+        rules_status_t res = cfgRulesStatus(appview_basename(path), args, rulesFilePath, cfg);
 
-        scope_free(path);
-        if (strlen(args) > 1) scope_free(args);
+        appview_free(path);
+        if (strlen(args) > 1) appview_free(args);
         if (cfg) cfgDestroy(&cfg);
-        if (res == RULES_NOT_SCOPED) {
+        if (res == RULES_NOT_APPVIEWD) {
             return NULL;
         }
     }
@@ -3454,31 +3454,31 @@ getScopeExec(const char *pathname, char **argv, char **envp)
 
     // If the exec to be started is Go static, then start with the CLI
     if ((isstat == TRUE) && (isgo == TRUE)) {
-        scopexec = fullGetEnv("SCOPE_EXEC_PATH");
-        if (((scopexec = getpath(scopexec)) == NULL) &&
-            ((scopexec = getpath("scope")) == NULL)) {
-            // can't find the scope executable
-            scopeLogWarn("can't find a scope executable for %s", pathname);
+        appviewxec = fullGetEnv("APPVIEW_EXEC_PATH");
+        if (((appviewxec = getpath(appviewxec)) == NULL) &&
+            ((appviewxec = getpath("appview")) == NULL)) {
+            // can't find the appview executable
+            appviewLogWarn("can't find a appview executable for %s", pathname);
             return NULL;
         }
     }
 
-    return scopexec;
+    return appviewxec;
 }
 
 EXPORTOFF int
 execv(const char *pathname, char *const argv[])
 {
     int i, nargs;
-    char *scopexec;
+    char *appviewxec;
     char **nargv;
 
     WRAP_CHECK(execv, -1);
 
-    scopexec = getScopeExec(pathname, (char **)argv, NULL);
-    if (scopexec == NULL) {
+    appviewxec = getAppViewExec(pathname, (char **)argv, NULL);
+    if (appviewxec == NULL) {
         /*
-         * Note: we enable libscope to be loaded in all procs
+         * Note: we enable libappview to be loaded in all procs
          * because the lib is responsible for determining if
          * it should interpose.
          */
@@ -3493,11 +3493,11 @@ execv(const char *pathname, char *const argv[])
     while ((argv[nargs] != NULL)) nargs++;
 
     size_t plen = sizeof(char *);
-    if ((nargs == 0) || (nargv = scope_calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
+    if ((nargs == 0) || (nargv = appview_calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
         return g_fn.execv(pathname, argv);
     }
 
-    nargv[0] = scopexec;
+    nargv[0] = appviewxec;
     nargv[1] = (char *)pathname;
 
     for (i = 2; i <= nargs; i++) {
@@ -3505,8 +3505,8 @@ execv(const char *pathname, char *const argv[])
     }
 
     g_fn.execv(nargv[0], nargv);
-    if (nargv) scope_free(nargv);
-    scope_free(scopexec);
+    if (nargv) appview_free(nargv);
+    appview_free(appviewxec);
     return -1;
 }
 
@@ -3515,19 +3515,19 @@ EXPORTOFF int
 execve(const char *pathname, char *const argv[], char *const envp[])
 {
     int i, nargs, rc;
-    char *scopexec;
+    char *appviewxec;
     char **nargv;
 
     WRAP_CHECK(execve, -1);
 
-    scopexec = getScopeExec(pathname, (char **)argv, (char **)envp);
-    if (scopexec == NULL) {
+    appviewxec = getAppViewExec(pathname, (char **)argv, (char **)envp);
+    if (appviewxec == NULL) {
         char **newenvp = NULL;
 
         // need to get/set preload in envp and not environ
         if (getPreload((char **)envp) == FALSE) {
             /*
-             * Note: we enable libscope to be loaded in all procs
+             * Note: we enable libappview to be loaded in all procs
              * because the lib is responsible for determining if
              * it should interpose.
              */
@@ -3540,13 +3540,13 @@ execve(const char *pathname, char *const argv[], char *const envp[])
         // If execve returns, it's an error
         if (newenvp) {
             for (i = 0; newenvp[i]; i++) {
-                if (scope_strstr(newenvp[i], "LD_PRELOAD")) {
-                    scope_free(newenvp[i]);
+                if (appview_strstr(newenvp[i], "LD_PRELOAD")) {
+                    appview_free(newenvp[i]);
                     break;
                 }
             }
 
-            scope_free(newenvp);
+            appview_free(newenvp);
         }
         return rc;
     }
@@ -3555,12 +3555,12 @@ execve(const char *pathname, char *const argv[], char *const envp[])
     while ((argv[nargs] != NULL)) nargs++;
 
     size_t plen = sizeof(char *);
-    if ((nargs == 0) || (nargv = scope_calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
+    if ((nargs == 0) || (nargv = appview_calloc(1, ((nargs * plen) + (plen * 2)))) == NULL) {
         // we're not adjusting envp here, given an error condition
         return g_fn.execve(pathname, argv, envp);
     }
 
-    nargv[0] = scopexec;
+    nargv[0] = appviewxec;
     nargv[1] = (char *)pathname;
 
     for (i = 2; i <= nargs; i++) {
@@ -3568,8 +3568,8 @@ execve(const char *pathname, char *const argv[], char *const envp[])
     }
 
     g_fn.execve(nargv[0], nargv, environ);
-    if (nargv) scope_free(nargv);
-    scope_free(scopexec);
+    if (nargv) appview_free(nargv);
+    appview_free(appviewxec);
     return -1;
 }
 
@@ -3584,7 +3584,7 @@ __overflow(FILE *stream, int ch)
 
     int rc = g_fn.__overflow(stream, ch);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != EOF), &ch, 1, "__overflow", BUF, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != EOF), &ch, 1, "__overflow", BUF, 0);
 
     return rc;
 }
@@ -3620,7 +3620,7 @@ __write_pthread(int fd, const void *buf, size_t size)
 }
 
 static bool
-isAnAppScopeConnection(int fd)
+isAnAppViewConnection(int fd)
 {
     if (fd == -1) return FALSE;
 
@@ -3639,10 +3639,10 @@ isAnAppScopeConnection(int fd)
  * and value of msgvec
  */
 static void
-scopeProcessSendmmsg(int sockfd, struct mmsghdr *msgvec, int rc) {
+appviewProcessSendmmsg(int sockfd, struct mmsghdr *msgvec, int rc) {
     if (rc != -1) {
         if (msgvec) {
-            scopeLog(CFG_LOG_TRACE, "fd:%d sendmmsg", sockfd);
+            appviewLog(CFG_LOG_TRACE, "fd:%d sendmmsg", sockfd);
 
             // For UDP connections the msg is a remote addr
             if (!sockIsTCP(sockfd)) {
@@ -3674,7 +3674,7 @@ scopeProcessSendmmsg(int sockfd, struct mmsghdr *msgvec, int rc) {
  * The DBG() output is ignored until after the constructor runs.
  */
 static long
-wrap_scope_syscall(long number, ...)
+wrap_appview_syscall(long number, ...)
 {
     struct FuncArgs fArgs;
 
@@ -3723,7 +3723,7 @@ wrap_scope_syscall(long number, ...)
             return rc;
         }
 
-        scopeProcessSendmmsg((int)fArgs.arg[0], (struct mmsghdr *) fArgs.arg[1], rc);
+        appviewProcessSendmmsg((int)fArgs.arg[0], (struct mmsghdr *) fArgs.arg[1], rc);
         return rc;
     }
 
@@ -3770,23 +3770,23 @@ wrap_scope_syscall(long number, ...)
 }
 
 static ssize_t
-wrap_scope_write(int fd, const void* buf, size_t size)
+wrap_appview_write(int fd, const void* buf, size_t size)
 {
     return (ssize_t)syscall(SYS_write, fd, buf, size);
 }
 
 static int
-wrap_scope_open(const char* pathname)
+wrap_appview_open(const char* pathname)
 {
     // This implementation is largely based on transportConnectFile().
-    int fd = scope_open(pathname, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
+    int fd = appview_open(pathname, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
     if (fd == -1) {
         DBG("%s", pathname);
         return fd;
     }
 
     // Since umask affects open permissions above...
-    if (scope_fchmod(fd, 0666) == -1) {
+    if (appview_fchmod(fd, 0666) == -1) {
         DBG("%d %s", fd, pathname);
     }
     return fd;
@@ -3805,7 +3805,7 @@ fwrite_unlocked(const void *ptr, size_t size, size_t nitems, FILE *stream)
 
     size_t rc = g_fn.fwrite_unlocked(ptr, size, nitems, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc == nitems), ptr, rc*size, "fwrite_unlocked", BUF, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc == nitems), ptr, rc*size, "fwrite_unlocked", BUF, 0);
 
     return rc;
 }
@@ -3850,7 +3850,7 @@ SSL_read(SSL *ssl, void *buf, int num)
 {
     int rc;
     
-    scopeLogTrace("SSL_read");
+    appviewLogTrace("SSL_read");
     WRAP_CHECK(SSL_read, -1);
     rc = g_fn.SSL_read(ssl, buf, num);
 
@@ -3868,7 +3868,7 @@ SSL_write(SSL *ssl, const void *buf, int num)
 {
     int rc;
     
-    scopeLogTrace("SSL_write");
+    appviewLogTrace("SSL_write");
     WRAP_CHECK(SSL_write, -1);
 
     rc = g_fn.SSL_write(ssl, buf, num);
@@ -3921,7 +3921,7 @@ gnutls_record_recv(gnutls_session_t session, void *data, size_t data_size)
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_recv");
+    //appviewLogError("gnutls_record_recv");
     WRAP_CHECK(gnutls_record_recv, -1);
     rc = g_fn.gnutls_record_recv(session, data, data_size);
 
@@ -3937,7 +3937,7 @@ gnutls_record_recv_early_data(gnutls_session_t session, void *data, size_t data_
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_recv_early_data");
+    //appviewLogError("gnutls_record_recv_early_data");
     WRAP_CHECK(gnutls_record_recv_early_data, -1);
     rc = g_fn.gnutls_record_recv_early_data(session, data, data_size);
 
@@ -3953,7 +3953,7 @@ gnutls_record_recv_packet(gnutls_session_t session, gnutls_packet_t *packet)
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_recv_packet");
+    //appviewLogError("gnutls_record_recv_packet");
     WRAP_CHECK(gnutls_record_recv_packet, -1);
     rc = g_fn.gnutls_record_recv_packet(session, packet);
 
@@ -3968,7 +3968,7 @@ gnutls_record_recv_seq(gnutls_session_t session, void *data, size_t data_size, u
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_recv_seq");
+    //appviewLogError("gnutls_record_recv_seq");
     WRAP_CHECK(gnutls_record_recv_seq, -1);
     rc = g_fn.gnutls_record_recv_seq(session, data, data_size, seq);
 
@@ -3984,7 +3984,7 @@ gnutls_record_send(gnutls_session_t session, const void *data, size_t data_size)
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_send");
+    //appviewLogError("gnutls_record_send");
     WRAP_CHECK(gnutls_record_send, -1);
     rc = g_fn.gnutls_record_send(session, data, data_size);
 
@@ -4001,7 +4001,7 @@ gnutls_record_send2(gnutls_session_t session, const void *data, size_t data_size
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_send2");
+    //appviewLogError("gnutls_record_send2");
     WRAP_CHECK(gnutls_record_send2, -1);
     rc = g_fn.gnutls_record_send2(session, data, data_size, pad, flags);
 
@@ -4017,7 +4017,7 @@ gnutls_record_send_early_data(gnutls_session_t session, const void *data, size_t
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_send_early_data");
+    //appviewLogError("gnutls_record_send_early_data");
     WRAP_CHECK(gnutls_record_send_early_data, -1);
     rc = g_fn.gnutls_record_send_early_data(session, data, data_size);
 
@@ -4034,7 +4034,7 @@ gnutls_record_send_range(gnutls_session_t session, const void *data, size_t data
 {
     ssize_t rc;
 
-    //scopeLogError("gnutls_record_send_range");
+    //appviewLogError("gnutls_record_send_range");
     WRAP_CHECK(gnutls_record_send_range, -1);
     rc = g_fn.gnutls_record_send_range(session, data, data_size, range);
 
@@ -4054,13 +4054,13 @@ nss_close(PRFileDesc *fd)
     // Note: NSS docs don't define that PR_GetError should be called on failure
     if (!fd) return PR_FAILURE;
 
-    //scopeLogError("fd:%d nss_close", (uint64_t)fd->methods);
+    //appviewLogError("fd:%d nss_close", (uint64_t)fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->close(fd);
     } else {
         rc = PR_FAILURE;
         DBG(NULL);
-        scopeLogError("ERROR: nss_close no list entry");
+        appviewLogError("ERROR: nss_close no list entry");
         return rc;
     }
 
@@ -4089,13 +4089,13 @@ nss_send(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags, PRInterv
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_send", (uint64_t)fd->methods);
+    //appviewLogError("fd:%d nss_send", (uint64_t)fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->send(fd, buf, amount, flags, timeout);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_send no list entry");
+        appviewLogError("ERROR: nss_send no list entry");
     }
 
     if (rc > 0) {
@@ -4125,13 +4125,13 @@ nss_recv(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags, PRIntervalTime
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_recv", (uint64_t)fd->methods);
+    //appviewLogError("fd:%d nss_recv", (uint64_t)fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->recv(fd, buf, amount, flags, timeout);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_recv no list entry");
+        appviewLogError("ERROR: nss_recv no list entry");
     }
 
     if (rc > 0) {
@@ -4161,13 +4161,13 @@ nss_read(PRFileDesc *fd, void *buf, PRInt32 amount)
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_read", (uint64_t)fd->methods);
+    //appviewLogError("fd:%d nss_read", (uint64_t)fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->read(fd, buf, amount);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_read no list entry");
+        appviewLogError("ERROR: nss_read no list entry");
     }
 
     if (rc > 0) {
@@ -4197,13 +4197,13 @@ nss_write(PRFileDesc *fd, const void *buf, PRInt32 amount)
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_write", fd->methods);
+    //appviewLogError("fd:%d nss_write", fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->write(fd, buf, amount);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_write no list entry");
+        appviewLogError("ERROR: nss_write no list entry");
     }
 
     if (rc > 0) {
@@ -4233,13 +4233,13 @@ nss_writev(PRFileDesc *fd, const PRIOVec *iov, PRInt32 iov_size, PRIntervalTime 
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_writev", fd->methods);
+    //appviewLogError("fd:%d nss_writev", fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->writev(fd, iov, iov_size, timeout);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_writev no list entry");
+        appviewLogError("ERROR: nss_writev no list entry");
     }
 
     if (rc > 0) {
@@ -4270,13 +4270,13 @@ nss_sendto(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_sendto", fd->methods);
+    //appviewLogError("fd:%d nss_sendto", fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->sendto(fd, (void *)buf, amount, flags, addr, timeout);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_sendto no list entry");
+        appviewLogError("ERROR: nss_sendto no list entry");
     }
 
     if (rc > 0) {
@@ -4307,13 +4307,13 @@ nss_recvfrom(PRFileDesc *fd, void *buf, PRInt32 amount, PRIntn flags,
         return -1;
     }
 
-    //scopeLogError("fd:%d nss_recvfrom", fd->methods);
+    //appviewLogError("fd:%d nss_recvfrom", fd->methods);
     if ((nssentry = lstFind(g_nsslist, (uint64_t)fd->methods)) != NULL) {
         rc = nssentry->ssl_methods->recvfrom(fd, buf, amount, flags, addr, timeout);
     } else {
         rc = -1;
         DBG(NULL);
-        scopeLogError("ERROR: nss_recvfrom no list entry");
+        appviewLogError("ERROR: nss_recvfrom no list entry");
     }
 
     if (rc > 0) {
@@ -4340,14 +4340,14 @@ SSL_ImportFD(PRFileDesc *model, PRFileDesc *currFd)
     if (result != NULL) {
         nss_list *nssentry;
 
-        if ((((nssentry = scope_calloc(1, sizeof(nss_list))) != NULL)) &&
-            ((nssentry->ssl_methods = scope_calloc(1, sizeof(PRIOMethods))) != NULL) &&
-            ((nssentry->ssl_int_methods = scope_calloc(1, sizeof(PRIOMethods))) != NULL)) {
+        if ((((nssentry = appview_calloc(1, sizeof(nss_list))) != NULL)) &&
+            ((nssentry->ssl_methods = appview_calloc(1, sizeof(PRIOMethods))) != NULL) &&
+            ((nssentry->ssl_int_methods = appview_calloc(1, sizeof(PRIOMethods))) != NULL)) {
 
-            scope_memmove(nssentry->ssl_methods, result->methods, sizeof(PRIOMethods));
-            scope_memmove(nssentry->ssl_int_methods, result->methods, sizeof(PRIOMethods));
+            appview_memmove(nssentry->ssl_methods, result->methods, sizeof(PRIOMethods));
+            appview_memmove(nssentry->ssl_int_methods, result->methods, sizeof(PRIOMethods));
             nssentry->id = (uint64_t)nssentry->ssl_int_methods;
-            //scopeLogInfo("fd:%d SSL_ImportFD", (uint64_t)nssentry->id);
+            //appviewLogInfo("fd:%d SSL_ImportFD", (uint64_t)nssentry->id);
 
             // ref contrib/tls/nss/prio.h struct PRIOMethods
             // read ... todo? read, recvfrom, acceptread
@@ -4392,7 +4392,7 @@ dlopen(const char *filename, int flags)
     if (flags & RTLD_NODELETE) strcat(fbuf, "RTLD_NODELETE|");
     if (flags & RTLD_NOLOAD) strcat(fbuf, "RTLD_NOLOAD|");
     if (flags & RTLD_DEEPBIND) strcat(fbuf, "RTLD_DEEPBIND|");
-    scopeLog(CFG_LOG_DEBUG, "dlopen called for %s with %s", filename, fbuf);
+    appviewLog(CFG_LOG_DEBUG, "dlopen called for %s with %s", filename, fbuf);
 
     WRAP_CHECK(dlopen, NULL);
 
@@ -4416,13 +4416,13 @@ dlopen(const char *filename, int flags)
         // Get the link map and ELF sections in advance of something matching
         if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
             (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
-            scopeLog(CFG_LOG_DEBUG, "\tlibrary:  %s", lm->l_name);
+            appviewLog(CFG_LOG_DEBUG, "\tlibrary:  %s", lm->l_name);
 
             // for each symbol in the list try to hook
             for (i=0; inject_hook_list[i].symbol; i++) {
                 if ((dlsym(handle, inject_hook_list[i].symbol)) &&
                     (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1)) {
-                    scopeLog(CFG_LOG_DEBUG, "\tdlopen interposed  %s", inject_hook_list[i].symbol);
+                    appviewLog(CFG_LOG_DEBUG, "\tdlopen interposed  %s", inject_hook_list[i].symbol);
                 }
             }
         }
@@ -4451,7 +4451,7 @@ setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
     WRAP_CHECK(setrlimit, -1);
 
     char msg[128];
-    scope_snprintf(msg, sizeof(msg), "setting resource limit %d to %d cur and %d max",
+    appview_snprintf(msg, sizeof(msg), "setting resource limit %d to %d cur and %d max",
                    resource, rlim->rlim_cur, rlim->rlim_max);
     notify(NOTIFY_FUNC, msg);
 
@@ -4461,14 +4461,14 @@ setrlimit(__rlimit_resource_t resource, const struct rlimit *rlim)
              * Setting value to 0 prevents file creation, we want to prevent
              * it regarding the fact that destination path can point to file.
              */
-            scopeLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_FSIZE with limit=0 prevents file creation - opt out from setrlimit.");
+            appviewLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_FSIZE with limit=0 prevents file creation - opt out from setrlimit.");
             return 0;
         } else if (resource == RLIMIT_NPROC) {
             /*
              * Setting value to 0 prevents process/thread creation for specific user.
              * We want to prevent it regarding the fact that we want to create out periodic thread.
              */
-            scopeLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_NPROC with limit=0 prevents process/thread creation - opt out from setrlimit.");
+            appviewLog(CFG_LOG_DEBUG, "setrlimit: RLIMIT_NPROC with limit=0 prevents process/thread creation - opt out from setrlimit.");
             return 0;
         }
     }
@@ -4481,7 +4481,7 @@ close(int fd)
 {
     WRAP_CHECK(close, -1);
 
-    if (isAnAppScopeConnection(fd)) return 0;
+    if (isAnAppViewConnection(fd)) return 0;
 
     int rc = g_fn.close(fd);
 
@@ -4494,9 +4494,9 @@ EXPORTOFF int
 fclose(FILE *stream)
 {
     WRAP_CHECK(fclose, EOF);
-    int fd = wrap_scope_fileno(stream);
+    int fd = wrap_appview_fileno(stream);
 
-    if (isAnAppScopeConnection(fd)) return 0;
+    if (isAnAppViewConnection(fd)) return 0;
 
     int rc = g_fn.fclose(stream);
 
@@ -4613,7 +4613,7 @@ __sendto_nocancel(int sockfd, const void *buf, size_t len, int flags,
     WRAP_CHECK(__sendto_nocancel, -1);
     rc = g_fn.__sendto_nocancel(sockfd, buf, len, flags, dest_addr, addrlen);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d __sendto_nocancel", sockfd);
+        appviewLog(CFG_LOG_TRACE, "fd:%d __sendto_nocancel", sockfd);
         doSetAddrs(sockfd);
 
         if (remotePortIsDNS(sockfd)) {
@@ -4644,7 +4644,7 @@ DNSServiceQueryRecord(void *sdRef, uint32_t flags, uint32_t interfaceIndex,
     time.duration = getDuration(time.initial);
 
     if (rc == 0) {
-        scopeLog(CFG_LOG_DEBUG, "DNSServiceQueryRecord");
+        appviewLog(CFG_LOG_DEBUG, "DNSServiceQueryRecord");
         doUpdateState(DNS, -1, time.duration, NULL, fullname);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, fullname);
     } else {
@@ -4674,7 +4674,7 @@ fseek(FILE *stream, long offset, int whence)
     WRAP_CHECK(fseek, -1);
     int rc = g_fn.fseek(stream, offset, whence);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "fseek");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "fseek");
 
     return rc;
 }
@@ -4685,7 +4685,7 @@ fseeko(FILE *stream, off_t offset, int whence)
     WRAP_CHECK(fseeko, -1);
     int rc = g_fn.fseeko(stream, offset, whence);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "fseeko");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "fseeko");
 
     return rc;
 }
@@ -4696,7 +4696,7 @@ ftell(FILE *stream)
     WRAP_CHECK(ftell, -1);
     long rc = g_fn.ftell(stream);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "ftell");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "ftell");
 
     return rc;
 }
@@ -4707,7 +4707,7 @@ ftello(FILE *stream)
     WRAP_CHECK(ftello, -1);
     off_t rc = g_fn.ftello(stream);
 
-    doSeek(wrap_scope_fileno(stream), (rc != -1), "ftello");
+    doSeek(wrap_appview_fileno(stream), (rc != -1), "ftello");
 
     return rc;
 }
@@ -4718,7 +4718,7 @@ rewind(FILE *stream)
     WRAP_CHECK_VOID(rewind);
     g_fn.rewind(stream);
 
-    doSeek(wrap_scope_fileno(stream), TRUE, "rewind");
+    doSeek(wrap_appview_fileno(stream), TRUE, "rewind");
 
     return;
 }
@@ -4729,7 +4729,7 @@ fsetpos(FILE *stream, const fpos_t *pos)
     WRAP_CHECK(fsetpos, -1);
     int rc = g_fn.fsetpos(stream, pos);
 
-    doSeek(wrap_scope_fileno(stream), (rc == 0), "fsetpos");
+    doSeek(wrap_appview_fileno(stream), (rc == 0), "fsetpos");
 
     return rc;
 }
@@ -4740,7 +4740,7 @@ fgetpos(FILE *stream,  fpos_t *pos)
     WRAP_CHECK(fgetpos, -1);
     int rc = g_fn.fgetpos(stream, pos);
 
-    doSeek(wrap_scope_fileno(stream), (rc == 0), "fgetpos");
+    doSeek(wrap_appview_fileno(stream), (rc == 0), "fgetpos");
 
     return rc;
 }
@@ -4751,7 +4751,7 @@ fgetpos64(FILE *stream,  fpos64_t *pos)
     WRAP_CHECK(fgetpos64, -1);
     int rc = g_fn.fgetpos64(stream, pos);
 
-    doSeek(wrap_scope_fileno(stream), (rc == 0), "fgetpos64");
+    doSeek(wrap_appview_fileno(stream), (rc == 0), "fgetpos64");
 
     return rc;
 }
@@ -4869,7 +4869,7 @@ fwrite(const void * ptr, size_t size, size_t nitems, FILE * stream)
 
     size_t rc = g_fn.fwrite(ptr, size, nitems, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc == nitems), ptr, rc*size, "fwrite", BUF, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc == nitems), ptr, rc*size, "fwrite", BUF, 0);
 
     return rc;
 }
@@ -4885,11 +4885,11 @@ puts(const char *s)
 
     int rc = g_fn.puts(s);
 
-    doWrite(wrap_scope_fileno(stdout), initialTime, (rc != EOF), s, strlen(s), "puts", BUF, 0);
+    doWrite(wrap_appview_fileno(stdout), initialTime, (rc != EOF), s, strlen(s), "puts", BUF, 0);
 
     if (rc != EOF) {
         // puts() "writes the string s and a trailing newline to stdout"
-        doWrite(wrap_scope_fileno(stdout), initialTime, TRUE, "\n", 1, "puts", BUF, 0);
+        doWrite(wrap_appview_fileno(stdout), initialTime, TRUE, "\n", 1, "puts", BUF, 0);
     }
 
     return rc;
@@ -4906,7 +4906,7 @@ putchar(int c)
 
     int rc = g_fn.putchar(c);
 
-    doWrite(wrap_scope_fileno(stdout), initialTime, (rc != EOF), &c, 1, "putchar", BUF, 0);
+    doWrite(wrap_appview_fileno(stdout), initialTime, (rc != EOF), &c, 1, "putchar", BUF, 0);
 
     return rc;
 }
@@ -4922,7 +4922,7 @@ fputs(const char *s, FILE *stream)
 
     int rc = g_fn.fputs(s, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != EOF), s, strlen(s), "fputs", BUF, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != EOF), s, strlen(s), "fputs", BUF, 0);
 
     return rc;
 }
@@ -4938,7 +4938,7 @@ fputs_unlocked(const char *s, FILE *stream)
 
     int rc = g_fn.fputs_unlocked(s, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != EOF), s, strlen(s), "fputs_unlocked", BUF, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != EOF), s, strlen(s), "fputs_unlocked", BUF, 0);
 
     return rc;
 }
@@ -4990,7 +4990,7 @@ fread(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
     size_t rc = g_fn.fread(ptr, size, nmemb, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "fread", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "fread", NONE, 0);
 
     return rc;
 }
@@ -5004,7 +5004,7 @@ __fread_chk(void *ptr, size_t ptrlen, size_t size, size_t nmemb, FILE *stream)
 
     size_t rc = g_fn.__fread_chk(ptr, ptrlen, size, nmemb, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "__fread_chk", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "__fread_chk", NONE, 0);
 
     return rc;
 }
@@ -5017,7 +5017,7 @@ fread_unlocked(void *ptr, size_t size, size_t nmemb, FILE *stream)
 
     size_t rc = g_fn.fread_unlocked(ptr, size, nmemb, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "fread_unlocked", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc == nmemb), NULL, rc*size, "fread_unlocked", NONE, 0);
 
     return rc;
 }
@@ -5030,7 +5030,7 @@ fgets(char *s, int n, FILE *stream)
 
     char* rc = g_fn.fgets(s, n, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets", NONE, 0);
 
     return rc;
 }
@@ -5044,7 +5044,7 @@ __fgets_chk(char *s, size_t size, int strsize, FILE *stream)
 
     char* rc = g_fn.__fgets_chk(s, size, strsize, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != NULL), NULL, size, "__fgets_chk", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != NULL), NULL, size, "__fgets_chk", NONE, 0);
 
     return rc;
 }
@@ -5057,7 +5057,7 @@ fgets_unlocked(char *s, int n, FILE *stream)
 
     char* rc = g_fn.fgets_unlocked(s, n, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets_unlocked", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != NULL), NULL, n, "fgets_unlocked", NONE, 0);
 
     return rc;
 }
@@ -5071,7 +5071,7 @@ __fgetws_chk(wchar_t *ws, size_t size, int strsize, FILE *stream)
 
     wchar_t* rc = g_fn.__fgetws_chk(ws, size, strsize, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != NULL), NULL, size*sizeof(wchar_t), "__fgetws_chk", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != NULL), NULL, size*sizeof(wchar_t), "__fgetws_chk", NONE, 0);
 
     return rc;
 }
@@ -5084,7 +5084,7 @@ fgetws(wchar_t *ws, int n, FILE *stream)
 
     wchar_t* rc = g_fn.fgetws(ws, n, stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != NULL), NULL, n*sizeof(wchar_t), "fgetws", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != NULL), NULL, n*sizeof(wchar_t), "fgetws", NONE, 0);
 
     return rc;
 }
@@ -5097,7 +5097,7 @@ fgetwc(FILE *stream)
 
     wint_t rc = g_fn.fgetwc(stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != WEOF), NULL, sizeof(wint_t), "fgetwc", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != WEOF), NULL, sizeof(wint_t), "fgetwc", NONE, 0);
 
     return rc;
 }
@@ -5110,7 +5110,7 @@ fgetc(FILE *stream)
 
     int rc = g_fn.fgetc(stream);
 
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != EOF), NULL, 1, "fgetc", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != EOF), NULL, 1, "fgetc", NONE, 0);
 
     return rc;
 }
@@ -5126,7 +5126,7 @@ fputc(int c, FILE *stream)
 
     int rc = g_fn.fputc(c, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != EOF), &c, 1, "fputc", NONE, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != EOF), &c, 1, "fputc", NONE, 0);
 
     return rc;
 }
@@ -5142,7 +5142,7 @@ fputc_unlocked(int c, FILE *stream)
 
     int rc = g_fn.fputc_unlocked(c, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != EOF), &c, 1, "fputc_unlocked", NONE, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != EOF), &c, 1, "fputc_unlocked", NONE, 0);
 
     return rc;
 }
@@ -5158,7 +5158,7 @@ putwc(wchar_t wc, FILE *stream)
 
     wint_t rc = g_fn.putwc(wc, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != WEOF), &wc, sizeof(wchar_t), "putwc", NONE, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != WEOF), &wc, sizeof(wchar_t), "putwc", NONE, 0);
 
     return rc;
 }
@@ -5174,7 +5174,7 @@ fputwc(wchar_t wc, FILE *stream)
 
     wint_t rc = g_fn.fputwc(wc, stream);
 
-    doWrite(wrap_scope_fileno(stream), initialTime, (rc != WEOF), &wc, sizeof(wchar_t), "fputwc", NONE, 0);
+    doWrite(wrap_appview_fileno(stream), initialTime, (rc != WEOF), &wc, sizeof(wchar_t), "fputwc", NONE, 0);
 
     return rc;
 }
@@ -5196,7 +5196,7 @@ fscanf(FILE *stream, const char *format, ...)
                          fArgs.arg[2], fArgs.arg[3],
                          fArgs.arg[4], fArgs.arg[5]);
 
-    doRead(wrap_scope_fileno(stream),initialTime, (rc != EOF), NULL, rc, "fscanf", NONE, 0);
+    doRead(wrap_appview_fileno(stream),initialTime, (rc != EOF), NULL, rc, "fscanf", NONE, 0);
 
     return rc;
 }
@@ -5210,7 +5210,7 @@ getline (char **lineptr, size_t *n, FILE *stream)
     ssize_t rc = g_fn.getline(lineptr, n, stream);
 
     size_t bytes = (n) ? *n : 0;
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != -1), NULL, bytes, "getline", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != -1), NULL, bytes, "getline", NONE, 0);
 
     return rc;
 }
@@ -5225,7 +5225,7 @@ getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
     ssize_t rc = g_fn.getdelim(lineptr, n, delimiter, stream);
 
     size_t bytes = (n) ? *n : 0;
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != -1), NULL, bytes, "getdelim", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != -1), NULL, bytes, "getdelim", NONE, 0);
 
     return rc;
 }
@@ -5243,7 +5243,7 @@ __getdelim (char **lineptr, size_t *n, int delimiter, FILE *stream)
     }
 
     size_t bytes = (n) ? *n : 0;
-    doRead(wrap_scope_fileno(stream), initialTime, (rc != -1), NULL, bytes, "__getdelim", NONE, 0);
+    doRead(wrap_appview_fileno(stream), initialTime, (rc != -1), NULL, bytes, "__getdelim", NONE, 0);
     return rc;
 }
 
@@ -5294,7 +5294,7 @@ dup2(int oldfd, int newfd)
 {
     WRAP_CHECK(dup2, -1);
 
-    if (isAnAppScopeConnection(newfd)) {
+    if (isAnAppViewConnection(newfd)) {
         if (newfd == ctlConnection(g_ctl, CFG_CTL)) ctlDisconnect(g_ctl, CFG_CTL);
         if (newfd == ctlConnection(g_ctl, CFG_LS)) ctlDisconnect(g_ctl, CFG_LS);
         if (newfd == mtcConnection(g_mtc)) mtcDisconnect(g_mtc);
@@ -5313,7 +5313,7 @@ dup3(int oldfd, int newfd, int flags)
 {
     WRAP_CHECK(dup3, -1);
 
-    if (isAnAppScopeConnection(newfd)) {
+    if (isAnAppViewConnection(newfd)) {
         if (newfd == ctlConnection(g_ctl, CFG_CTL)) ctlDisconnect(g_ctl, CFG_CTL);
         if (newfd == ctlConnection(g_ctl, CFG_LS)) ctlDisconnect(g_ctl, CFG_LS);
         if (newfd == mtcConnection(g_mtc)) mtcDisconnect(g_mtc);
@@ -5330,7 +5330,7 @@ EXPORTOFF void
 vsyslog(int priority, const char *format, va_list ap)
 {
     WRAP_CHECK_VOID(vsyslog);
-    scopeLog(CFG_LOG_DEBUG, "vsyslog");
+    appviewLog(CFG_LOG_DEBUG, "vsyslog");
     g_fn.vsyslog(priority, format, ap);
     return;
 }
@@ -5341,7 +5341,7 @@ fork()
     pid_t rc;
 
     WRAP_CHECK(fork, -1);
-    scopeLog(CFG_LOG_DEBUG, "fork");
+    appviewLog(CFG_LOG_DEBUG, "fork");
     // fork duplicates only the thread that calls it. This generate the following problem
     // we need to ensure that only the thread which calls the fork hold all the locks.
     // In other situation we will hit the deadlock since the child can try to use a lock
@@ -5350,9 +5350,9 @@ fork()
     // P1(parent)          P2(child)
     // T1 (fork)    ->     T1
     // T2 (lock)
-    scope_op_before_fork();
+    appview_op_before_fork();
     rc = g_fn.fork();
-    scope_op_after_fork(rc);
+    appview_op_after_fork(rc);
     if (rc == 0) {
         // We are the child proc
         doReset();
@@ -5368,7 +5368,7 @@ socket(int socket_family, int socket_type, int protocol)
     WRAP_CHECK(socket, -1);
     sd = g_fn.socket(socket_family, socket_type, protocol);
     if (sd != -1) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d socket", sd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d socket", sd);
         addSock(sd, socket_type, socket_family);
 
         if ((socket_family == AF_INET) || (socket_family == AF_INET6)) {
@@ -5413,7 +5413,7 @@ listen(int sockfd, int backlog)
     WRAP_CHECK(listen, -1);
     rc = g_fn.listen(sockfd, backlog);
     if (rc != -1) {
-        scopeLog(CFG_LOG_DEBUG, "fd:%d listen", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d listen", sockfd);
 
         doUpdateState(OPEN_PORTS, sockfd, 1, "listen", NULL);
         doUpdateState(NET_CONNECTIONS, sockfd, 1, "listen", NULL);
@@ -5479,7 +5479,7 @@ bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
     rc = g_fn.bind(sockfd, addr, addrlen);
     if (rc != -1) { 
         doSetConnection(sockfd, addr, addrlen, LOCAL);
-        scopeLog(CFG_LOG_DEBUG, "fd:%d bind", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d bind", sockfd);
     } else {
         doUpdateState(NET_ERR_CONN, sockfd, 0, "bind", "nopath");
     }
@@ -5503,7 +5503,7 @@ connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
         doSetConnection(sockfd, addr, addrlen, REMOTE);
         doUpdateState(NET_CONNECTIONS, sockfd, 1, "connect", NULL);
 
-        scopeLog(CFG_LOG_DEBUG, "fd:%d connect", sockfd);
+        appviewLog(CFG_LOG_DEBUG, "fd:%d connect", sockfd);
     } else {
         doUpdateState(NET_ERR_CONN, sockfd, 0, "connect", "nopath");
     }
@@ -5518,7 +5518,7 @@ send(int sockfd, const void *buf, size_t len, int flags)
     WRAP_CHECK(send, -1);
     rc = g_fn.send(sockfd, buf, len, flags);
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d send", sockfd);
+        appviewLog(CFG_LOG_TRACE, "fd:%d send", sockfd);
         if (remotePortIsDNS(sockfd)) {
             getDNSName(sockfd, (void *)buf, len);
         }
@@ -5542,7 +5542,7 @@ internal_sendto(int sockfd, const void *buf, size_t len, int flags,
     if ((g_ismusl == TRUE) && (g_cfg.funcs_attached == FALSE)) return rc; 
 
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d sendto", sockfd);
+        appviewLog(CFG_LOG_TRACE, "fd:%d sendto", sockfd);
         doSetConnection(sockfd, dest_addr, addrlen, REMOTE);
 
         if (remotePortIsDNS(sockfd)) {
@@ -5578,7 +5578,7 @@ sendmsg(int sockfd, const struct msghdr *msg, int flags)
             size_t msg_controllen_orig;
             struct msghdr *msg_modify = (struct msghdr *)msg;
 
-            scopeLog(CFG_LOG_TRACE, "fd:%d sendmsg", sockfd);
+            appviewLog(CFG_LOG_TRACE, "fd:%d sendmsg", sockfd);
 
             // For UDP connections the msg is a remote addr
             if (!sockIsTCP(sockfd)) {
@@ -5630,7 +5630,7 @@ internal_sendmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen, int fla
         return rc;
     }
 
-    scopeProcessSendmmsg(sockfd, msgvec, rc);
+    appviewProcessSendmmsg(sockfd, msgvec, rc);
     return rc;
 }
 
@@ -5647,10 +5647,10 @@ recv(int sockfd, void *buf, size_t len, int flags)
     ssize_t rc;
 
     WRAP_CHECK(recv, -1);
-    scopeLog(CFG_LOG_TRACE, "fd:%d recv", sockfd);
+    appviewLog(CFG_LOG_TRACE, "fd:%d recv", sockfd);
     rc = g_fn.recv(sockfd, buf, len, flags);
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
@@ -5674,10 +5674,10 @@ __recv_chk(int sockfd, void *buf, size_t len, size_t buflen, int flags)
     ssize_t rc;
 
     WRAP_CHECK(__recv_chk, -1);
-    scopeLog(CFG_LOG_TRACE, "fd:%d __recv_chk", sockfd);
+    appviewLog(CFG_LOG_TRACE, "fd:%d __recv_chk", sockfd);
     rc = g_fn.__recv_chk(sockfd, buf, len, buflen, flags);
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
@@ -5705,12 +5705,12 @@ internal_recvfrom(int sockfd, void *buf, size_t len, int flags,
     rc = g_fn.recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
     if ((g_ismusl == TRUE) && (g_cfg.funcs_attached == FALSE)) return rc;
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d recvfrom", sockfd);
+        appviewLog(CFG_LOG_TRACE, "fd:%d recvfrom", sockfd);
         if (remotePortIsDNS(sockfd)) {
             getDNSAnswer(sockfd, buf, rc, BUF);
         }
@@ -5737,12 +5737,12 @@ __recvfrom_chk(int sockfd, void *buf, size_t len, size_t buflen, int flags,
     WRAP_CHECK(__recvfrom_chk, -1);
     rc = g_fn.__recvfrom_chk(sockfd, buf, len, buflen, flags, src_addr, addrlen);
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
     if (rc != -1) {
-        scopeLog(CFG_LOG_TRACE, "fd:%d __recvfrom_chk", sockfd);
+        appviewLog(CFG_LOG_TRACE, "fd:%d __recvfrom_chk", sockfd);
         if (remotePortIsDNS(sockfd)) {
             getDNSAnswer(sockfd, buf, rc, BUF);
         }
@@ -5799,7 +5799,7 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
     WRAP_CHECK(recvmsg, -1);
     rc = g_fn.recvmsg(sockfd, msg, flags);
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
@@ -5807,7 +5807,7 @@ recvmsg(int sockfd, struct msghdr *msg, int flags)
         if (msg) {
             size_t msg_iovlen_orig;
             size_t msg_controllen_orig;
-            scopeLog(CFG_LOG_TRACE, "fd:%d recvmsg", sockfd);
+            appviewLog(CFG_LOG_TRACE, "fd:%d recvmsg", sockfd);
 
             // For UDP connections the msg is a remote addr
                 if (msg->msg_namelen >= sizeof(struct sockaddr_in6)) {
@@ -5854,13 +5854,13 @@ recvmmsg(int sockfd, struct mmsghdr *msgvec, unsigned int vlen,
     WRAP_CHECK(recvmmsg, -1);
     rc = g_fn.recvmmsg(sockfd, msgvec, vlen, flags, timeout);
 
-    // If called with the MSG_PEEK flag set, don't do any scope processing
+    // If called with the MSG_PEEK flag set, don't do any appview processing
     // as it could result in processing of duplicate bytes later
     if (flags & MSG_PEEK) return rc;
 
     if (rc != -1) {
         if (msgvec) {
-            scopeLog(CFG_LOG_TRACE, "fd:%d recvmmsg", sockfd);
+            appviewLog(CFG_LOG_TRACE, "fd:%d recvmmsg", sockfd);
 
             // For UDP connections the msg is a remote addr
                 if (msgvec->msg_hdr.msg_namelen >= sizeof(struct sockaddr_in6)) {
@@ -5899,7 +5899,7 @@ gethostbyname(const char *name)
     time.duration = getDuration(time.initial);
 
     if (rc != NULL) {
-        scopeLog(CFG_LOG_DEBUG, "gethostbyname");
+        appviewLog(CFG_LOG_DEBUG, "gethostbyname");
         doUpdateState(DNS, -1, time.duration, NULL, name);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, name);
     } else {
@@ -5923,7 +5923,7 @@ gethostbyname2(const char *name, int af)
     time.duration = getDuration(time.initial);
 
     if (rc != NULL) {
-        scopeLog(CFG_LOG_DEBUG, "gethostbyname2");
+        appviewLog(CFG_LOG_DEBUG, "gethostbyname2");
         doUpdateState(DNS, -1, time.duration, NULL, name);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, name);
     } else {
@@ -5955,7 +5955,7 @@ getaddrinfo(const char *node, const char *service,
     time.duration = getDuration(time.initial);
 
     if (rc == 0) {
-        scopeLog(CFG_LOG_DEBUG, "getaddrinfo");
+        appviewLog(CFG_LOG_DEBUG, "getaddrinfo");
         doUpdateState(DNS, -1, time.duration, NULL, node);
         doUpdateState(DNS_DURATION, -1, time.duration, NULL, node);
     } else {
@@ -5972,10 +5972,10 @@ getaddrinfo(const char *node, const char *service,
 
 // This overrides a weak definition in src/dbg.c
 void
-scopeLog(cfg_log_level_t level, const char *format, ...)
+appviewLog(cfg_log_level_t level, const char *format, ...)
 {
-    char scope_log_var_buf[LOG_BUF_SIZE];
-    const char overflow_msg[] = "WARN: scopeLog msg truncated.\n";
+    char appview_log_var_buf[LOG_BUF_SIZE];
+    const char overflow_msg[] = "WARN: appviewLog msg truncated.\n";
     char *local_buf;
     char time_buf[LOG_TIME_SIZE];
     char tz_buf[LOG_TZ_BUF_SIZE];
@@ -5985,24 +5985,24 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
 
     if (!g_log) {
         if (!g_constructor_debug_enabled) return;
-        local_buf = scope_log_var_buf + scope_snprintf(scope_log_var_buf, LOG_BUF_SIZE, "Constructor: (pid:%d): ", scope_getpid());
-        size_t local_buf_len = sizeof(scope_log_var_buf) + (scope_log_var_buf - local_buf) - 1;
+        local_buf = appview_log_var_buf + appview_snprintf(appview_log_var_buf, LOG_BUF_SIZE, "Constructor: (pid:%d): ", appview_getpid());
+        size_t local_buf_len = sizeof(appview_log_var_buf) + (appview_log_var_buf - local_buf) - 1;
 
         va_list args;
         va_start(args, format);
-        int msg_len = scope_vsnprintf(local_buf, local_buf_len, format, args);
+        int msg_len = appview_vsnprintf(local_buf, local_buf_len, format, args);
         va_end(args);
         if (msg_len == -1) {
             DBG(NULL);
             return;
         }
 
-        scope_sprintf(local_buf + msg_len, "\n");
+        appview_sprintf(local_buf + msg_len, "\n");
         local_buf += msg_len + 1;
 
         if (DEFAULT_LOG_LEVEL > level) return;
 
-        int fd = wrap_scope_open(DEFAULT_LOG_PATH);
+        int fd = wrap_appview_open(DEFAULT_LOG_PATH);
         if (fd == -1) {
             DBG(NULL);
             return;
@@ -6010,46 +6010,46 @@ scopeLog(cfg_log_level_t level, const char *format, ...)
 
         if (msg_len >= local_buf_len) {
             DBG(NULL);
-            wrap_scope_write(fd, overflow_msg, sizeof(overflow_msg));
+            wrap_appview_write(fd, overflow_msg, sizeof(overflow_msg));
         } else {
-            wrap_scope_write(fd, scope_log_var_buf, local_buf - scope_log_var_buf);
+            wrap_appview_write(fd, appview_log_var_buf, local_buf - appview_log_var_buf);
         }
-        scope_close(fd);
+        appview_close(fd);
         return;
     }
 
     cfg_log_level_t cfg_level = logLevel(g_log);
     if ((cfg_level == CFG_LOG_NONE) || (cfg_level > level)) return;
 
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     msec = tv.tv_usec / 1000; 
     if (msec > 999) {
         tv.tv_sec++;
         msec = 0;
     }
-    scope_localtime_r(&tv.tv_sec, &tm_info);
-    scope_strftime(time_buf, LOG_TIME_SIZE, "%Y-%m-%dT%H:%M:%S", &tm_info); 
-    scope_strftime(tz_buf, LOG_TZ_BUF_SIZE, "%z", &tm_info); 
+    appview_localtime_r(&tv.tv_sec, &tm_info);
+    appview_strftime(time_buf, LOG_TIME_SIZE, "%Y-%m-%dT%H:%M:%S", &tm_info); 
+    appview_strftime(tz_buf, LOG_TZ_BUF_SIZE, "%z", &tm_info); 
 
-    local_buf = scope_log_var_buf + scope_snprintf(scope_log_var_buf, LOG_BUF_SIZE, "Scope: %s(pid:%d): [%s.%03d%s] ", g_proc.procname, g_proc.pid, time_buf, msec, tz_buf);
-    size_t local_buf_len = sizeof(scope_log_var_buf) + (scope_log_var_buf - local_buf) - 1;
+    local_buf = appview_log_var_buf + appview_snprintf(appview_log_var_buf, LOG_BUF_SIZE, "AppView: %s(pid:%d): [%s.%03d%s] ", g_proc.procname, g_proc.pid, time_buf, msec, tz_buf);
+    size_t local_buf_len = sizeof(appview_log_var_buf) + (appview_log_var_buf - local_buf) - 1;
 
     va_list args;
     va_start(args, format);
-    int msg_len = scope_vsnprintf(local_buf, local_buf_len, format, args);
+    int msg_len = appview_vsnprintf(local_buf, local_buf_len, format, args);
     va_end(args);
     if (msg_len == -1) {
         DBG(NULL);
         return;
     }
-    scope_sprintf(local_buf + msg_len, "\n");
+    appview_sprintf(local_buf + msg_len, "\n");
     local_buf += msg_len + 1;
 
     if (msg_len >= local_buf_len) {
         DBG(NULL);
         logSend(g_log, overflow_msg, level);
     } else {
-        logSend(g_log, scope_log_var_buf, level);
+        logSend(g_log, appview_log_var_buf, level);
     }
 }
 
@@ -6133,7 +6133,7 @@ __fdelt_chk(long int fdelt)
 
     if (fdelt < 0 || fdelt >= FD_SETSIZE) {
         DBG(NULL);
-        scope_fprintf(scope_stderr, "__fdelt_chk error: buffer overflow detected?\n");
+        appview_fprintf(appview_stderr, "__fdelt_chk error: buffer overflow detected?\n");
         abort();
     }
 
@@ -6151,7 +6151,7 @@ uv__read_hook(void *stream)
     if (g_cfg.funcs_attached == FALSE) return g_fn.uv__read(stream);
 
     if (SYMBOL_LOADED(uv_fileno)) g_fn.uv_fileno(stream, &g_ssl_fd);
-    //scopeLog(CFG_LOG_TRACE, "%s: fd %d", __FUNCTION__, g_ssl_fd);
+    //appviewLog(CFG_LOG_TRACE, "%s: fd %d", __FUNCTION__, g_ssl_fd);
     if (g_fn.uv__read) return g_fn.uv__read(stream);
 }
 
@@ -6196,7 +6196,7 @@ __longjmp_chk(jmp_buf env, int val)
 
 
 static void *
-wrap_scope_dlsym(void *handle, const char *name, void *who)
+wrap_appview_dlsym(void *handle, const char *name, void *who)
 {
     return dlsym(handle, name);
 }

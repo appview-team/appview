@@ -2,12 +2,12 @@ require("dotenv").config();
 
 module.exports = {
   siteMetadata: {
-    title: "AppScope",
+    title: "AppView",
     titleTemplate: "%s · Instrument, Collect, Observe",
     description:
-      "AppScope is an open source instrumentation utility for any application, regardless of its runtime, with no code modification required. Collect only the data you need for full observability of your applications, systems and infrastructure.",
-    url: "https://team-appscope.github.io/appscope",
-    siteUrl: "https://team-appscope.github.io/appscope",
+      "AppView is an open source instrumentation utility for any application, regardless of its runtime, with no code modification required. Collect only the data you need for full observability of your applications, systems and infrastructure.",
+    url: "https://team-appview.github.io/appview",
+    siteUrl: "https://team-appview.github.io/appview",
     image: "/images/isoarchitecture.png",
     twitterUsername: "@cribl",
   },

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/rules"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/rules"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -37,15 +37,15 @@ import (
 // rulesCmd represents the rules command
 var rulesCmd = &cobra.Command{
 	Use:   "rules [flags]",
-	Short: "View or modify system-wide AppScope rules",
-	Long:  `View or modify system-wide AppScope rules to automatically scope a set of processes. You can add or remove a single process at a time.`,
-	Example: `  scope rules
-  scope rules --rootdir /path/to/host/root --json
-  scope rules --add nginx
-  scope rules --add nginx < scope.yml
-  scope rules --add java --arg myServer
-  scope rules --add firefox --rootdir /path/to/host/root
-  scope rules --remove chromium`,
+	Short: "View or modify system-wide AppView rules",
+	Long:  `View or modify system-wide AppView rules to automatically view a set of processes. You can add or remove a single process at a time.`,
+	Example: `  appview rules
+  appview rules --rootdir /path/to/host/root --json
+  appview rules --add nginx
+  appview rules --add nginx < appview.yml
+  appview rules --add java --arg myServer
+  appview rules --add firefox --rootdir /path/to/host/root
+  appview rules --remove chromium`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
@@ -126,10 +126,10 @@ var rulesCmd = &cobra.Command{
 		// Validate user has root permissions
 		if err := util.UserVerifyRootPerm(); err != nil {
 			log.Error().Err(err)
-			util.ErrAndExit("modifying the scope rules requires administrator privileges")
+			util.ErrAndExit("modifying the appview rules requires administrator privileges")
 		}
 
-		// Add a process to; or remove a process from the scope rules
+		// Add a process to; or remove a process from the appview rules
 		if addProc != "" {
 			if err = rules.Add(rulesFile, addProc, procArg, sourceid, rc.Rootdir, rc, unixPath); err != nil {
 				util.ErrAndExit("Rules failure: %v", err)

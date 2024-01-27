@@ -28,7 +28,7 @@ declare -a stdlib_ignore_syms=('/_GLOBAL_OFFSET_TABLE_/d'
 '/^dlsym/d'
 )
 
-# List of contrib libraries used by the libscope.so
+# List of contrib libraries used by the libappview.so
 declare -a conrib_libs=(
 "./contrib/cJSON/libcjson.a" 
 "./contrib/build/funchook/libfunchook.a"

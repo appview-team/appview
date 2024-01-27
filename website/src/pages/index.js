@@ -4,7 +4,7 @@ import Hero from "../components/Hero";
 import Highlights from "../components/Highlights";
 import MobileHeader from "../components/MobileHeader";
 import Footer from "../components/Footer";
-import WhyAppScope from "../components/WhyAppScope";
+import WhyAppView from "../components/WhyAppView";
 import HowItWorks from "../components/HowItWorks";
 import GetStarted from "../components/GetStarted";
 import SEO from "../components/SEO";
@@ -14,7 +14,7 @@ const IndexPage = () => {
     <main>
       <SEO />
       <Helmet>
-        <meta name="og:image" content={'https://cribl.io/wp-content/uploads/2022/01/thumb.appScope.fullColorWhiteAlt.png'} />
+        <meta name="og:image" content={'https://cribl.io/wp-content/uploads/2022/01/thumb.appAppView.fullColorWhiteAlt.png'} />
       </Helmet>
       {/* <Alert /> */}
       <div className="display-xs">
@@ -26,7 +26,7 @@ const IndexPage = () => {
       </div>
       <Hero />
       <Highlights />
-      <WhyAppScope />
+      <WhyAppView />
       <HowItWorks />
       <GetStarted />
       <Footer />

@@ -4,7 +4,7 @@
 #include <string.h>
 #include "evtutils.h"
 #include "test.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 static void
 evtProtoAllocHttp1AndFree(void **state) {
@@ -72,7 +72,7 @@ evtFreeDoesNotCrash(void **state) {
 int
 main(int argc, char* argv[])
 {
-    scope_printf("running %s\n", argv[0]);
+    appview_printf("running %s\n", argv[0]);
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(evtProtoAllocHttp1AndFree),

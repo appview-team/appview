@@ -63,7 +63,7 @@ event:
     name: .*
     field: .*
     value: .*
-libscope:
+libappview:
   configevent: true
   summaryperiod: 10
   commanddir: /tmp/SESSIONPATH/cmd
@@ -71,7 +71,7 @@ libscope:
     level: warning
     transport:
       type: file
-      path: /tmp/SESSIONPATH/libscope.log
+      path: /tmp/SESSIONPATH/libappview.log
       buffering: line
       tls:
         enable: false

@@ -84,27 +84,27 @@ cmdUnservice(pid_t nspid)
  * If attaching to a process in the current namespace:
  * - follow regular attach logic to ultimately PTRACE attach
  * If attaching to a process in a child namespace:
- * - fork and exec a child scope process in the child PID and MNT namespace (nsForkAndExec)
- * - write the scope loader and configuration (joinChildNamespace)
+ * - fork and exec a child appview process in the child PID and MNT namespace (nsForkAndExec)
+ * - write the appview loader and configuration (joinChildNamespace)
  * - follow regular attach logic to ultimately PTRACE attach
  * If attaching to a process in a parent/sibling namespace (--rootdir specified)
  * it is not possible to change PID ns to that of a parent, so:
  * - change to the target mnt namespace (nsAttach)
- * - write the scope loader and configuration
- * - create a shell script, executed by cron, to perform the scope attach
+ * - write the appview loader and configuration
+ * - create a shell script, executed by cron, to perform the appview attach
  */
 int
 cmdAttach(pid_t pid, const char* rootdir)
 {
     int res = EXIT_FAILURE;
-    char *scopeLibPath;
+    char *appviewLibPath;
     char path[PATH_MAX] = {0};
     char env_path[PATH_MAX];
     uid_t eUid = geteuid();
     gid_t eGid = getegid();
     uid_t nsUid = eUid;
     uid_t nsGid = eGid;
-    elf_buf_t *scope_ebuf = NULL;
+    elf_buf_t *appview_ebuf = NULL;
     elf_buf_t *ebuf = NULL;
 
     if (rootdir) {
@@ -114,40 +114,40 @@ cmdAttach(pid_t pid, const char* rootdir)
     nsUid = nsInfoTranslateUidRootDir("", pid);
     nsGid = nsInfoTranslateGidRootDir("", pid);
 
-    scope_ebuf = getElf("/proc/self/exe");
-    if (!scope_ebuf) {
+    appview_ebuf = getElf("/proc/self/exe");
+    if (!appview_ebuf) {
         perror("setenv");
         goto out;
     }
 
-    // Extract and patch libscope from scope static. Don't attempt to extract from scope dynamic
-    if (is_static(scope_ebuf->buf)) {
+    // Extract and patch libappview from appview static. Don't attempt to extract from appview dynamic
+    if (is_static(appview_ebuf->buf)) {
         if (libdirExtract(NULL, 0, nsUid, nsGid, LIBRARY_FILE)) {
             fprintf(stderr, "error: failed to extract library\n");
             goto out;
         }
 
-        scopeLibPath = (char *)libdirGetPath(LIBRARY_FILE);
+        appviewLibPath = (char *)libdirGetPath(LIBRARY_FILE);
 
-        if (patchLibrary(scopeLibPath, FALSE) == PATCH_FAILED) {
+        if (patchLibrary(appviewLibPath, FALSE) == PATCH_FAILED) {
             fprintf(stderr, "error: failed to patch library\n");
             goto out;
         }
     } else {
-        scopeLibPath = (char *)libdirGetPath(LIBRARY_FILE);
+        appviewLibPath = (char *)libdirGetPath(LIBRARY_FILE);
     }
 
-    if (access(scopeLibPath, R_OK|X_OK)) {
-        fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
+    if (access(appviewLibPath, R_OK|X_OK)) {
+        fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", appviewLibPath);
         goto out;
     }
 
-    if (setenv("SCOPE_LIB_PATH", scopeLibPath, 1)) {
-        perror("setenv(SCOPE_LIB_PATH) failed");
+    if (setenv("APPVIEW_LIB_PATH", appviewLibPath, 1)) {
+        perror("setenv(APPVIEW_LIB_PATH) failed");
         goto out;
     }
 
-    // Set SCOPE_PID_ENV
+    // Set APPVIEW_PID_ENV
     setPidEnv(getpid());
 
     /*
@@ -166,13 +166,13 @@ cmdAttach(pid_t pid, const char* rootdir)
         goto out;
     }
 
-    uint64_t rc = findLibrary("libscope.so", pid, FALSE, NULL, 0);
+    uint64_t rc = findLibrary("libappview.so", pid, FALSE, NULL, 0);
 
     /*
     * If the expected process exists in different PID namespace (container)
     * we do a following switch context sequence:
     * - load static loader file into memory
-    * - [optionally] save the configuration file pointed by SCOPE_CONF_PATH into memory
+    * - [optionally] save the configuration file pointed by APPVIEW_CONF_PATH into memory
     * - switch the namespace from parent
     * - save previously loaded static loader into new namespace
     * - [optionally] save previously loaded configuration file into new namespace
@@ -211,11 +211,11 @@ cmdAttach(pid_t pid, const char* rootdir)
     }
 
     // add the env vars we want in the library
-    dprintf(fd, "SCOPE_LIB_PATH=%s\n", libdirGetPath(LIBRARY_FILE));
+    dprintf(fd, "APPVIEW_LIB_PATH=%s\n", libdirGetPath(LIBRARY_FILE));
 
     int i;
     for (i = 0; environ[i]; i++) {
-        if (strlen(environ[i]) > 6 && strncmp(environ[i], "SCOPE_", 6) == 0) {
+        if (strlen(environ[i]) > 6 && strncmp(environ[i], "APPVIEW_", 6) == 0) {
             dprintf(fd, "%s\n", environ[i]);
         }
     }
@@ -228,10 +228,10 @@ cmdAttach(pid_t pid, const char* rootdir)
         fprintf(stderr, "error: can't get path to executable for pid %d\n", pid);
         res = EXIT_FAILURE;
     } else if (rc == 0) {
-        // proc exists, libscope does not exist, a load & attach
-        res = load_and_attach(pid, scopeLibPath);
+        // proc exists, libappview does not exist, a load & attach
+        res = load_and_attach(pid, appviewLibPath);
     } else {
-        // libscope exists, a first time attach or a reattach
+        // libappview exists, a first time attach or a reattach
         res = attach(pid);
     }
 
@@ -245,9 +245,9 @@ out:
         free(ebuf);
     }
 
-    if (scope_ebuf) {
-        freeElf(scope_ebuf->buf, scope_ebuf->len);
-        free(scope_ebuf);
+    if (appview_ebuf) {
+        freeElf(appview_ebuf->buf, appview_ebuf->len);
+        free(appview_ebuf);
     }
 
     exit(res);
@@ -280,12 +280,12 @@ cmdDetach(pid_t pid, const char *rootdir)
 int
 cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
 {
-    char *scopeLibPath;
+    char *appviewLibPath;
     uid_t eUid = geteuid();
     gid_t eGid = getegid();
     uid_t nsUid = eUid;
     uid_t nsGid = eGid;
-    elf_buf_t *scope_ebuf = NULL;
+    elf_buf_t *appview_ebuf = NULL;
     elf_buf_t *ebuf = NULL;
 
     if (nspid != -1) {
@@ -293,64 +293,64 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
         nsGid = nsInfoTranslateGidRootDir("", nspid);
     }
 
-    scope_ebuf = getElf("/proc/self/exe");
-    if (!scope_ebuf) {
+    appview_ebuf = getElf("/proc/self/exe");
+    if (!appview_ebuf) {
         perror("setenv");
         goto out;
     }
 
-    // Extract and patch libscope from scope static. Don't attempt to extract from scope dynamic
-    if (is_static(scope_ebuf->buf)) {
+    // Extract and patch libappview from appview static. Don't attempt to extract from appview dynamic
+    if (is_static(appview_ebuf->buf)) {
         if (libdirExtract(NULL, 0, nsUid, nsGid, LIBRARY_FILE)) {
             fprintf(stderr, "error: failed to extract library\n");
             goto out;
         }
 
-        scopeLibPath = (char *)libdirGetPath(LIBRARY_FILE);
+        appviewLibPath = (char *)libdirGetPath(LIBRARY_FILE);
 
-        if (patchLibrary(scopeLibPath, FALSE) == PATCH_FAILED) {
+        if (patchLibrary(appviewLibPath, FALSE) == PATCH_FAILED) {
             fprintf(stderr, "error: failed to patch library\n");
             goto out;
         }
     } else {
-        scopeLibPath = (char *)libdirGetPath(LIBRARY_FILE);
+        appviewLibPath = (char *)libdirGetPath(LIBRARY_FILE);
     }
 
-    if (access(scopeLibPath, R_OK|X_OK)) {
-        fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", scopeLibPath);
+    if (access(appviewLibPath, R_OK|X_OK)) {
+        fprintf(stderr, "error: library %s is missing, not readable, or not executable\n", appviewLibPath);
         goto out;
     }
 
-    if (setenv("SCOPE_LIB_PATH", scopeLibPath, 1)) {
-        perror("setenv(SCOPE_LIB_PATH) failed");
+    if (setenv("APPVIEW_LIB_PATH", appviewLibPath, 1)) {
+        perror("setenv(APPVIEW_LIB_PATH) failed");
         goto out;
     }
 
-    // Set SCOPE_PID_ENV
+    // Set APPVIEW_PID_ENV
     setPidEnv(getpid());
 
 
     /*
-     * What kind of app are we trying to scope?
+     * What kind of app are we trying to appview?
      */
 
     char *inferior_command = NULL;
 
     inferior_command = getpath(argv[0]); 
     if (!inferior_command) {
-        fprintf(stderr,"scope could not find or execute command `%s`.  Exiting.\n", argv[0]);
+        fprintf(stderr,"appview could not find or execute command `%s`.  Exiting.\n", argv[0]);
         goto out;
     }
 
     ebuf = getElf(inferior_command);
 
     if (ebuf && (is_go(ebuf->buf) == TRUE)) {
-        if (setenv("SCOPE_APP_TYPE", "go", 1) == -1) {
+        if (setenv("APPVIEW_APP_TYPE", "go", 1) == -1) {
             perror("setenv");
             goto out;
         }
     } else {
-        if (setenv("SCOPE_APP_TYPE", "native", 1) == -1) {
+        if (setenv("APPVIEW_APP_TYPE", "native", 1) == -1) {
             perror("setenv");
             goto out;
         }
@@ -358,19 +358,19 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
 
 
     /*
-     * If the app we want to scope is Dynamic
+     * If the app we want to appview is Dynamic
      * Just exec it with LD_PRELOAD and we're done
      */
 
     if ((ebuf == NULL) || (!is_static(ebuf->buf))) {
         if (ebuf) freeElf(ebuf->buf, ebuf->len);
 
-        if (setenv("LD_PRELOAD", scopeLibPath, 0) == -1) {
+        if (setenv("LD_PRELOAD", appviewLibPath, 0) == -1) {
             perror("setenv");
             goto out;
         }
 
-        if (setenv("SCOPE_EXEC_TYPE", "dynamic", 1) == -1) {
+        if (setenv("APPVIEW_EXEC_TYPE", "dynamic", 1) == -1) {
             perror("setenv");
             goto out;
         }
@@ -380,11 +380,11 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
 
 
     /*
-     * If the app we want to scope is Static
+     * If the app we want to appview is Static
      * There are determinations to be made
      */
 
-    if (setenv("SCOPE_EXEC_TYPE", "static", 1) == -1) {
+    if (setenv("APPVIEW_EXEC_TYPE", "static", 1) == -1) {
         perror("setenv");
         goto out;
     }
@@ -398,7 +398,7 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
     program_invocation_short_name = basename(argv[0]);
 
     // If it's not a Go app, we don't support it
-    // so just exec it without scope
+    // so just exec it without appview
     if (!is_go(ebuf->buf)) {
         // We're getting here with upx-encoded binaries
         // and any other static native apps...
@@ -407,11 +407,11 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
         goto out;
     }
 
-    // If scope itself is static, we need to call scope dynamic
+    // If appview itself is static, we need to call appview dynamic
     // because we need to use dlopen
-    if (is_static(scope_ebuf->buf)) {
+    if (is_static(appview_ebuf->buf)) {
 
-        // Get scopedyn from the scope executable
+        // Get appviewdyn from the appview executable
         unsigned char *start; 
         size_t len;
         if ((len = getAsset(LOADER_FILE, &start)) == -1) {
@@ -419,15 +419,15 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
             goto out;
         }
 
-        // Patch the scopedyn executable on the heap (for musl support)
+        // Patch the appviewdyn executable on the heap (for musl support)
         if (patchLoader(start, nsUid, nsGid) == PATCH_FAILED) {
             fprintf(stderr, "error: failed to patch loader\n");
             goto out;
         }
 
-#if 0   // Write scopedyn to /tmp for debugging
+#if 0   // Write appviewdyn to /tmp for debugging
         int fd_dyn; 
-        if ((fd_dyn = open("/tmp/scopedyn", O_CREAT | O_RDWR | O_TRUNC)) == -1) {
+        if ((fd_dyn = open("/tmp/appviewdyn", O_CREAT | O_RDWR | O_TRUNC)) == -1) {
             perror("cmdRun:open");
             goto out;
         }
@@ -438,7 +438,7 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
         }
         close(fd_dyn);
 #endif
-        // Write scopedyn to shared memory
+        // Write appviewdyn to shared memory
         char path_to_fd[PATH_MAX];
         int fd = memfd_create("", 0);
         if (fd == -1) {
@@ -446,16 +446,16 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
             goto out;
         }
         ssize_t written = write(fd, start, len);
-        if (written != g_scopedynsz) {
+        if (written != g_appviewdynsz) {
             fprintf(stderr, "error: failed to write loader to shm\n");
             goto out;
         }
 
-        // Exec scopedyn from shared memory
-        // Append "scopedyn" to argv first
+        // Exec appviewdyn from shared memory
+        // Append "appviewdyn" to argv first
         int execArgc = 0;
         char *execArgv[argc + 1];
-        execArgv[execArgc++] = "scopedyn";
+        execArgv[execArgc++] = "appviewdyn";
         for (int i = 0; i < argc; i++) {
             execArgv[execArgc++] = argv[i];
         }
@@ -464,25 +464,25 @@ cmdRun(pid_t pid, pid_t nspid, int argc, char **argv)
         execve(path_to_fd, &execArgv[0], environ);
         perror("execve");
 
-    // If scope itself is dynamic, dlopen libscope and sys_exec the app
+    // If appview itself is dynamic, dlopen libappview and sys_exec the app
     // and we're done
     } else {
-        // we should never be here. we dont run scope dynamic.
+        // we should never be here. we dont run appview dynamic.
     }
  
 out:
     /*
      * Cleanup and exec the user app (where possible)
-     * If there are errors, the app will run without scope
+     * If there are errors, the app will run without appview
      */
     if (ebuf) {
         freeElf(ebuf->buf, ebuf->len);
         free(ebuf);
     }
 
-    if (scope_ebuf) {
-        freeElf(scope_ebuf->buf, scope_ebuf->len);
-        free(scope_ebuf);
+    if (appview_ebuf) {
+        freeElf(appview_ebuf->buf, appview_ebuf->len);
+        free(appview_ebuf);
     }
 
     if (inferior_command) {
@@ -506,13 +506,13 @@ cmdInstall(const char *rootdir)
     unsigned char *loader_file = NULL;
     size_t loader_file_len;
 
-    // Extract library from scope binary into memory while in origin namespace
+    // Extract library from appview binary into memory while in origin namespace
     if ((library_file_len = getAsset(LIBRARY_FILE, &library_file)) == -1) {
         fprintf(stderr, "cmdInstall getAsset library failed\n");
         return EXIT_FAILURE;
     }
 
-    // Extract loader from scope binary into memory while in origin namespace
+    // Extract loader from appview binary into memory while in origin namespace
     if ((loader_file_len = getAsset(STATIC_LOADER_FILE, &loader_file)) == -1) {
         fprintf(stderr, "cmdInstall getAsset loader failed\n");
         return EXIT_FAILURE;

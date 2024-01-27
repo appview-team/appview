@@ -7,7 +7,7 @@
 #include "dbg.h"
 #include "utils.h"
 #include "metriccapture.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 // Consistent with src/sluice/js/input/MetricsIn.ts
 #define STATSD         "^([^:]+):([\\d.]+)\\|(c|g|ms|s|h)$"
@@ -29,31 +29,31 @@ initMetricCapture(void)
     if (!g_statsd_regex) {
         if (!(g_statsd_regex = pcre2_compile((PCRE2_SPTR)STATSD,
                 PCRE2_ZERO_TERMINATED, 0, &errNum, &errPos, NULL))) {
-            scopeLogError("ERROR: statsd regex failed; err=%d, pos=%ld",
+            appviewLogError("ERROR: statsd regex failed; err=%d, pos=%ld",
                     errNum, errPos);
         }
     }
     if (!g_statsd_ext_regex) {
         if (!(g_statsd_ext_regex = pcre2_compile((PCRE2_SPTR)STATSD_EXT,
                 PCRE2_ZERO_TERMINATED, 0, &errNum, &errPos, NULL))) {
-            scopeLogError("ERROR: statsd extended regex failed; err=%d, pos=%ld",
+            appviewLogError("ERROR: statsd extended regex failed; err=%d, pos=%ld",
                     errNum, errPos);
         }
     }
 
     size_t buf_size = DEFAULT_CBUF_SIZE;
     char *qlen_str;
-    if ((qlen_str = fullGetEnv("SCOPE_QUEUE_LENGTH")) != NULL) {
+    if ((qlen_str = fullGetEnv("APPVIEW_QUEUE_LENGTH")) != NULL) {
         unsigned long qlen;
-        scope_errno = 0;
-        qlen = scope_strtoul(qlen_str, NULL, 10);
-        if (!scope_errno && qlen) {
+        appview_errno = 0;
+        qlen = appview_strtoul(qlen_str, NULL, 10);
+        if (!appview_errno && qlen) {
             buf_size = qlen;
         }
     }
 
     if (!(g_metric_buf = cbufInit(buf_size))) {
-        scopeLogError("ERROR: statsd buffer creation failed");
+        appviewLogError("ERROR: statsd buffer creation failed");
     }
 }
 
@@ -76,7 +76,7 @@ createCapturedMetric(unsigned char *name, unsigned char *value,
     if (!name || !value || !type) goto err;
 
     // Alloc space
-    base = scope_malloc(sizeof(captured_metric_t));
+    base = appview_malloc(sizeof(captured_metric_t));
     if (!base) goto err;
 
     // Copy in field values
@@ -92,7 +92,7 @@ err:
     if (value) pcre2_substring_free(value);
     if (type) pcre2_substring_free(type);
     if (dims) pcre2_substring_free(dims);
-    if (base) scope_free(base);
+    if (base) appview_free(base);
     return NULL;
 }
 
@@ -105,7 +105,7 @@ destroyCapturedMetric(captured_metric_t **metric)
     if (tmp->value) pcre2_substring_free(tmp->value);
     if (tmp->type) pcre2_substring_free(tmp->type);
     if (tmp->dims) pcre2_substring_free(tmp->dims);
-    scope_free(tmp);
+    appview_free(tmp);
     *metric = NULL;
 }
 
@@ -216,7 +216,7 @@ doMetricCapture(int sockfd, net_info *net, char *buf, size_t len, metric_t src, 
             }
         }
     } else {
-        scopeLogWarn("WARN: doMetric() got unknown data type; %d", dtype);
+        appviewLogWarn("WARN: doMetric() got unknown data type; %d", dtype);
         DBG("%d", dtype);
     }
 

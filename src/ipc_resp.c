@@ -3,7 +3,7 @@
 #include "com.h"
 #include "dbg.h"
 #include "ipc_resp.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "runtimecfg.h"
 
 static const char* cmdMetaName[] = {
@@ -11,34 +11,34 @@ static const char* cmdMetaName[] = {
     [META_REQ_JSON_PARTIAL] = "incompleteRequestJson",
 };
 
-static const char* cmdScopeName[] = {
+static const char* cmdAppViewName[] = {
     [IPC_CMD_GET_SUPPORTED_CMD]    = "getSupportedCmd",
-    [IPC_CMD_GET_SCOPE_STATUS]     = "getScopeStatus",
-    [IPC_CMD_GET_SCOPE_CFG]        = "getScopeCfg",
-    [IPC_CMD_SET_SCOPE_CFG]        = "setScopeCfg",
+    [IPC_CMD_GET_APPVIEW_STATUS]     = "getAppViewStatus",
+    [IPC_CMD_GET_APPVIEW_CFG]        = "getAppViewCfg",
+    [IPC_CMD_SET_APPVIEW_CFG]        = "setAppViewCfg",
     [IPC_CMD_GET_TRANSPORT_STATUS] = "getTransportStatus",
     [IPC_CMD_GET_PROC_DETAILS]     = "getProcessDetails",
 };
 
-#define CMD_SCOPE_SIZE  (ARRAY_SIZE(cmdScopeName))
+#define CMD_APPVIEW_SIZE  (ARRAY_SIZE(cmdAppViewName))
 
 extern void doAndReplaceConfig(void *);
 extern log_t *g_log;
 extern mtc_t *g_mtc;
 extern ctl_t *g_ctl;
 
-// Wrapper for scope message response
-// TODO: replace scopeRespWrapper with cJSON
-struct scopeRespWrapper{
-    cJSON *resp;                // Scope message response
+// Wrapper for appview message response
+// TODO: replace appviewRespWrapper with cJSON
+struct appviewRespWrapper{
+    cJSON *resp;                // AppView message response
 };
 
 /*
- * Creates the scope response wrapper object
+ * Creates the appview response wrapper object
  */
-static scopeRespWrapper *
+static appviewRespWrapper *
 respWrapperCreate(void) {
-    scopeRespWrapper *wrap = scope_calloc(1, sizeof(scopeRespWrapper));
+    appviewRespWrapper *wrap = appview_calloc(1, sizeof(appviewRespWrapper));
     if (!wrap) {
         return NULL;
     }
@@ -47,32 +47,32 @@ respWrapperCreate(void) {
 }
 
 /*
- * Destroys the scope response wrapper object
+ * Destroys the appview response wrapper object
  */
 void
-ipcRespWrapperDestroy(scopeRespWrapper *wrap) {
+ipcRespWrapperDestroy(appviewRespWrapper *wrap) {
     if (wrap->resp) {
         cJSON_Delete(wrap->resp);
     }
 
-    scope_free(wrap);
+    appview_free(wrap);
 }
 
 /*
- * Returns the scope message response string representation
+ * Returns the appview message response string representation
  */
 char *
-ipcRespScopeRespStr(scopeRespWrapper *wrap) {
+ipcRespAppViewRespStr(appviewRespWrapper *wrap) {
     return cJSON_PrintUnformatted(wrap->resp);
 }
 
 /*
- * Creates the wrapper for generic response (scope message and ipc message)
- * Used by following requests: IPC_CMD_UNKNOWN, IPC_CMD_SET_SCOPE_CFG
+ * Creates the wrapper for generic response (appview message and ipc message)
+ * Used by following requests: IPC_CMD_UNKNOWN, IPC_CMD_SET_APPVIEW_CFG
  */
-scopeRespWrapper *
+appviewRespWrapper *
 ipcRespStatus(ipc_resp_status_t status) {
-    scopeRespWrapper *wrap = respWrapperCreate();
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -93,7 +93,7 @@ allocFail:
 }
 
 /*
- * Creates descriptor for meta and scope command used in IPC_CMD_GET_SUPPORTED_CMD
+ * Creates descriptor for meta and appview command used in IPC_CMD_GET_SUPPORTED_CMD
  */
 static cJSON*
 createCmdDesc(int id, const char *name) {
@@ -119,11 +119,11 @@ createCmdDesc(int id, const char *name) {
  * Creates the wrapper for response to IPC_CMD_GET_SUPPORTED_CMD
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
-ipcRespGetScopeCmds(const cJSON * unused) {
-    SCOPE_BUILD_ASSERT(IPC_CMD_UNKNOWN == ARRAY_SIZE(cmdScopeName), "cmdScopeName must be inline with ipc_scope_req_t");
+appviewRespWrapper *
+ipcRespGetAppViewCmds(const cJSON * unused) {
+    APPVIEW_BUILD_ASSERT(IPC_CMD_UNKNOWN == ARRAY_SIZE(cmdAppViewName), "cmdAppViewName must be inline with ipc_appview_req_t");
 
-    scopeRespWrapper *wrap = respWrapperCreate();
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -150,27 +150,27 @@ ipcRespGetScopeCmds(const cJSON * unused) {
     }
     cJSON_AddItemToObjectCS(resp, "commands_meta", metaCmds);
 
-    cJSON *scopeCmds = cJSON_CreateArray();
-    if (!scopeCmds) {
+    cJSON *appviewCmds = cJSON_CreateArray();
+    if (!appviewCmds) {
         goto metaCmdFail;
     }
 
-    for (int id = 0; id < ARRAY_SIZE(cmdScopeName); ++id){
-        cJSON *singleCmd = createCmdDesc(id, cmdScopeName[id]);
+    for (int id = 0; id < ARRAY_SIZE(cmdAppViewName); ++id){
+        cJSON *singleCmd = createCmdDesc(id, cmdAppViewName[id]);
         if (!singleCmd) {
-            goto scopeCmdFail;
+            goto appviewCmdFail;
         }
-        cJSON_AddItemToArray(scopeCmds, singleCmd);
+        cJSON_AddItemToArray(appviewCmds, singleCmd);
     }
-    cJSON_AddItemToObjectCS(resp, "commands_scope", scopeCmds);
+    cJSON_AddItemToObjectCS(resp, "commands_appview", appviewCmds);
 
     return wrap;
 
 metaCmdFail:
     cJSON_Delete(metaCmds);
 
-scopeCmdFail:
-    cJSON_Delete(scopeCmds);
+appviewCmdFail:
+    cJSON_Delete(appviewCmds);
 
 allocFail:
     ipcRespWrapperDestroy(wrap);
@@ -178,12 +178,12 @@ allocFail:
 }
 
 /*
- * Creates the wrapper for response to IPC_CMD_GET_SCOPE_STATUS
+ * Creates the wrapper for response to IPC_CMD_GET_APPVIEW_STATUS
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
-ipcRespGetScopeStatus(const cJSON *unused) {
-    scopeRespWrapper *wrap = respWrapperCreate();
+appviewRespWrapper *
+ipcRespGetAppViewStatus(const cJSON *unused) {
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -195,7 +195,7 @@ ipcRespGetScopeStatus(const cJSON *unused) {
     if (!cJSON_AddNumberToObjLN(resp, "status", IPC_RESP_OK)) {
         goto allocFail;
     }
-    if (!cJSON_AddBoolToObjLN(resp, "scoped", (g_cfg.funcs_attached))) {
+    if (!cJSON_AddBoolToObjLN(resp, "viewed", (g_cfg.funcs_attached))) {
         goto allocFail;
     }
     return wrap;
@@ -206,12 +206,12 @@ allocFail:
 }
 
 /*
- * Creates the wrapper for response to IPC_CMD_GET_SCOPE_CFG
+ * Creates the wrapper for response to IPC_CMD_GET_APPVIEW_CFG
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
-ipcRespGetScopeCfg(const cJSON *unused) {
-    scopeRespWrapper *wrap = respWrapperCreate();
+appviewRespWrapper *
+ipcRespGetAppViewCfg(const cJSON *unused) {
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -246,36 +246,36 @@ allocFail:
  * Creates the wrapper for response to IPC_CMD_UNKNOWN
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
+appviewRespWrapper *
 ipcRespStatusNotImplemented(const cJSON *unused) {
     return ipcRespStatus(IPC_RESP_NOT_IMPLEMENTED);
 }
 
 /*
- * Process the request IPC_CMD_SET_SCOPE_CFG
+ * Process the request IPC_CMD_SET_APPVIEW_CFG
  */
 static bool
-ipcProcessSetCfg(const cJSON *scopeReq) {
+ipcProcessSetCfg(const cJSON *appviewReq) {
     bool res = FALSE;
-    // Verify if scope request is based on JSON-format
-    cJSON *cfgKey = cJSON_GetObjectItem(scopeReq, "cfg");
+    // Verify if appview request is based on JSON-format
+    cJSON *cfgKey = cJSON_GetObjectItem(appviewReq, "cfg");
     if (!cfgKey || !cJSON_IsObject(cfgKey)) {
         return res;
     }
     char *cfgStr = cJSON_PrintUnformatted(cfgKey);
     config_t *cfg = cfgFromString(cfgStr);
     doAndReplaceConfig(cfg);
-    scope_free(cfgStr);
+    appview_free(cfgStr);
     res = TRUE;
     return res;
 }
 
 /*
- * Creates the wrapper for response to IPC_CMD_SET_SCOPE_CFG
+ * Creates the wrapper for response to IPC_CMD_SET_APPVIEW_CFG
  */
-scopeRespWrapper *
-ipcRespSetScopeCfg(const cJSON *scopeReq) {
-    if (ipcProcessSetCfg(scopeReq)) {
+appviewRespWrapper *
+ipcRespSetAppViewCfg(const cJSON *appviewReq) {
+    if (ipcProcessSetCfg(appviewReq)) {
         return ipcRespStatus(IPC_RESP_OK);
     }
     return ipcRespStatus(IPC_RESP_SERVER_ERROR);
@@ -380,7 +380,7 @@ enum InterfaceId {
 };
 
 static const
-struct singleInterface scope_interfaces[] = {
+struct singleInterface appview_interfaces[] = {
     [INDEX_LOG]     = {.name = "log",     .enabled = logTransportEnabled,     .status = logTransportStatus},
     [INDEX_PAYLOAD] = {.name = "payload", .enabled = payloadTransportEnabled, .status = payloadTransportStatus},
     [INDEX_CRIBL]   = {.name = "cribl",   .enabled = criblTransportEnabled,   .status = eventsTransportStatus},
@@ -392,9 +392,9 @@ struct singleInterface scope_interfaces[] = {
  * Creates the wrapper for response to IPC_CMD_GET_TRANSPORT_STATUS
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
+appviewRespWrapper *
 ipcRespGetTransportStatus(const cJSON *unused) {
-    scopeRespWrapper *wrap = respWrapperCreate();
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -412,16 +412,16 @@ ipcRespGetTransportStatus(const cJSON *unused) {
         goto allocFail;
     }
 
-    for (int index = 0; index < ARRAY_SIZE(scope_interfaces); ++index) {
+    for (int index = 0; index < ARRAY_SIZE(appview_interfaces); ++index) {
         int interfaceIndex = index;
         // Skip preparing the interface info if it is disabled
-        if (scope_interfaces[interfaceIndex].enabled() == FALSE) {
+        if (appview_interfaces[interfaceIndex].enabled() == FALSE) {
             continue;
         }
 
         // if the cribl is last one there is no point to handle events and metrics
         if (interfaceIndex == INDEX_CRIBL) {
-            index = ARRAY_SIZE(scope_interfaces);
+            index = ARRAY_SIZE(appview_interfaces);
         }
 
         cJSON *singleInterface = cJSON_CreateObject();
@@ -429,9 +429,9 @@ ipcRespGetTransportStatus(const cJSON *unused) {
             goto interfaceFail;
         }
 
-        transport_status_t status = scope_interfaces[interfaceIndex].status();
+        transport_status_t status = appview_interfaces[interfaceIndex].status();
 
-        if (!cJSON_AddStringToObject(singleInterface, "name", scope_interfaces[interfaceIndex].name)) {
+        if (!cJSON_AddStringToObject(singleInterface, "name", appview_interfaces[interfaceIndex].name)) {
             cJSON_Delete(singleInterface);
             goto interfaceFail;
         }
@@ -480,9 +480,9 @@ allocFail:
  * Creates the wrapper for response to IPC_CMD_GET_PROC_DETAILS
  * TODO: use unused attribute later
  */
-scopeRespWrapper *
+appviewRespWrapper *
 ipcRespGetProcessDetails(const cJSON *unused) {
-    scopeRespWrapper *wrap = respWrapperCreate();
+    appviewRespWrapper *wrap = respWrapperCreate();
     if (!wrap) {
         return NULL;
     }
@@ -518,9 +518,9 @@ allocFail:
     return NULL; 
 }
 /*
- * Creates the wrapper for failed case in processing scope msg
+ * Creates the wrapper for failed case in processing appview msg
  */
-scopeRespWrapper *
-ipcRespStatusScopeError(ipc_resp_status_t status) {
+appviewRespWrapper *
+ipcRespStatusAppViewError(ipc_resp_status_t status) {
     return ipcRespStatus(status);
 }

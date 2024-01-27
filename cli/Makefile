@@ -21,11 +21,11 @@ LIBDIR := ../lib/linux/$(ARCH)
 SRCDIR := ../src
 CONFDIR := ../conf
 
-SCOPE := $(BINDIR)/scope
-SCOPEDYN := $(BINDIR)/scopedyn
-LIBSCOPE := $(LIBDIR)/libscope.so
+APPVIEW := $(BINDIR)/appview
+APPVIEWDYN := $(BINDIR)/appviewdyn
+LIBAPPVIEW := $(LIBDIR)/libappview.so
 LIBLOADER := $(LIBDIR)/libloader.a
-CONF_YML := $(CONFDIR)/scope.yml
+CONF_YML := $(CONFDIR)/appview.yml
 LOADER_C_FILES:=$(wildcard $(SRCDIR)/loader/*.c)
 LIBRARY_C_FILES:=$(wildcard $(SRCDIR)/*.c)
 
@@ -51,7 +51,7 @@ build: all
 
 ## debug: build with gdb support
 debug:
-	$(MAKE) scope BUILD_OPTS="-gcflags=all=\"-N -l\""
+	$(MAKE) appview BUILD_OPTS="-gcflags=all=\"-N -l\""
 
 # If any cli TestGetFlow* test fails, this may need to be rerun
 # and the expected results in flows/flow_test.go will need to be
@@ -60,12 +60,12 @@ genflowtest:
 	./flows/gen_flow_test.sh
 
 ## all:
-all: deps $(SCOPE) require-go-version
+all: deps $(APPVIEW) require-go-version
 
 ## clean: remove the built binary
 clean:
 	$(RM) -r build/*
-	$(RM) run/bundle.go $(SCOPE) $(SCOPEDYN)
+	$(RM) run/bundle.go $(APPVIEW) $(APPVIEWDYN)
 	$(RM) coverage.out coverage.html
 	$(RM) -rf -- .gocache/*/
 	$(RM) -rf -- .gomod/*/
@@ -89,37 +89,37 @@ $(TRIVY):
 rebuild: clean build 
 
 # in case someone is building here before the C code is built
-$(LIBSCOPE): $(LIBRARY_C_FILES)
-	@$(MAKE) -C .. lib/linux/$(ARCH)/libscope.so
+$(LIBAPPVIEW): $(LIBRARY_C_FILES)
+	@$(MAKE) -C .. lib/linux/$(ARCH)/libappview.so
 $(LIBLOADER): $(LOADER_C_FILES)
 	@$(MAKE) -C .. lib/linux/$(ARCH)/libloader.a
-$(SCOPEDYN): $(LOADER_C_FILES)
-	@$(MAKE) -C .. bin/linux/$(ARCH)/scopedyn
+$(APPVIEWDYN): $(LOADER_C_FILES)
+	@$(MAKE) -C .. bin/linux/$(ARCH)/appviewdyn
 
 # the -w go build flags remove the dwarf symbol table from the resulting executable
 # the -tags force os/user and netgo to use go and NOT cgo because a static exec can't resolve libc calls from cgo
-# To enable building SIGDEL, replace next line with: $(SCOPE): $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN) $(SIGDEL)
-$(SCOPE): $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN)
-$(SCOPE): export GOOS=linux
-$(SCOPE): export CGO_ENABLED=1
-$(SCOPE): $(GOVVV) $(filter-out %_test.go,$(shell find . -type f -name '*.go'))
-	@echo "$${CI:+::group::}Building scope"
+# To enable building SIGDEL, replace next line with: $(APPVIEW): $(LIBAPPVIEW) $(LIBLOADER) $(APPVIEWDYN) $(SIGDEL)
+$(APPVIEW): $(LIBAPPVIEW) $(LIBLOADER) $(APPVIEWDYN)
+$(APPVIEW): export GOOS=linux
+$(APPVIEW): export CGO_ENABLED=1
+$(APPVIEW): $(GOVVV) $(filter-out %_test.go,$(shell find . -type f -name '*.go'))
+	@echo "$${CI:+::group::}Building appview"
 	$(RM) run/bundle.go
 	$(RM) -r build/*
-	cp $(LIBSCOPE) $(CONF_YML) $(SCOPEDYN) build/
+	cp $(LIBAPPVIEW) $(CONF_YML) $(APPVIEWDYN) build/
 	$(GO_BINDATA) -nocompress -o run/bundle.go -pkg run build
-	CGO_CFLAGS="-DLIBSCOPE_SO_SIZE=\"$(shell du -b "$(LIBSCOPE)" | cut -f1)\" -DSCOPEDYN_SIZE=\"$(shell du -b "$(SCOPEDYN)" | cut -f1)\"" \
+	CGO_CFLAGS="-DLIBAPPVIEW_SO_SIZE=\"$(shell du -b "$(LIBAPPVIEW)" | cut -f1)\" -DAPPVIEWDYN_SIZE=\"$(shell du -b "$(APPVIEWDYN)" | cut -f1)\"" \
 	$(GO) build \
 		-tags "osusergo netgo" \
 		-ldflags="$(shell $(GOVVV) -flags) -w -linkmode external -extldflags \"-lrt -ldl -lpthread -static\" " \
 		-buildmode=pie \
 		$(BUILD_OPTS) \
-		-o $(SCOPE)
-	$(RM) -r $(SCOPEDYN)
+		-o $(APPVIEW)
+	$(RM) -r $(APPVIEWDYN)
 
 ## test: run unit tests
 test:
-	CGO_CFLAGS="-DLIBSCOPE_SO_SIZE=\"0\" -DSCOPEDYN_SIZE=\"0\"" \
+	CGO_CFLAGS="-DLIBAPPVIEW_SO_SIZE=\"0\" -DAPPVIEWDYN_SIZE=\"0\"" \
 	$(GO) test -v -p 1 -failfast -timeout 600s -coverprofile coverage.out ./...
 
 ## fmt: format all Go files
@@ -157,4 +157,4 @@ require-upx:
 	@[ -n "$(shell which upx)" ] || \
 	  { echo >&2 "error: upx required"; exit 1; }
 
-.PHONY: build debug all clean deps rebuild scope test fmt lint vet cover check help
+.PHONY: build debug all clean deps rebuild appview test fmt lint vet cover check help

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/criblio/scope/bolton"
+	"github.com/appview-team/appview/bolton"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var boltonCmd = &cobra.Command{
 	Use:     "bolton",
 	Short:   "In loving memory of bolton",
 	Long:    `In loving memory of bolton`,
-	Example: `scope bolton`,
+	Example: `appview bolton`,
 	Args:    cobra.NoArgs,
 	Hidden:  true,
 	Run: func(cmd *cobra.Command, args []string) {

@@ -1,22 +1,22 @@
 #!/bin/bash
 #
-# Cleanup the environment after scope start 
+# Cleanup the environment after appview start 
 #
 
 PRELOAD_PATH="/etc/ld.so.preload"
-LIBSCOPE_PATH="/usr/lib/libscope.so"
-PROFILE_SCOPE_SCRIPT="/etc/profile.d/scope.sh"
-USR_APPSCOPE_DIR="/usr/lib/appscope/"
-TMP_APPSCOPE_DIR="/tmp/appscope/"
-CRIBL_APPSCOPE_DIR="$CRIBL_HOME/appscope/"
+LIBAPPVIEW_PATH="/usr/lib/libappview.so"
+PROFILE_APPVIEW_SCRIPT="/etc/profile.d/appview.sh"
+USR_APPVIEW_DIR="/usr/lib/appview/"
+TMP_APPVIEW_DIR="/tmp/appview/"
+CRIBL_APPVIEW_DIR="$CRIBL_HOME/appview/"
 
 echo "Following script will try to remove following files:"
 echo "- $PRELOAD_PATH"
-echo "- $LIBSCOPE_PATH"
-echo "- $PROFILE_SCOPE_SCRIPT"
-echo "- $USR_APPSCOPE_DIR"
-echo "- $TMP_APPSCOPE_DIR"
-echo "- \$CRIBL_HOME/appscope/"
+echo "- $LIBAPPVIEW_PATH"
+echo "- $PROFILE_APPVIEW_SCRIPT"
+echo "- $USR_APPVIEW_DIR"
+echo "- $TMP_APPVIEW_DIR"
+echo "- \$CRIBL_HOME/appview/"
 
 read -p "Continue (y/n)?" choice
 case "$choice" in 
@@ -38,37 +38,37 @@ else
 fi
 
 # This one is a symbolic link
-if [ -L $LIBSCOPE_PATH ] ; then
-    rm $LIBSCOPE_PATH
-    echo "$LIBSCOPE_PATH file was removed"
+if [ -L $LIBAPPVIEW_PATH ] ; then
+    rm $LIBAPPVIEW_PATH
+    echo "$LIBAPPVIEW_PATH file was removed"
 else
-    echo "$LIBSCOPE_PATH file was missing. Continue..."
+    echo "$LIBAPPVIEW_PATH file was missing. Continue..."
 fi
 
-if [ -f $PROFILE_SCOPE_SCRIPT ] ; then
-    rm $PROFILE_SCOPE_SCRIPT
-    echo "$PROFILE_SCOPE_SCRIPT file was removed"
+if [ -f $PROFILE_APPVIEW_SCRIPT ] ; then
+    rm $PROFILE_APPVIEW_SCRIPT
+    echo "$PROFILE_APPVIEW_SCRIPT file was removed"
 else
-    echo "$PROFILE_SCOPE_SCRIPT file was missing. Continue..."
+    echo "$PROFILE_APPVIEW_SCRIPT file was missing. Continue..."
 fi
 
-if [ -d "$USR_APPSCOPE_DIR" ] ; then
-    rm -r $USR_APPSCOPE_DIR
-    echo "$USR_APPSCOPE_DIR directory was removed"
+if [ -d "$USR_APPVIEW_DIR" ] ; then
+    rm -r $USR_APPVIEW_DIR
+    echo "$USR_APPVIEW_DIR directory was removed"
 else
-    echo "$USR_APPSCOPE_DIR directory was missing. Continue..."
+    echo "$USR_APPVIEW_DIR directory was missing. Continue..."
 fi
 
-if [ -d "$TMP_APPSCOPE_DIR" ] ; then
-    rm -r $TMP_APPSCOPE_DIR
-    echo "$TMP_APPSCOPE_DIR directory was removed"
+if [ -d "$TMP_APPVIEW_DIR" ] ; then
+    rm -r $TMP_APPVIEW_DIR
+    echo "$TMP_APPVIEW_DIR directory was removed"
 else
-    echo "$TMP_APPSCOPE_DIR directory was missing."
+    echo "$TMP_APPVIEW_DIR directory was missing."
 fi
 
-if [ -f $CRIBL_HOME ] && [ -d "$CRIBL_APPSCOPE_DIR" ] ; then
-    rm -r $CRIBL_APPSCOPE_DIR
-    echo "$CRIBL_APPSCOPE_DIR directory was removed"
+if [ -f $CRIBL_HOME ] && [ -d "$CRIBL_APPVIEW_DIR" ] ; then
+    rm -r $CRIBL_APPVIEW_DIR
+    echo "$CRIBL_APPVIEW_DIR directory was removed"
 else
-    echo "\$CRIBL_HOME was not set or \$CRIBL_HOME/appscope directory was missing."
+    echo "\$CRIBL_HOME was not set or \$CRIBL_HOME/appview directory was missing."
 fi

@@ -2,7 +2,7 @@
 
 #include "fn.h"
 #include "os.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "test.h"
 
 static void
@@ -15,13 +15,13 @@ static void
 osWritePermSuccess(void **state) {
     int perm = PROT_READ | PROT_EXEC;
     size_t len = 4096;
-    void *addr = scope_mmap(NULL, len, perm, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+    void *addr = appview_mmap(NULL, len, perm, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
     assert_ptr_not_equal(addr, MAP_FAILED);
     bool res = osMemPermAllow(addr, len, perm, PROT_WRITE);
     assert_true(res);
     res = osMemPermRestore(addr, len, perm);
     assert_true(res);
-    scope_munmap(addr ,len);
+    appview_munmap(addr ,len);
 }
 
 static void
@@ -30,13 +30,13 @@ osWritePermFailure(void **state) {
     size_t len = 4096;
 
     // Open file as read only
-    int fd = scope_open("/etc/passwd", O_RDONLY);
-    void *addr = scope_mmap(NULL, len, perm, MAP_SHARED, fd, 0);
+    int fd = appview_open("/etc/passwd", O_RDONLY);
+    void *addr = appview_mmap(NULL, len, perm, MAP_SHARED, fd, 0);
     assert_ptr_not_equal(addr, MAP_FAILED);
     bool res = osMemPermAllow(addr, len, perm, PROT_WRITE);
     assert_false(res);
-    scope_munmap(addr ,len);
-    scope_close(fd);
+    appview_munmap(addr ,len);
+    appview_close(fd);
 }
 
 int

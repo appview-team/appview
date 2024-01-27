@@ -1,8 +1,8 @@
 #ifndef __IPC_H__
 #define __IPC_H__
 
-#include "scopestdlib.h"
-#include "scopetypes.h"
+#include "appviewstdlib.h"
+#include "appviewtypes.h"
 #include "ipc_resp.h"
 
 /*

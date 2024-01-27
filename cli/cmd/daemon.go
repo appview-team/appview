@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/criblio/scope/bpf"
-	"github.com/criblio/scope/daemon"
-	"github.com/criblio/scope/snapshot"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/bpf"
+	"github.com/appview-team/appview/daemon"
+	"github.com/appview-team/appview/snapshot"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -22,10 +22,10 @@ import (
 // daemonCmd represents the daemon command
 var daemonCmd = &cobra.Command{
 	Use:   "daemon [flags]",
-	Short: "Run the scope daemon",
+	Short: "Run the appview daemon",
 	Long:  `Listen and respond to system events.`,
-	Example: `scope daemon
-	scope daemon --filedest localhost:10089`,
+	Example: `appview daemon
+	appview daemon --filedest localhost:10089`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		filedest, _ := cmd.Flags().GetString("filedest")
@@ -37,19 +37,19 @@ var daemonCmd = &cobra.Command{
 		// Validate user has root permissions
 		if err := util.UserVerifyRootPerm(); err != nil {
 			log.Error().Err(err)
-			util.ErrAndExit("scope daemon requires administrator privileges")
+			util.ErrAndExit("appview daemon requires administrator privileges")
 		}
 
-		loader, err := bpf.NewLoader("scope-ebpf")
+		loader, err := bpf.NewLoader("appview-ebpf")
 		if err != nil {
 			log.Error().Err(err)
-			util.ErrAndExit("scope-ebpf loader was not found. scope daemon requires that scope-ebpf loader need to run.")
+			util.ErrAndExit("appview-ebpf loader was not found. appview daemon requires that appview-ebpf loader need to run.")
 		}
 
 		sigdel, err := loader.NewSigdel()
 		if err != nil {
 			log.Error().Err(err)
-			util.ErrAndExit("scope-ebpf loader cannot create sigdel object")
+			util.ErrAndExit("appview-ebpf loader cannot create sigdel object")
 		}
 
 		// Buffered Channel (non-blocking until full)
@@ -60,7 +60,7 @@ var daemonCmd = &cobra.Command{
 		// Terminate Loader
 		if err := loader.Terminate(); err != nil {
 			log.Error().Err(err)
-			util.ErrAndExit("scope daemon was not able to terminate ebpf loader")
+			util.ErrAndExit("appview daemon was not able to terminate ebpf loader")
 		}
 		d := daemon.New(filedest)
 		for {
@@ -71,10 +71,10 @@ var daemonCmd = &cobra.Command{
 					sigEvent.Sig, sigEvent.Errno, sigEvent.Handler,
 					sigEvent.Pid, sigEvent.NsPid, sigEvent.Uid, sigEvent.Gid, sigEvent.Comm)
 
-				// TODO Filter out expected signals from libscope
+				// TODO Filter out expected signals from libappview
 				// get proc/pid/maps from ns
-				// iterate through, find libscope and get range
-				// is signal handler address in libscopeStart-libscopeEnd range
+				// iterate through, find libappview and get range
+				// is signal handler address in libappviewStart-libappviewEnd range
 
 				// If the daemon is running on the host, use the pid(hostpid) to get the crash files
 				// If the daemon is running in a container, use the nspid to get the crash files
@@ -85,7 +85,7 @@ var daemonCmd = &cobra.Command{
 					pid = sigEvent.Pid
 				}
 
-				// Wait for libscope to generate crash files (if the app was scoped)
+				// Wait for libappview to generate crash files (if the app was viewed)
 				time.Sleep(1 * time.Second) // TODO Is this long enough? Too long? Check for files instead?
 
 				// Generate/retrieve snapshot files
@@ -99,7 +99,7 @@ var daemonCmd = &cobra.Command{
 						log.Error().Err(err).Msgf("error connecting to %s", filedest)
 						continue
 					}
-					d.SendSnapshotFiles(fmt.Sprintf("/tmp/appscope/%d/", pid), sendcore)
+					d.SendSnapshotFiles(fmt.Sprintf("/tmp/appview/%d/", pid), sendcore)
 					d.Disconnect()
 				}
 			}

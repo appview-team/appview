@@ -2847,7 +2847,7 @@ getNetRxTxBucket(net_info *net)
 
 // Create a security event for a file
 void
-fileSecurity(const char* path, const char* reason, bool close, uint64_t write_bytes)
+fileSecurity(const char *path, const char *reason, bool close, uint64_t write_bytes)
 {
     size_t len = sizeof(security_info_t);
     security_info_t *secp = appview_calloc(1, len);
@@ -2866,7 +2866,7 @@ fileSecurity(const char* path, const char* reason, bool close, uint64_t write_by
 
 // Create a security event when a function is GOT hooked
 void
-gotSecurity(const char* funcname, const char* reason, const char* dlpi_name, const char* file_from_maps_file)
+gotSecurity(const char *funcname, const char *reason, const char *dlpi_name, const char *file_from_maps_file)
 {
     size_t len = sizeof(security_info_t);
     security_info_t *secp = appview_calloc(1, len);
@@ -2883,7 +2883,7 @@ gotSecurity(const char* funcname, const char* reason, const char* dlpi_name, con
 
 // Create a security event for DNS
 void
-dnsSecurity(const char* dnsName, const char* reason)
+dnsSecurity(const char *dnsName, const char *reason)
 {
     size_t len = sizeof(security_info_t);
     security_info_t *secp = appview_calloc(1, len);
@@ -2898,7 +2898,7 @@ dnsSecurity(const char* dnsName, const char* reason)
 
 // Create a security event when a connection is made to a user-blocked IP or port
 void
-netSecurity(const char* raddr, uint port, const char* reason)
+netSecurity(const char *raddr, uint port, const char *reason)
 {
     size_t len = sizeof(security_info_t);
     security_info_t *secp = appview_calloc(1, len);

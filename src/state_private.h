@@ -14,7 +14,7 @@
 #define PROTOCOL_STR 16
 #define FUNC_MAX 24
 #define DLPI_MAX 256 
-#define REASON_MAX 256
+#define REASON_MAX PATH_MAX + 128
 #define HDRTYPE_MAX 16
 
 //

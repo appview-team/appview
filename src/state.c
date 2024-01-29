@@ -1280,8 +1280,7 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 static void
 doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
-    if ((g_notify_def.enable == FALSE) || (g_notify_def.files == FALSE) ||
-        !fs || !path) return;
+    if (!fs || !path) return;
 
     int i;
 
@@ -1305,10 +1304,11 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // check for spaces at the end of file names
     for (i = 0; i < appview_strlen(path); i++) {
         if (appview_isspace(path[i])) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             appview_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
                            path);
+            fileSecurity(path, msg, FALSE, 0);
             notify(NOTIFY_FILES, msg);
         }
     }
@@ -1323,10 +1323,11 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     if (num_entries >= 2) {
-        char msg[PATH_MAX + 128];
+        char msg[REASON_MAX];
 
         appview_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
                        path);
+        fileSecurity(path, msg, FALSE, 0);
         notify(NOTIFY_FILES, msg);
     }
 
@@ -1337,11 +1338,12 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         (appview_strstr(path, "stdin") == NULL) &&
         (appview_strstr(path, "stderr") == NULL) &&
         ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
-        char msg[PATH_MAX + 128];
+        char msg[REASON_MAX];
 
         appview_snprintf(msg, sizeof(msg),
                        "path name %s contains setuid or setgid bits set representing a potential issue",
                        path);
+        fileSecurity(path, msg, FALSE, 0);
         notify(NOTIFY_FILES, msg);
     }
 
@@ -1357,11 +1359,12 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
             if (appview_strstr(path, g_notify_def.sys_dirs[i])) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 appview_snprintf(msg, sizeof(msg),
                                "a system dir %s with a g/a write permission setting which represents a potential issue",
                                path);
+                fileSecurity(path, msg, FALSE, 0);
                 notify(NOTIFY_FILES, msg);
                 break;
             }
@@ -1394,20 +1397,22 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
         endpwent();
 
         if (known_uid == FALSE) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             appview_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
                            path, sbuf->st_uid);
+            fileSecurity(path, msg, FALSE, 0);
             notify(NOTIFY_FILES, msg);
         }
 
         if (known_gid == FALSE) {
-            char msg[PATH_MAX + 128];
+            char msg[REASON_MAX];
 
             appview_snprintf(msg, sizeof(msg),
                            "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
                            path, sbuf->st_gid);
+            fileSecurity(path, msg, FALSE, 0);
             notify(NOTIFY_FILES, msg);
         }
     }
@@ -1434,12 +1439,14 @@ doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
     }
 
     // TODO: add reverse DNS to get the hostname
-    char msg[PATH_MAX + 256];
+    char msg[REASON_MAX];
     if (rip[0] != '\0') {
         appview_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated to %s", fsrd->path, rip);
+        fileSecurity(fsrd->path, msg, FALSE, 0);
         notify(NOTIFY_FILES, msg);
     } else {
         appview_snprintf(msg, sizeof(msg), "The file %s has been exfiltrated", fsrd->path);
+        fileSecurity(fsrd->path, msg, FALSE, 0);
         notify(NOTIFY_FILES, msg);
     }
 }
@@ -1760,10 +1767,11 @@ doBlockConnection(int fd, const struct sockaddr *addr)
          * If blocking when there is not a match in the white list, then return no go
          */
         if (g_notify_def.white_block == TRUE) {
-            char msg[INET6_ADDRSTRLEN + 256];
+            char msg[REASON_MAX];
 
             appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
             appview_snprintf(msg, sizeof(msg), "a blocked network connection to %s from a white list mismatch", rip);
+            netSecurity(rip, port, msg);
             notify(NOTIFY_NET, msg);
             return 1;
         }
@@ -1771,10 +1779,11 @@ doBlockConnection(int fd, const struct sockaddr *addr)
         // Should this connection be blocked based on the black list?
         for (int i = 0; g_notify_def.ip_black[i] != NULL; i++) {
             if (appview_strcmp(rip, g_notify_def.ip_black[i]) == 0) {
-                char msg[INET6_ADDRSTRLEN + 256];
+                char msg[REASON_MAX];
 
                 appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
                 appview_snprintf(msg, sizeof(msg), "a blocked network connection to %s from the black list", rip);
+                netSecurity(rip, port, msg);
                 notify(NOTIFY_NET, msg);
                 return 1;
             }
@@ -1790,6 +1799,7 @@ doBlockConnection(int fd, const struct sockaddr *addr)
         appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);
         appview_snprintf(msg, sizeof(msg), "a blocked network connection due to user config of a port block on %s:%d",
                        rip, port);
+        netSecurity(rip, port, msg);
         notify(NOTIFY_NET, msg);
         return 1;
     }
@@ -2030,23 +2040,27 @@ getDNSName(int sd, void *pkt, int pktlen)
 
         int label_len = (int)*dname++;
         if (label_len > 63) {
+            dnsSecurity(dname, "DNS request with an illegal label length");
             notify(NOTIFY_DNS, "DNS request with an illegal label length");
             return -1; // labels must be 63 chars or less
         }
 
         if (&dname[label_len] >= pkt_end) {
+            dnsSecurity(dname, "DNS request with a label length that exceeds the packet end");
             notify(NOTIFY_DNS, "DNS request with a label length that exceeds the packet end");
             return -1; // honor packet end
         }
 
         // Ensure we don't overrun the size of dnsName
         if ((dnsNameBytesUsed + label_len) >= sizeof(dnsName)) {
+            dnsSecurity(dname, "DNS request with a name that is greater than the size of a label");
             notify(NOTIFY_DNS, "DNS request with a name that is greater than the size of a label");
             return -1;
         }
 
         for ( ; (label_len > 0); label_len--) {
             if (!isLegalLabelChar(*dname)) {
+                dnsSecurity(dname, "DNS request with an illegal label character");
                 notify(NOTIFY_DNS, "DNS request with an illegal label character");
                 return -1;
             }
@@ -2094,6 +2108,7 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
 
             if (appview_ns_parserr(&handle, ns_s_an, i, &rr) == -1) {
                 appviewLogError("ERROR:parse rr");
+                dnsSecurity("nil", "illegal DNS response can't be parsed");
                 notify(NOTIFY_DNS, "illegal DNS response can't be parsed");
                 return FALSE;
             }
@@ -2113,17 +2128,20 @@ parseDNSAnswer(char *buf, size_t len, cJSON *json, cJSON *addrs, int first)
             if (ns_rr_type(rr) == ns_t_a) {
                 if (!appview_inet_ntop(AF_INET, (struct sockaddr_in *)rr.rdata,
                                      ipaddr, sizeof(ipaddr))) {
+                    dnsSecurity("nil", "DNS response with an illegal IPv6 address");
                     notify(NOTIFY_DNS, "DNS response with an illegal IPv6 address");
                     continue;
                 }
             } else if (ns_rr_type(rr) == ns_t_aaaa) {
                 if (!appview_inet_ntop(AF_INET6, (struct sockaddr_in6 *)rr.rdata,
                                      ipaddr, sizeof(ipaddr))) {
+                    dnsSecurity("nil", "DNS response with an illegal IPv4 address");
                     notify(NOTIFY_DNS, "DNS response with an illegal IPv4 address");
                     continue;
                 }
             } else {
                 DBG("DNS response received without an IP address");
+                dnsSecurity("nil", "DNS response received without an IP address");
                 notify(NOTIFY_DNS, "DNS response without an IP address");
                 continue;
             }
@@ -2384,9 +2402,10 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
             if (fs->enforceRD) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                fileSecurity(fs->path, msg, FALSE, 0);
                 notify(NOTIFY_FILES, msg);
             }
 
@@ -2425,9 +2444,10 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
             if (fs->enforceWR) {
-                char msg[PATH_MAX + 128];
+                char msg[REASON_MAX];
 
                 appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                fileSecurity(fs->path, msg, FALSE, bytes);
                 notify(NOTIFY_FILES, msg);
 
             }
@@ -2823,4 +2843,71 @@ getNetRxTxBucket(net_info *net)
     }
 
     return bucket;
+}
+
+// Create a security event for a file
+void
+fileSecurity(const char *path, const char *reason, bool close, uint64_t write_bytes)
+{
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
+    if (!secp) return;
+
+    secp->evtype = EVT_SEC;
+    appview_strncpy(secp->path, path, appview_strnlen(path, sizeof(secp->path)));
+    appview_strncpy(secp->reason, reason, appview_strnlen(reason, sizeof(secp->reason)));
+
+    if (close) {
+        secp->write_bytes = write_bytes;
+    }
+
+    cmdPostEvent(g_ctl, (char *)secp);
+}
+
+// Create a security event when a function is GOT hooked
+void
+gotSecurity(const char *funcname, const char *reason, const char *dlpi_name, const char *file_from_maps_file)
+{
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
+    if (!secp) return;
+
+    secp->evtype = EVT_SEC;
+    appview_strncpy(secp->func, funcname, appview_strnlen(funcname, sizeof(secp->func)));
+    appview_strncpy(secp->reason, reason, appview_strnlen(reason, sizeof(secp->reason)));
+    appview_strncpy(secp->dlpi_name, dlpi_name, appview_strnlen(dlpi_name, sizeof(secp->dlpi_name)));
+    appview_strncpy(secp->path, file_from_maps_file, appview_strnlen(file_from_maps_file, sizeof(secp->path)));
+
+    cmdPostEvent(g_ctl, (char *)secp);
+}
+
+// Create a security event for DNS
+void
+dnsSecurity(const char *dnsName, const char *reason)
+{
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
+    if (!secp) return;
+
+    secp->evtype = EVT_SEC;
+    appview_strncpy(secp->dnsName, dnsName, appview_strnlen(dnsName, sizeof(secp->dnsName)));
+    appview_strncpy(secp->reason, reason, appview_strnlen(reason, sizeof(secp->reason)));
+
+    cmdPostEvent(g_ctl, (char *)secp);
+}
+
+// Create a security event when a connection is made to a user-blocked IP or port
+void
+netSecurity(const char *raddr, uint port, const char *reason)
+{
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
+    if (!secp) return;
+
+    secp->evtype = EVT_SEC;
+    appview_strncpy(secp->host, raddr, appview_strnlen(raddr, sizeof(secp->host)));
+    secp->port = port;
+    appview_strncpy(secp->reason, reason, appview_strnlen(reason, sizeof(secp->reason)));
+
+    cmdPostEvent(g_ctl, (char *)secp);
 }

@@ -2057,8 +2057,10 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
             appview_strstr(file_from_maps_file, "/libpthread") ||
             !appview_strcmp(file_from_maps_file, "[vdso]")) goto next;
 
-        char msg[128];
+        const char *exe_or_lib_name = info->dlpi_name[0] ? info->dlpi_name : g_proc.procname;
+        char msg[256];
         appview_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
+        gotSecurity(fname, msg, exe_or_lib_name, file_from_maps_file);
         notify(NOTIFY_LIBS, msg);
 
 next:

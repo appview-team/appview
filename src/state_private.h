@@ -13,6 +13,8 @@
 
 #define PROTOCOL_STR 16
 #define FUNC_MAX 24
+#define DLPI_MAX 256 
+#define REASON_MAX PATH_MAX + 128
 #define HDRTYPE_MAX 16
 
 //
@@ -245,6 +247,19 @@ typedef struct payload_info_t {
     size_t len;
     char *data;
 } payload_info;
+
+typedef struct security_info_t {
+    metric_t evtype;
+    char reason[REASON_MAX];
+    char lib[PATH_MAX];
+    char path[PATH_MAX];
+    char dnsName[MAX_HOSTNAME];
+    uint write_bytes;
+    char host[INET6_ADDRSTRLEN];
+    uint port;
+    char func[FUNC_MAX];
+    char dlpi_name[DLPI_MAX];
+} security_info;
 
 // Accessor functions defined in state.c, but used in report.c too.
 int get_port(int, int, control_type_t);

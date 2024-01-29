@@ -248,9 +248,9 @@ typedef struct payload_info_t {
     char *data;
 } payload_info;
 
-typedef struct {
-    char reason[REASON_MAX];
+typedef struct security_info_t {
     metric_t evtype;
+    char reason[REASON_MAX];
     char lib[PATH_MAX];
     char path[PATH_MAX];
     char dnsName[MAX_HOSTNAME];
@@ -259,7 +259,7 @@ typedef struct {
     uint port;
     char func[FUNC_MAX];
     char dlpi_name[DLPI_MAX];
-} security_info_t;
+} security_info;
 
 // Accessor functions defined in state.c, but used in report.c too.
 int get_port(int, int, control_type_t);

@@ -2849,8 +2849,8 @@ getNetRxTxBucket(net_info *net)
 void
 fileSecurity(const char *path, const char *reason, bool close, uint64_t write_bytes)
 {
-    size_t len = sizeof(security_info_t);
-    security_info_t *secp = appview_calloc(1, len);
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
     if (!secp) return;
 
     secp->evtype = EVT_SEC;
@@ -2868,8 +2868,8 @@ fileSecurity(const char *path, const char *reason, bool close, uint64_t write_by
 void
 gotSecurity(const char *funcname, const char *reason, const char *dlpi_name, const char *file_from_maps_file)
 {
-    size_t len = sizeof(security_info_t);
-    security_info_t *secp = appview_calloc(1, len);
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
     if (!secp) return;
 
     secp->evtype = EVT_SEC;
@@ -2885,8 +2885,8 @@ gotSecurity(const char *funcname, const char *reason, const char *dlpi_name, con
 void
 dnsSecurity(const char *dnsName, const char *reason)
 {
-    size_t len = sizeof(security_info_t);
-    security_info_t *secp = appview_calloc(1, len);
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
     if (!secp) return;
 
     secp->evtype = EVT_SEC;
@@ -2900,8 +2900,8 @@ dnsSecurity(const char *dnsName, const char *reason)
 void
 netSecurity(const char *raddr, uint port, const char *reason)
 {
-    size_t len = sizeof(security_info_t);
-    security_info_t *secp = appview_calloc(1, len);
+    size_t len = sizeof(struct security_info_t);
+    security_info *secp = appview_calloc(1, len);
     if (!secp) return;
 
     secp->evtype = EVT_SEC;

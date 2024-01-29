@@ -3285,7 +3285,7 @@ doNetMetric(metric_t type, net_info *net, control_type_t source, ssize_t size)
 }
 
 void
-doSecurityMetric(security_info_t *sec)
+doSecurityMetric(security_info *sec)
 {
     if (appview_strlen(sec->path) > 0) {
         // file
@@ -3517,7 +3517,7 @@ doEvent()
             fs_info *fs;
             stat_err_info *staterr;
             protocol_info *proto;
-            security_info_t *sec;
+            security_info *sec;
 
             if (event->evtype == EVT_NET) {
                 net = (net_info *)data;
@@ -3538,7 +3538,7 @@ doEvent()
                 proto = (protocol_info *)data;
                 doProtocolMetric(proto);
             } else if (event->evtype == EVT_SEC) {
-                sec = (security_info_t *)data;
+                sec = (security_info *)data;
                 doSecurityMetric(sec);
             } else {
                 DBG(NULL);

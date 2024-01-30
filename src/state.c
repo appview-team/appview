@@ -1355,7 +1355,8 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     if ((fs->mode & S_IWGRP) || (fs->mode & S_IWOTH)) {
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
-            if (appview_strstr(path, g_notify_def.sys_dirs[i])) {
+            if (appview_strncmp(path, g_notify_def.sys_dirs[i],
+                                appview_strlen(g_notify_def.sys_dirs[i])) == 0) {
                 char msg[REASON_MAX];
 
                 appview_snprintf(msg, sizeof(msg),

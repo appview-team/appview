@@ -2051,11 +2051,24 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          * From libappview.
          *   It's us and we modifiy the GOT.
          */
-        if (appview_strstr(file_from_maps_file, "/libc-") ||
-            appview_strstr(file_from_maps_file, "/libc.") ||
-            appview_strstr(file_from_maps_file, "libappview") ||
-            appview_strstr(file_from_maps_file, "/libpthread") ||
+        if (appview_strstr(file_from_maps_file, "libappview") ||
+            appview_strstr(file_from_maps_file, "/usr/lib") ||
+            appview_strstr(file_from_maps_file, "/usr/bin") ||
             !appview_strcmp(file_from_maps_file, "[vdso]")) goto next;
+
+#ifdef DEBUG
+        printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
+               __FUNCTION__, __LINE__, dl_info.dli_sname, fname, got_value, dl_info.dli_saddr);
+
+        if (appview_strncmp(fname, dl_info.dli_sname, appview_strlen(dl_info.dli_sname))) {
+            printf("%s:%d len link map %ld dladdr1 %ld\n", __FUNCTION__, __LINE__,
+                   appview_strlen(fname), appview_strlen(dl_info.dli_sname));
+        }
+
+        if ((void*)got_value != dl_info.dli_saddr) {
+            printf("%s:%d\n", __FUNCTION__, __LINE__);
+        }
+#endif
 
         const char *exe_or_lib_name = info->dlpi_name[0] ? info->dlpi_name : g_proc.procname;
         char msg[256];

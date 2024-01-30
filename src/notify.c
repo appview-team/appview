@@ -25,10 +25,11 @@
 #undef SSL_read
 #undef SSL_write
 
-static bool g_inited = FALSE;
 static const char *g_slackApiToken;
 static const char *g_slackChannel;
 notify_info_t g_notify_def = {0};
+bool g_notified = FALSE;
+bool g_inited = FALSE;
 
 static void
 initOpenSSL(void) {
@@ -62,17 +63,26 @@ static bool
 setList(char *list, char *dest[], size_t max_entries){
     int num_entries = 0;
     char *token = NULL;
+    char *save = NULL;
+    char *copy;
 
-    token = appview_strtok(list, ",");
+    if (list == NULL) return FALSE;
+
+    if ((copy = appview_calloc(1, strlen(list) + 1)) == NULL) return FALSE;
+    appview_strcpy(copy, list);
+
+    token = appview_strtok_r(copy, ",", &save);
     while ((token != NULL) && (num_entries < max_entries)) {
         if ((dest[num_entries] = appview_strdup(token)) == NULL) {
             appviewLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
+            appview_free(copy);
             return FALSE;
         }
         num_entries++;
-        token = appview_strtok(NULL, ",");
+        token = appview_strtok_r(NULL, ",", &save);
     }
 
+    appview_free(copy);
     return TRUE;
 }
 
@@ -252,6 +262,8 @@ sendSlackMessage(SSL *ssl, const char *msg) {
  */
 static bool
 slackNotify(const char *msg) {
+    if (g_notify_def.send == FALSE) return FALSE;
+
     SSL *ssl;
     const SSL_METHOD *method = TLS_client_method();
 
@@ -328,49 +340,55 @@ notify(notify_type_t dtype, const char *msg)
         // TODO: add config and determine which notification we are using
         initOpenSSL();
         // Should we return here?
-        if (getSlackVars() == FALSE) return FALSE;
-        if (getNotifyVars() == FALSE) return FALSE;
+        if ((getNotifyVars() == FALSE) ||
+            (getSlackVars() == FALSE)) {
+            // setting this for for unit test only
+            g_notified = TRUE;
+            return FALSE;
+        }
+
         g_inited = TRUE;
     }
 
-    bool doit, rv = FALSE;
+    bool doit = FALSE, rv = FALSE;
 
     if (g_notify_def.enable == FALSE) return FALSE;
 
-    if (g_notify_def.send == TRUE) {
-        switch (dtype) {
-        case NOTIFY_INIT:
-            return TRUE;
+    switch (dtype) {
+    case NOTIFY_INIT:
+        return TRUE;
 
-        case NOTIFY_LIBS:
-            doit = g_notify_def.libs;
-            break;
+    case NOTIFY_LIBS:
+        doit = g_notify_def.libs;
+        break;
 
-         case NOTIFY_FILES:
-            doit = g_notify_def.files;
-            break;
+    case NOTIFY_FILES:
+        doit = g_notify_def.files;
+        break;
 
-        case NOTIFY_FUNC:
-            doit = g_notify_def.functions;
-            break;
+    case NOTIFY_FUNC:
+        doit = g_notify_def.functions;
+        break;
 
-        case NOTIFY_NET:
-            doit = g_notify_def.network;
-            break;
+    case NOTIFY_NET:
+        doit = g_notify_def.network;
+        break;
 
-        case NOTIFY_DNS:
-            doit = g_notify_def.dns;
-            break;
+    case NOTIFY_DNS:
+        doit = g_notify_def.dns;
+        break;
 
-        default:
-            doit = FALSE;
-            break;
-        }
+    default:
+        doit = FALSE;
+        break;
+    }
 
-        if (doit == TRUE) {
-            // TODO: add config and determine which notification we are using
-            rv = slackNotify(msg);
-        }
+    if (doit == TRUE) {
+        // TODO: add config and determine which notification we are using
+        rv = slackNotify(msg);
+
+        // only for unit test
+        g_notified = TRUE;
     }
 
     if (g_notify_def.exit == TRUE) {

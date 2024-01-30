@@ -1280,13 +1280,25 @@ detectProtocol(int sockfd, net_info *net, void *buf, size_t len, metric_t src, s
 static void
 doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
-    if (!fs || !path) return;
+    if ((g_notify_def.enable == FALSE) ||
+        (g_notify_def.files == FALSE) ||
+        !fs || !path ||
+        appview_strstr(path, "stdin") ||
+        appview_strstr(path, "stdout") ||
+        appview_strstr(path, "stderr") ||
+        appview_strstr(path, "/proc")) return;
 
     int i;
+    char *this;
 
     // Should this path be enforced for write access?
     for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
-        if (appview_strstr(path, g_notify_def.file_write[i])) {
+ 
+        // ignore a leading space
+        this = g_notify_def.file_write[i];
+        if (*this == ' ') this++;
+
+        if (appview_strstr(path, this)) {
             fs->enforceWR = TRUE;
             break;
         }
@@ -1295,50 +1307,35 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     // TODO: do we need to check both?
     // Should this path be enforced for read access?
     for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
-        if (appview_strstr(path, g_notify_def.file_read[i])) {
+        // ignore a leading space
+        this = g_notify_def.file_read[i];
+        if (*this == ' ') this++;
+
+        if (appview_strstr(path, this)) {
             fs->enforceRD = TRUE;
             break;
         }
     }
 
     // check for spaces at the end of file names
-    for (i = 0; i < appview_strlen(path); i++) {
+    i = appview_strlen(path);
+    do {
         if (appview_isspace(path[i])) {
-            char msg[REASON_MAX];
+            char msg[PATH_MAX + 128];
 
-            appview_snprintf(msg, sizeof(msg), "spaces in the path name %s representing a potential issue",
+            appview_snprintf(msg, sizeof(msg),
+                           "spaces at the end of the path name %s representing a potential issue",
                            path);
             fileSecurity(path, msg, FALSE, 0);
             notify(NOTIFY_FILES, msg);
         }
-    }
-
-    // check for a double file extension
-    int num_entries = 0;
-    char *dext = (char *)path;
-
-    while ((dext = appview_strstr(dext, ".")) != NULL) {
-            num_entries++;
-            dext++;
-    }
-
-    if (num_entries >= 2) {
-        char msg[REASON_MAX];
-
-        appview_snprintf(msg, sizeof(msg), "path name %s contains double extensions representing a potential issue",
-                       path);
-        fileSecurity(path, msg, FALSE, 0);
-        notify(NOTIFY_FILES, msg);
-    }
+        i--;
+    } while (isalnum(path[i]) == 0);
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set
-    if (sbuf &&
-        (appview_strstr(path, "stdout") == NULL) &&
-        (appview_strstr(path, "stdin") == NULL) &&
-        (appview_strstr(path, "stderr") == NULL) &&
-        ((sbuf->st_mode & S_ISUID) || (sbuf->st_mode & S_ISGID))) {
-        char msg[REASON_MAX];
+    if ((fs->mode & S_ISUID) || (fs->mode & S_ISGID)) {
+        char msg[PATH_MAX + 128];
 
         appview_snprintf(msg, sizeof(msg),
                        "path name %s contains setuid or setgid bits set representing a potential issue",
@@ -1355,7 +1352,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files in system dirs that have g/a write perms
-    if ((sbuf->st_mode & S_IWGRP) || (sbuf->st_mode & S_IWOTH)) {
+    if ((fs->mode & S_IWGRP) || (fs->mode & S_IWOTH)) {
         // Is this path a system dir?
         for (i = 0; g_notify_def.sys_dirs[i] != NULL; i++) {
             if (appview_strstr(path, g_notify_def.sys_dirs[i])) {
@@ -1372,49 +1369,43 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    if ((appview_strstr(path, "stdout") == NULL) &&
-        (appview_strstr(path, "stdin") == NULL) &&
-        (appview_strstr(path, "stderr") == NULL)) {
+    struct passwd *pw;
+    bool known_uid = FALSE, known_gid = FALSE;
 
-        struct passwd *pw;
-        bool known_uid = FALSE, known_gid = FALSE;
+    // Open the password database
+    setpwent();
 
-        // Open the password database
-        setpwent();
-
-        // Iterate through known users
-        while ((pw = getpwent()) != NULL) {
-            if (sbuf->st_uid == pw->pw_uid) {
-                known_uid = TRUE;
-            }
-
-            if (sbuf->st_gid == pw->pw_gid) {
-                known_gid = TRUE;
-            }
+    // Iterate through known users
+    while ((pw = getpwent()) != NULL) {
+        if (fs->fuid == pw->pw_uid) {
+            known_uid = TRUE;
         }
-
-        // Close the password database
-        endpwent();
-
-        if (known_uid == FALSE) {
-            char msg[REASON_MAX];
-
-            appview_snprintf(msg, sizeof(msg),
-                           "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
-                           path, sbuf->st_uid);
-            fileSecurity(path, msg, FALSE, 0);
-            notify(NOTIFY_FILES, msg);
+        if (fs->fgid == pw->pw_gid) {
+            known_gid = TRUE;
         }
+    }
 
-        if (known_gid == FALSE) {
-            char msg[REASON_MAX];
+    // Close the password database
+    endpwent();
 
-            appview_snprintf(msg, sizeof(msg),
-                           "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
-                           path, sbuf->st_gid);
-            fileSecurity(path, msg, FALSE, 0);
-            notify(NOTIFY_FILES, msg);
-        }
+    if (known_uid == FALSE) {
+        char msg[REASON_MAX];
+
+        appview_snprintf(msg, sizeof(msg),
+                       "a file %s that is owned by an unknown user, UID %d, which represents a potential issue",
+                       path, sbuf->st_uid);
+        fileSecurity(path, msg, FALSE, 0);
+        notify(NOTIFY_FILES, msg);
+    }
+
+    if (known_gid == FALSE) {
+        char msg[REASON_MAX];
+
+        appview_snprintf(msg, sizeof(msg),
+                       "a file %s that is owned by an unknown group, GID %d, which represents a potential issue",
+                       path, sbuf->st_gid);
+        fileSecurity(path, msg, FALSE, 0);
+        notify(NOTIFY_FILES, msg);
     }
 }
 
@@ -2715,7 +2706,6 @@ doOpen(int fd, const char *path, fs_type_t type, const char *func)
 
         doUpdateState(FS_OPEN, fd, 0, func, path);
         doDetectFile(path, &g_fsinfo[fd], &sbuf);
-        appviewLog(CFG_LOG_TRACE, "fd:%d %s", fd, func);
     }
 }
 

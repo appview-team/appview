@@ -5,7 +5,7 @@ import StarCount from "./widgets/StarCount";
 import Download from "./widgets/Download";
 import CriblSiteNav from "./criblSiteNav";
 import logo from "../images/logo-appview.svg";
-import "../scss/_appAppViewNav.scss";
+import "../scss/_appViewNav.scss";
 
 export default function Header() {
   const data = useStaticQuery(graphql`

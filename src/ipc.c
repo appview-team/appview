@@ -44,9 +44,9 @@ translateParseStatusToResp(req_parse_status_t status) {
     case REQ_PARSE_JSON_ERROR:
     case REQ_PARSE_REQ_ERROR:
     case REQ_PARSE_UNIQ_ERROR:
-    case REQ_PARSE_SCOPE_REQ_ERROR:
-    case REQ_PARSE_MISSING_SCOPE_DATA_ERROR:
-    case REQ_PARSE_SCOPE_SIZE_ERROR:
+    case REQ_PARSE_APPVIEW_REQ_ERROR:
+    case REQ_PARSE_MISSING_APPVIEW_DATA_ERROR:
+    case REQ_PARSE_APPVIEW_SIZE_ERROR:
         DBG("%d", status);
         return IPC_BAD_REQUEST;
     default:
@@ -68,15 +68,15 @@ typedef enum {
 static ipc_receive_result
 ipcReceiveFrameWithRetry(mqd_t mqDes, char *mqMsgBuf, size_t mqMaxMsgSize, ssize_t *mqMsgLen) {
     for (int retryCount = 1; retryCount <= RETRY_COUNT; ++retryCount) {
-        *mqMsgLen = scope_mq_receive(mqDes, mqMsgBuf, mqMaxMsgSize, 0);
+        *mqMsgLen = appview_mq_receive(mqDes, mqMsgBuf, mqMaxMsgSize, 0);
         if (*mqMsgLen != -1) {
             return MSG_RECV_OK;
-        } else if(scope_errno == EAGAIN) {
+        } else if(appview_errno == EAGAIN) {
             /*
             * Message queue is empty wait 50 us and retry since
             * the communication here is non-block
             */
-            scope_nanosleep((const struct timespec[]){{0, 50000L}}, NULL);
+            appview_nanosleep((const struct timespec[]){{0, 50000L}}, NULL);
         } else {
             /*
             * Other error
@@ -93,15 +93,15 @@ ipcReceiveFrameWithRetry(mqd_t mqDes, char *mqMsgBuf, size_t mqMaxMsgSize, ssize
 static ipc_resp_result_t
 ipcSendFrameWithRetry(mqd_t mqDes, void *frame, size_t frameLen) {
     for (int retryCount = 1; retryCount <= RETRY_COUNT; ++retryCount) {
-        int sendRes = scope_mq_send(mqDes, frame, frameLen, 0);
+        int sendRes = appview_mq_send(mqDes, frame, frameLen, 0);
         if (sendRes == 0) {
             return RESP_RESULT_OK;
-        } else if(scope_errno == EAGAIN) {
+        } else if(appview_errno == EAGAIN) {
             /*
             * Message queue is full wait 50 us and retry since
             * the communication here is non-block
             */
-            scope_nanosleep((const struct timespec[]){{0, 50000L}}, NULL);
+            appview_nanosleep((const struct timespec[]){{0, 50000L}}, NULL);
         } else {
             /*
             * Other error
@@ -117,7 +117,7 @@ ipcSendFrameWithRetry(mqd_t mqDes, void *frame, size_t frameLen) {
  */
 mqd_t
 ipcOpenConnection(const char *name, int oflag) {
-    return scope_mq_open(name, oflag);
+    return appview_mq_open(name, oflag);
 }
 
 /*
@@ -125,7 +125,7 @@ ipcOpenConnection(const char *name, int oflag) {
  */
 int
 ipcCloseConnection(mqd_t mqdes) {
-    return scope_mq_close(mqdes);
+    return appview_mq_close(mqdes);
 }
 
 /*
@@ -141,7 +141,7 @@ ipcIsActive(mqd_t mqdes, size_t *maxMsgSize, long *msgCount) {
         return FALSE;
     }
 
-    if (scope_mq_getattr(mqdes, &attr) == -1) {
+    if (appview_mq_getattr(mqdes, &attr) == -1) {
         return FALSE;
     }
 
@@ -172,11 +172,11 @@ msgBufIsNULTermPresent(const char* msgBuf, size_t msgLen) {
 
 /*
  * Parse single frame placed in message queue.
- * Returns scope data from frame, the status of parsing the frame (parseStatus) and unique identifer of message request (uniqVal)
+ * Returns appview data from frame, the status of parsing the frame (parseStatus) and unique identifer of message request (uniqVal)
  */
 static char *
-ipcParseSingleFrame(const char *msgBuf, ssize_t msgLen, req_parse_status_t *parseStatus, int *uniqVal, size_t *scopeFrameLen, size_t *remainLen) {
-    char *scopeMsg = NULL;
+ipcParseSingleFrame(const char *msgBuf, ssize_t msgLen, req_parse_status_t *parseStatus, int *uniqVal, size_t *appviewFrameLen, size_t *remainLen) {
+    char *appviewMsg = NULL;
 
     // Check if there is at least one NUL terminator
     if (msgBufIsNULTermPresent(msgBuf, msgLen) == FALSE) {
@@ -232,73 +232,73 @@ ipcParseSingleFrame(const char *msgBuf, ssize_t msgLen, req_parse_status_t *pars
 
     // Calculate offset of message - skip metadata part
     char *metaData = cJSON_PrintUnformatted(msgJson);
-    size_t metaDataLen = scope_strlen(metaData);
+    size_t metaDataLen = appview_strlen(metaData);
     size_t dataOffset = metaDataLen + 1;
-    // There is no scope data
+    // There is no appview data
     if (msgLen <= dataOffset) {
-        *parseStatus = REQ_PARSE_MISSING_SCOPE_DATA_ERROR;
+        *parseStatus = REQ_PARSE_MISSING_APPVIEW_DATA_ERROR;
         goto cleanMetadata;
     }
-    // Calculate the scope data length
+    // Calculate the appview data length
     size_t dataLen = msgLen - dataOffset;
-    // Allocate place for scope data in the current frame
-    scopeMsg = scope_calloc(1, sizeof(char) * dataLen);
-    if (!scopeMsg) {
+    // Allocate place for appview data in the current frame
+    appviewMsg = appview_calloc(1, sizeof(char) * dataLen);
+    if (!appviewMsg) {
         *parseStatus = REQ_PARSE_ALLOCATION_ERROR;
         goto cleanMetadata;
     }
     // Skip NUL char separator
-    scope_memcpy(scopeMsg, msgBuf + dataOffset, dataLen);
+    appview_memcpy(appviewMsg, msgBuf + dataOffset, dataLen);
     *parseStatus = REQ_PARSE_OK;
-    *scopeFrameLen = dataLen;
+    *appviewFrameLen = dataLen;
     if (reqKey->valueint == META_REQ_JSON_PARTIAL ) {
         *parseStatus = REQ_PARSE_PARTIAL;
     } 
 
 cleanMetadata:
-    scope_free(metaData);
+    appview_free(metaData);
 
 cleanJson:
     cJSON_Delete(msgJson);
 
 end:
-    return scopeMsg;
+    return appviewMsg;
 }
 
 static char *
-scopeMsgCreate(const char *frame, size_t frameLen) {
-    char *msg = scope_calloc(1, frameLen * sizeof(char));
+appviewMsgCreate(const char *frame, size_t frameLen) {
+    char *msg = appview_calloc(1, frameLen * sizeof(char));
     if (!msg) {
         return NULL;
     }
-    scope_memcpy(msg, frame, frameLen);
+    appview_memcpy(msg, frame, frameLen);
 
     return msg;
 }
 
 static char *
-scopeMsgAppend(char *msg, size_t msgLen, const char *frame, size_t frameLen, req_parse_status_t *parseStatus) {
+appviewMsgAppend(char *msg, size_t msgLen, const char *frame, size_t frameLen, req_parse_status_t *parseStatus) {
     // When we append we will overwrite the last byte
     size_t newMsgLen = msgLen - 1 + frameLen;
     if (newMsgLen > INPUT_MSG_ALLOC_LIMIT) {
-        *parseStatus = REQ_PARSE_SCOPE_SIZE_ERROR;
+        *parseStatus = REQ_PARSE_APPVIEW_SIZE_ERROR;
         return NULL;
     }
-    char *temp = scope_realloc(msg, newMsgLen * sizeof(char));
+    char *temp = appview_realloc(msg, newMsgLen * sizeof(char));
     if (!temp) {
         *parseStatus = REQ_PARSE_ALLOCATION_ERROR;
         return NULL;
     }
     // overwrite the NUL byte
     int lastMsgIndx = msgLen - 1;
-    scope_memcpy(temp + lastMsgIndx, frame, frameLen);
+    appview_memcpy(temp + lastMsgIndx, frame, frameLen);
 
     return temp;
 }
 
 /* 
  * ipcRequestHandler performs parsing of incoming frame in message queue
- * Returns scope msg
+ * Returns appview msg
  */
 char *
 ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseStatus, int *uniqueReq) {
@@ -308,7 +308,7 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
 
 
     // Allocate maximum buffer for single meesage in message queue
-    char *mqMsgBuf = scope_malloc(mqMaxMsgSize);
+    char *mqMsgBuf = appview_malloc(mqMaxMsgSize);
     if (!mqMsgBuf) {
         *parseStatus = REQ_PARSE_ALLOCATION_ERROR;
         return msgRes;
@@ -323,46 +323,46 @@ ipcRequestHandler(mqd_t mqDes, size_t mqMaxMsgSize, req_parse_status_t *parseSta
         ipc_receive_result recvStatus = ipcReceiveFrameWithRetry(mqDes, mqMsgBuf, mqMaxMsgSize, &mqMsgLen);
         if (recvStatus != MSG_RECV_OK) {
             *parseStatus = (recvStatus == MSG_RECV_RETRY_LIMIT) ? REQ_PARSE_RECEIVE_TIMEOUT_ERROR : REQ_PARSE_RECEIVE_ERROR;
-            scope_free(mqMsgBuf);
-            scope_free(msgRes);
+            appview_free(mqMsgBuf);
+            appview_free(msgRes);
             return NULL;
         }
         // Data from single frame
         frameRes = ipcParseSingleFrame(mqMsgBuf, mqMsgLen, parseStatus, uniqueReq, &frameLen, &remainLen);
         if (!frameRes) {
-            scope_free(mqMsgBuf);
-            scope_free(msgRes);
+            appview_free(mqMsgBuf);
+            appview_free(msgRes);
             return NULL;
         }
 
         // First frame 
         if (!msgRes) {
-            msgRes = scopeMsgCreate(frameRes, frameLen);
+            msgRes = appviewMsgCreate(frameRes, frameLen);
             if (!msgRes) {
                 *parseStatus = REQ_PARSE_ALLOCATION_ERROR;
-                scope_free(frameRes);
-                scope_free(mqMsgBuf);
+                appview_free(frameRes);
+                appview_free(mqMsgBuf);
                 return NULL;
             }
             msgLen += frameLen;
         } else {
-            char *temp = scopeMsgAppend(msgRes, msgLen, frameRes, frameLen, parseStatus);
+            char *temp = appviewMsgAppend(msgRes, msgLen, frameRes, frameLen, parseStatus);
             if (!temp) {
-                scope_free(frameRes);
-                scope_free(msgRes);
-                scope_free(mqMsgBuf);
+                appview_free(frameRes);
+                appview_free(msgRes);
+                appview_free(mqMsgBuf);
                 return NULL;
             }
             msgRes = temp;
             msgLen = msgLen - 1 + frameLen;
         }
-        scope_free(frameRes);
+        appview_free(frameRes);
 
         if (*parseStatus != REQ_PARSE_PARTIAL) {
             listenForResponseTransmission = FALSE;
         }
     }
-    scope_free(mqMsgBuf);
+    appview_free(mqMsgBuf);
 
     return msgRes;
 }
@@ -411,7 +411,7 @@ ipcSendFailedResponse(mqd_t mqDes, size_t msgBufSize, req_parse_status_t parseSt
     }
 
     char *metadataBytes = cJSON_PrintUnformatted(meta);
-    size_t metadataLen = scope_strlen(metadataBytes);
+    size_t metadataLen = appview_strlen(metadataBytes);
     // There is not sufficient place to use msg buffer 
     if (metadataLen >= msgBufSize) {
         res = RESP_UNSUFFICENT_MSGBUF_ERROR;
@@ -421,18 +421,18 @@ ipcSendFailedResponse(mqd_t mqDes, size_t msgBufSize, req_parse_status_t parseSt
     res = ipcSendFrameWithRetry(mqDes, metadataBytes, metadataLen);
 
 end:
-    scope_free(metadataBytes);
+    appview_free(metadataBytes);
     cJSON_Delete(meta);
     return res;
 }
 
-typedef scopeRespWrapper* (*responseProcessor)(const cJSON *);
+typedef appviewRespWrapper* (*responseProcessor)(const cJSON *);
 
 static responseProcessor supportedResp[] = {
-    [IPC_CMD_GET_SUPPORTED_CMD]    = ipcRespGetScopeCmds,
-    [IPC_CMD_GET_SCOPE_STATUS]     = ipcRespGetScopeStatus,
-    [IPC_CMD_GET_SCOPE_CFG]        = ipcRespGetScopeCfg, 
-    [IPC_CMD_SET_SCOPE_CFG]        = ipcRespSetScopeCfg,
+    [IPC_CMD_GET_SUPPORTED_CMD]    = ipcRespGetAppViewCmds,
+    [IPC_CMD_GET_APPVIEW_STATUS]     = ipcRespGetAppViewStatus,
+    [IPC_CMD_GET_APPVIEW_CFG]        = ipcRespGetAppViewCfg, 
+    [IPC_CMD_SET_APPVIEW_CFG]        = ipcRespSetAppViewCfg,
     [IPC_CMD_GET_TRANSPORT_STATUS] = ipcRespGetTransportStatus,
     [IPC_CMD_GET_PROC_DETAILS]     = ipcRespGetProcessDetails,
     [IPC_CMD_UNKNOWN]              = ipcRespStatusNotImplemented
@@ -440,54 +440,54 @@ static responseProcessor supportedResp[] = {
 
 /* 
  * ipcProcessRequestAndPrepareResponse
- * - parse the scope request
+ * - parse the appview request
  * - prepare the response
  * It will create response based on:
- * - scopeReq scope request
- * Returns scope wrapper which contains the scope message response
+ * - appviewReq appview request
+ * Returns appview wrapper which contains the appview message response
  */
-static scopeRespWrapper *
-ipcProcessRequestAndPrepareResponse(const char *scopeReq, ipc_resp_result_t *res) {
+static appviewRespWrapper *
+ipcProcessRequestAndPrepareResponse(const char *appviewReq, ipc_resp_result_t *res) {
 
     req_parse_status_t status = REQ_PARSE_JSON_ERROR;
 
-    // Verify if scope request is based on JSON-format
-    cJSON *scopeReqJson = cJSON_Parse(scopeReq);
-    if (!scopeReqJson) {
+    // Verify if appview request is based on JSON-format
+    cJSON *appviewReqJson = cJSON_Parse(appviewReq);
+    if (!appviewReqJson) {
         goto errJson;
     }
 
-    if (!cJSON_IsObject(scopeReqJson)) {
+    if (!cJSON_IsObject(appviewReqJson)) {
         goto errJson;
     }
 
-    cJSON *cmdReq = cJSON_GetObjectItemCaseSensitive(scopeReqJson, "req");
+    cJSON *cmdReq = cJSON_GetObjectItemCaseSensitive(appviewReqJson, "req");
     if (!cmdReq || !cJSON_IsNumber(cmdReq)) {
-        status = REQ_PARSE_SCOPE_REQ_ERROR;
+        status = REQ_PARSE_APPVIEW_REQ_ERROR;
         goto errJson;
     }
 
-    ipc_scope_req_t supportedCmd = IPC_CMD_UNKNOWN;
+    ipc_appview_req_t supportedCmd = IPC_CMD_UNKNOWN;
     for(supportedCmd = 0; supportedCmd < IPC_CMD_UNKNOWN; ++supportedCmd) {
         if (cmdReq->valueint == supportedCmd) {
             break;
         }
     }
 
-    scopeRespWrapper *resp = supportedResp[supportedCmd](scopeReqJson);
+    appviewRespWrapper *resp = supportedResp[supportedCmd](appviewReqJson);
     if (!resp) {
         *res = RESP_PROCESSING_ERROR;
     }
-    cJSON_Delete(scopeReqJson);
+    cJSON_Delete(appviewReqJson);
 
     return resp;
 
 errJson:
     *res = RESP_REQUEST_ERROR;
 
-    cJSON_Delete(scopeReqJson);
+    cJSON_Delete(appviewReqJson);
 
-    return ipcRespStatusScopeError(translateParseStatusToResp(status));
+    return ipcRespStatusAppViewError(translateParseStatusToResp(status));
 
 }
 
@@ -498,90 +498,90 @@ errJson:
  * Returns status of sending operation.
  */
 ipc_resp_result_t
-ipcSendSuccessfulResponse(mqd_t mqDes, size_t msgBufSize, const char *scopeDataReq, int uniqReq) {
+ipcSendSuccessfulResponse(mqd_t mqDes, size_t msgBufSize, const char *appviewDataReq, int uniqReq) {
 
     ipc_resp_result_t res = RESP_ALLOCATION_ERROR;
-    // Proceed incoming scope request 
-    scopeRespWrapper *scopeRespWrap = ipcProcessRequestAndPrepareResponse(scopeDataReq, &res);
-    if (!scopeRespWrap) {
+    // Proceed incoming appview request 
+    appviewRespWrapper *appviewRespWrap = ipcProcessRequestAndPrepareResponse(appviewDataReq, &res);
+    if (!appviewRespWrap) {
         return res;
     }
-    char *scopeRespBytes = ipcRespScopeRespStr(scopeRespWrap);
-    if (!scopeRespBytes) {
+    char *appviewRespBytes = ipcRespAppViewRespStr(appviewRespWrap);
+    if (!appviewRespBytes) {
         goto destroyWrap;
     }
-    size_t scopeDataRemainLen = scope_strlen(scopeRespBytes);
-    size_t scopeDataOffset = 0;
+    size_t appviewDataRemainLen = appview_strlen(appviewRespBytes);
+    size_t appviewDataOffset = 0;
 
     // Allocate buffer to send out
-    void *frame = scope_malloc(msgBufSize * sizeof(char));
+    void *frame = appview_malloc(msgBufSize * sizeof(char));
     if (!frame) {
-        goto destroyScopeRespStr;
+        goto destroyAppViewRespStr;
     }
 
-    while (scopeDataRemainLen) {
+    while (appviewDataRemainLen) {
         // Create basic metadata for response
-        cJSON *metadataJson = createMetaResp(IPC_RESP_OK, uniqReq, scopeDataRemainLen);
+        cJSON *metadataJson = createMetaResp(IPC_RESP_OK, uniqReq, appviewDataRemainLen);
         if (!metadataJson) {
             goto destroyFrame;
         }
 
         char *metadataBytes = cJSON_PrintUnformatted(metadataJson);
-        size_t metadataLen = scope_strlen(metadataBytes) + 1;
+        size_t metadataLen = appview_strlen(metadataBytes) + 1;
 
         // There is not sufficient place to use msg buffer 
         if (metadataLen >= msgBufSize) {
             res = RESP_UNSUFFICENT_MSGBUF_ERROR;
-            scope_free(metadataBytes);
+            appview_free(metadataBytes);
             cJSON_Delete(metadataJson);
             goto destroyFrame;
         }
-        // Calculate the scope data offset and length including NUL terminator byte
+        // Calculate the appview data offset and length including NUL terminator byte
         size_t maxDataLen = msgBufSize - metadataLen;
         size_t dataSendLen = maxDataLen;
-        if (scopeDataRemainLen < maxDataLen) {
-            dataSendLen = scopeDataRemainLen;
+        if (appviewDataRemainLen < maxDataLen) {
+            dataSendLen = appviewDataRemainLen;
         }
-        scopeDataRemainLen -= dataSendLen;
+        appviewDataRemainLen -= dataSendLen;
 
         /*
         * If there is still remaining data we want to change status
         * from 200 -> 206, but because of how we construct the message
         * we cannot do this prior
         */
-        if (scopeDataRemainLen != 0) {
+        if (appviewDataRemainLen != 0) {
             // Locate the status field
-            char *statusStrs = scope_strstr(metadataBytes, "\"status\":200");
+            char *statusStrs = appview_strstr(metadataBytes, "\"status\":200");
             // Get the offset for change 200 -> 206 minus 2 escape "\" characters
             size_t offset = sizeof("\"status\":200") - 2;
             statusStrs[offset] = '6';
         }
 
-        scope_memcpy(frame, metadataBytes, metadataLen);
-        scope_free(metadataBytes);
+        appview_memcpy(frame, metadataBytes, metadataLen);
+        appview_free(metadataBytes);
         cJSON_Delete(metadataJson);
 
-        // Copy the scope frame data
-        scope_memcpy(frame + metadataLen, scopeRespBytes + scopeDataOffset, dataSendLen);
+        // Copy the appview frame data
+        appview_memcpy(frame + metadataLen, appviewRespBytes + appviewDataOffset, dataSendLen);
 
         res = ipcSendFrameWithRetry(mqDes, frame, metadataLen + dataSendLen);
         if (res != RESP_RESULT_OK) {
             goto destroyFrame;
         }
 
-        scopeDataOffset += dataSendLen;
+        appviewDataOffset += dataSendLen;
     }
 
     res = RESP_RESULT_OK;
 
 destroyFrame:
-    scope_free(frame);
+    appview_free(frame);
 
-destroyScopeRespStr:
-    scope_free(scopeRespBytes);
+destroyAppViewRespStr:
+    appview_free(appviewRespBytes);
 
 destroyWrap:
-    ipcRespWrapperDestroy(scopeRespWrap);
+    ipcRespWrapperDestroy(appviewRespWrap);
 
     return res;
 }

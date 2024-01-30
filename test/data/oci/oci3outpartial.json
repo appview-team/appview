@@ -1,17 +1,17 @@
 {
 	"process":	{
-		"env":	["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LD_PRELOAD=/opt/appscope/libscope.so", "SCOPE_SETUP_DONE=true"]
+		"env":	["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "LD_PRELOAD=/opt/appview/libappview.so", "APPVIEW_SETUP_DONE=true"]
 	},
 	"mounts":	[{
-			"destination":	"/usr/lib/appscope/",
+			"destination":	"/usr/lib/appview/",
 			"type":	"bind",
-			"source":	"/usr/lib/appscope/",
+			"source":	"/usr/lib/appview/",
 			"options":	["rbind", "rprivate"]
 		}],
 	"hooks":	{
 		"startContainer":	[{
-				"path":	"/usr/lib/appscope/1.2.3/scope",
-				"args":	["/usr/lib/appscope/1.2.3/scope", "extract", "-p", "/opt/appscope"]
+				"path":	"/usr/lib/appview/1.2.3/appview",
+				"args":	["/usr/lib/appview/1.2.3/appview", "extract", "-p", "/opt/appview"]
 			}]
 	}
 }

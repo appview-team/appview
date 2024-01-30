@@ -10,7 +10,7 @@
 #include "mtcformat.h"
 #include "strset.h"
 #include "com.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 
 struct _mtc_fmt_t
@@ -31,13 +31,13 @@ mtcFormatCreate(cfg_mtc_format_t format)
 {
     if (format >= CFG_FORMAT_MAX) return NULL;
 
-    mtc_fmt_t* f = scope_calloc(1, sizeof(mtc_fmt_t));
+    mtc_fmt_t* f = appview_calloc(1, sizeof(mtc_fmt_t));
     if (!f) {
         DBG(NULL);
         return NULL;
     }
     f->format = format;
-    f->statsd.prefix = (DEFAULT_STATSD_PREFIX) ? scope_strdup(DEFAULT_STATSD_PREFIX) : NULL;
+    f->statsd.prefix = (DEFAULT_STATSD_PREFIX) ? appview_strdup(DEFAULT_STATSD_PREFIX) : NULL;
     f->statsd.max_len = DEFAULT_STATSD_MAX_LEN;
     f->verbosity = DEFAULT_MTC_VERBOSITY;
     f->tags = DEFAULT_CUSTOM_TAGS;
@@ -53,12 +53,12 @@ mtcFormatDestroyTags(custom_tag_t*** tags)
     custom_tag_t** t = *tags;
     int i = 0;
     while (t[i]) {
-        scope_free(t[i]->name);
-        scope_free(t[i]->value);
-        scope_free(t[i]);
+        appview_free(t[i]->name);
+        appview_free(t[i]->value);
+        appview_free(t[i]);
         i++;
     }
-    scope_free(t);
+    appview_free(t);
     *tags = NULL;
 }
 
@@ -67,9 +67,9 @@ mtcFormatDestroy(mtc_fmt_t** fmt)
 {
     if (!fmt || !*fmt) return;
     mtc_fmt_t* f = *fmt;
-    if (f->statsd.prefix) scope_free(f->statsd.prefix);
+    if (f->statsd.prefix) appview_free(f->statsd.prefix);
     mtcFormatDestroyTags(&f->tags);
-    scope_free(f);
+    appview_free(f);
     *fmt = NULL;
 }
 
@@ -102,11 +102,11 @@ createStatsFieldString(mtc_fmt_t* fmt, event_field_t* f, char* tag, int sizeofta
 
     switch (f->value_type) {
         case FMT_NUM:
-            sz = scope_snprintf(tag, sizeoftag, "%s:%lli", f->name, f->value.num);
+            sz = appview_snprintf(tag, sizeoftag, "%s:%lli", f->name, f->value.num);
             break;
         case FMT_STR:
             if (!f->value.str) return -1;
-            sz = scope_snprintf(tag, sizeoftag, "%s:%s", f->name, f->value.str);
+            sz = appview_snprintf(tag, sizeoftag, "%s:%s", f->name, f->value.str);
             break;
         default:
             DBG("%d %s", f->value_type, f->name);
@@ -121,15 +121,15 @@ appendStatsdFieldString(mtc_fmt_t* fmt, char* tag, int sz, char** end, int* byte
     if (strSetEntryCount(addedFields) == 1) {
         sz += 2; // add space for the |#
         if ((*bytes + sz) >= fmt->statsd.max_len) return;
-        *end = scope_stpcpy(*end, "|#");
-        *end = scope_stpcpy(*end, tag);
-        scope_strcpy(*end, "\n"); // add newline, but don't advance end
+        *end = appview_stpcpy(*end, "|#");
+        *end = appview_stpcpy(*end, tag);
+        appview_strcpy(*end, "\n"); // add newline, but don't advance end
     } else {
         sz += 1; // add space for the comma
         if ((*bytes + sz) >= fmt->statsd.max_len) return;
-        *end = scope_stpcpy(*end, ",");
-        *end = scope_stpcpy(*end, tag);
-        scope_strcpy(*end, "\n"); // add newline, but don't advance end
+        *end = appview_stpcpy(*end, ",");
+        *end = appview_stpcpy(*end, tag);
+        appview_strcpy(*end, "\n"); // add newline, but don't advance end
     }
     *bytes += sz;
 }
@@ -180,7 +180,7 @@ addStatsdCustomFields(mtc_fmt_t *fmt, custom_tag_t **tags, char **end, int *byte
 
         // No verbosity setting exists for custom fields.
 
-        sz = scope_snprintf(tag, sizeof(tag), "%s:%s", t->name, t->value);
+        sz = appview_snprintf(tag, sizeof(tag), "%s:%s", t->name, t->value);
         if (sz < 0) break;
 
         appendStatsdFieldString(fmt, tag, sz, end, bytes, addedFields);
@@ -192,7 +192,7 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
 {
     if (!fmt || !e) return NULL;
 
-    char* end = scope_calloc(1, fmt->statsd.max_len + 1);
+    char* end = appview_calloc(1, fmt->statsd.max_len + 1);
     if (!end) {
          DBG("%s", e->name);
          return NULL;
@@ -202,43 +202,43 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
 
     // First, calculate size
     int bytes = 0;
-    bytes += scope_strlen(fmt->statsd.prefix);
-    bytes += scope_strlen(e->name);
+    bytes += appview_strlen(fmt->statsd.prefix);
+    bytes += appview_strlen(e->name);
     char valuebuf[320]; // :-MAX_DBL.00| => max of 315 chars for float
     int n = -1;
     switch ( e->value.type ) {
         case FMT_INT:
-            n = scope_sprintf(valuebuf, ":%lli|", e->value.integer);
+            n = appview_sprintf(valuebuf, ":%lli|", e->value.integer);
             break;
         case FMT_FLT:
-            n = scope_sprintf(valuebuf, ":%.2f|", e->value.floating);
+            n = appview_sprintf(valuebuf, ":%.2f|", e->value.floating);
             break;
         default:
             DBG(NULL);
     }
     if (n < 0) {
-        scope_free(end_start);
+        appview_free(end_start);
         return NULL;
     }
     bytes += n; // size of value in valuebuf
     char* type = statsdType(e->type);
-    bytes += scope_strlen(type);
+    bytes += appview_strlen(type);
 
     // Test the calloc'd size is adequate
     if (bytes >= fmt->statsd.max_len) {
-        scope_free(end_start);
+        appview_free(end_start);
         return NULL;
     }
 
     // Then construct it
-    end = scope_stpcpy(end, fmt->statsd.prefix);
-    end = scope_stpcpy(end, e->name);
-    end = scope_stpcpy(end, valuebuf);
-    end = scope_stpcpy(end, type);
+    end = appview_stpcpy(end, fmt->statsd.prefix);
+    end = appview_stpcpy(end, e->name);
+    end = appview_stpcpy(end, valuebuf);
+    end = appview_stpcpy(end, type);
 
     // Add a newline that will get overwritten if there are fields.
     // (strcpy doesn't advance end)
-    scope_strcpy(end, "\n");
+    appview_strcpy(end, "\n");
 
     // addedFields lets us avoid duplicate field names.  If we go to
     // add one that's already in the set, skip it.  In this way precedence
@@ -257,7 +257,7 @@ mtcFormatStatsDString(mtc_fmt_t* fmt, event_t* e, regex_t* fieldFilter)
     return end_start;
 }
 
-#if SCOPE_PROM_SUPPORT != 0
+#if APPVIEW_PROM_SUPPORT != 0
 
 static bool
 appendPromField(FILE *stream, mtc_fmt_t *fmt, event_field_t *field, strset_t *addedFields)
@@ -274,10 +274,10 @@ appendPromField(FILE *stream, mtc_fmt_t *fmt, event_field_t *field, strset_t *ad
     int retVal = -1;
     switch (field->value_type) {
         case FMT_NUM:
-            retVal = scope_fprintf(stream, "%c%s=\"%lli\"", delim, field->name, field->value.num);
+            retVal = appview_fprintf(stream, "%c%s=\"%lli\"", delim, field->name, field->value.num);
             break;
         case FMT_STR:
-            retVal = scope_fprintf(stream, "%c%s=\"%s\"", delim, field->name, field->value.str);
+            retVal = appview_fprintf(stream, "%c%s=\"%s\"", delim, field->name, field->value.str);
             break;
         default:
             DBG("%d %s", field->value_type, field->name);
@@ -355,11 +355,11 @@ mtcFormatPromString(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
     strset_t *addedFields = NULL;
 
     // memstream, just to let it manage growth in prom_str as needed.
-    stream = scope_open_memstream(&prom_str, &size);
+    stream = appview_open_memstream(&prom_str, &size);
     if (!stream || !prom_str) goto out;
 
     // Copy metric name into a buffer, then convert "." to "_".
-    if (scope_asprintf(&name, "%s%s", fmt->statsd.prefix, evt->name) < 0) {
+    if (appview_asprintf(&name, "%s%s", fmt->statsd.prefix, evt->name) < 0) {
         name = NULL;
         goto out;
     }
@@ -369,9 +369,9 @@ mtcFormatPromString(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
     }
 
     // Add the TYPE comment line
-    if (scope_fprintf(stream, "# TYPE %s %s\n", name, promTypeStr(evt->type) ) < 0) goto out;
+    if (appview_fprintf(stream, "# TYPE %s %s\n", name, promTypeStr(evt->type) ) < 0) goto out;
     // Add the metric, start with the name
-    if (scope_fprintf(stream, "%s", name) < 0) goto out;
+    if (appview_fprintf(stream, "%s", name) < 0) goto out;
 
 
     // Add fields to the metric
@@ -380,16 +380,16 @@ mtcFormatPromString(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
     if (!addPromCustomFields(fmt, fmt->tags, stream, addedFields)) goto out;
     if (!addPromFields(fmt, evt->fields, stream, addedFields, fieldFilter)) goto out;
     if (strSetEntryCount(addedFields) >= 1) {
-        if (scope_fprintf(stream, "}") < 0) goto out;
+        if (appview_fprintf(stream, "}") < 0) goto out;
     }
 
     // Add the value to the metric
     switch ( evt->value.type ) {
         case FMT_INT:
-            if (scope_fprintf(stream, " %lli\n", evt->value.integer) < 0) goto out;
+            if (appview_fprintf(stream, " %lli\n", evt->value.integer) < 0) goto out;
             break;
         case FMT_FLT:
-            if (scope_fprintf(stream, " %.2f\n", evt->value.floating) < 0) goto out;
+            if (appview_fprintf(stream, " %.2f\n", evt->value.floating) < 0) goto out;
             break;
         default:
             DBG(NULL);
@@ -401,11 +401,11 @@ mtcFormatPromString(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
     completely_successful = TRUE;
 
 out:
-    if (stream) scope_fclose(stream);
-    if (name) scope_free(name);
+    if (stream) appview_fclose(stream);
+    if (name) appview_free(name);
     if (!completely_successful) {
         DBG("%d %s", evt->value.type, evt->name);
-        if (prom_str) scope_free(prom_str);
+        if (prom_str) appview_free(prom_str);
         prom_str = NULL;
     }
     strSetDestroy(&addedFields);
@@ -431,24 +431,24 @@ mtcFormatEventForOutput(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
 
         // Request is for this json, plus a _time field
         struct timeval tv;
-        scope_gettimeofday(&tv, NULL);
+        appview_gettimeofday(&tv, NULL);
         double timestamp = tv.tv_sec + tv.tv_usec/1e6;
         cJSON_AddNumberToObjLN(json, "_time", timestamp);
 
         // add envelope for metric events 
-        // https://github.com/criblio/appscope/issues/198
+        // https://github.com/criblio/appview/issues/198
         
         if (!(json_root = cJSON_CreateObject())) goto out;
         if (!cJSON_AddStringToObjLN(json_root, "type", "metric")) goto out;
         cJSON_AddItemToObjectCS(json_root, "body", json);
 
         if ((msg = cJSON_PrintUnformatted(json_root))) {
-            int strsize = scope_strlen(msg);
-            char *temp = scope_realloc(msg, strsize+2); // room for "\n\0"
+            int strsize = appview_strlen(msg);
+            char *temp = appview_realloc(msg, strsize+2); // room for "\n\0"
             if (!temp) {
                 DBG(NULL);
-                scopeLogInfo("mtcFormat scope_realloc error");
-                scope_free(msg);
+                appviewLogInfo("mtcFormat appview_realloc error");
+                appview_free(msg);
                 msg = NULL;
             } else {
                 msg = temp;
@@ -456,7 +456,7 @@ mtcFormatEventForOutput(mtc_fmt_t *fmt, event_t *evt, regex_t *fieldFilter)
                 msg[strsize+1] = '\0';
             }
         }
-#if SCOPE_PROM_SUPPORT != 0
+#if APPVIEW_PROM_SUPPORT != 0
     } else if (fmt->format == CFG_FMT_PROMETHEUS) {
         msg = mtcFormatPromString(fmt, evt, fieldFilter);
 #endif
@@ -503,8 +503,8 @@ mtcFormatStatsDPrefixSet(mtc_fmt_t* fmt, const char* prefix)
     if (!fmt) return;
 
     // Don't leak on repeated sets
-    if (fmt->statsd.prefix) scope_free(fmt->statsd.prefix);
-    fmt->statsd.prefix = (prefix) ? scope_strdup(prefix) : NULL;
+    if (fmt->statsd.prefix) appview_free(fmt->statsd.prefix);
+    fmt->statsd.prefix = (prefix) ? appview_strdup(prefix) : NULL;
 }
 
 void
@@ -532,11 +532,11 @@ mtcFormatCustomTagsSet(mtc_fmt_t* fmt, custom_tag_t** tags)
 
     if (!tags || !*tags) return;
 
-    // get a count of how big to scope_calloc
+    // get a count of how big to appview_calloc
     int num = 0;
     while(tags[num]) num++;
 
-    fmt->tags = scope_calloc(1, sizeof(custom_tag_t*) * (num+1));
+    fmt->tags = appview_calloc(1, sizeof(custom_tag_t*) * (num+1));
     if (!fmt->tags) {
         DBG(NULL);
         return;
@@ -544,14 +544,14 @@ mtcFormatCustomTagsSet(mtc_fmt_t* fmt, custom_tag_t** tags)
 
     int i, j = 0;
     for (i = 0; i<num; i++) {
-        custom_tag_t* t = scope_calloc(1, sizeof(custom_tag_t));
-        char* n = scope_strdup(tags[i]->name);
-        char* v = scope_strdup(tags[i]->value);
+        custom_tag_t* t = appview_calloc(1, sizeof(custom_tag_t));
+        char* n = appview_strdup(tags[i]->name);
+        char* v = appview_strdup(tags[i]->value);
         if (!t || !n || !v) {
             DBG("t=%p n=%p v=%p", t, n, v);
-            if (t) scope_free (t);
-            if (n) scope_free (n);
-            if (v) scope_free (v);
+            if (t) appview_free (t);
+            if (n) appview_free (n);
+            if (v) appview_free (v);
             continue;
         }
         t->name = n;
@@ -601,7 +601,7 @@ fmtUrlEncode(const char* in_str)
 {
     // rfc3986 Percent-Encoding
     if (!in_str) return NULL;
-    char *out = scope_malloc(scope_strlen(in_str) * 3 + 1);
+    char *out = appview_malloc(appview_strlen(in_str) * 3 + 1);
     if (!out) return NULL;
 
     char *inptr = (char*) in_str;
@@ -626,7 +626,7 @@ fmtUrlDecode(const char* in_str)
 {
     // rfc3986 Percent-Encoding
     if (!in_str) return NULL;
-    char *out = scope_malloc(scope_strlen(in_str) + 1);
+    char *out = appview_malloc(appview_strlen(in_str) + 1);
     if (!out) return NULL;
 
     char *inptr = (char*) in_str;

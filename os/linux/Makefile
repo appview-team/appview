@@ -4,10 +4,10 @@
 CWD = $(shell pwd)
 OS=linux
 CC=gcc
-SCOPE_VER:="$(shell git --no-pager describe --abbrev=12 --dirty=+ --always --tags)"
-LIBRARY_CFLAGS=-fPIC -g -Wall -Wno-nonnull -Wno-deprecated-declarations -Werror=implicit-function-declaration -Werror=override-init -Wstrict-prototypes -I contrib/ls-hpack $(if $(DEBUG),-DDEBUG) -DSCOPE_VER=\"$(SCOPE_VER)\"
-LOADER_CFLAGS=-fPIC -g -Wall -Wno-nonnull -Wno-deprecated-declarations -Werror=implicit-function-declaration -Werror=override-init -Wno-format-security -Wno-format-truncation -Wstrict-prototypes -I contrib/ls-hpack $(if $(DEBUG),-DDEBUG) -DSCOPE_VER=\"$(SCOPE_VER)\" 
-TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -coverage -Wno-format-security -Wno-format-truncation -DSCOPE_VER=\"$(SCOPE_VER)\"
+APPVIEW_VER:="$(shell git --no-pager describe --abbrev=12 --dirty=+ --always --tags)"
+LIBRARY_CFLAGS=-fPIC -g -Wall -Wno-nonnull -Wno-deprecated-declarations -Werror=implicit-function-declaration -Werror=override-init -Wstrict-prototypes -I contrib/ls-hpack $(if $(DEBUG),-DDEBUG) -DAPPVIEW_VER=\"$(APPVIEW_VER)\"
+LOADER_CFLAGS=-fPIC -g -Wall -Wno-nonnull -Wno-deprecated-declarations -Werror=implicit-function-declaration -Werror=override-init -Wno-format-security -Wno-format-truncation -Wstrict-prototypes -I contrib/ls-hpack $(if $(DEBUG),-DDEBUG) -DAPPVIEW_VER=\"$(APPVIEW_VER)\" 
+TEST_CFLAGS=-g -Wall -Wno-nonnull -O0 -coverage -Wno-format-security -Wno-format-truncation -DAPPVIEW_VER=\"$(APPVIEW_VER)\"
 YAML_DEFINES=-DYAML_VERSION_MAJOR="0" -DYAML_VERSION_MINOR="2" -DYAML_VERSION_PATCH="2" -DYAML_VERSION_STRING="\"0.2.2\""
 CJSON_DEFINES=-DENABLE_LOCALES
 YAML_SRC=$(wildcard contrib/libyaml/src/*.c)
@@ -37,9 +37,9 @@ LOADER_TEST_C_FILES:=$(wildcard test/unit/loader/*.c)
 LOADER_TEST_C_FILES:=$(filter-out test/unit/loader/wraptest.c, $(LOADER_TEST_C_FILES))
 OS_C_FILES:=os/$(OS)/os.c
 ARCH=$(shell uname -m)
-LIBSCOPE=lib/$(OS)/$(ARCH)/libscope.so
+LIBAPPVIEW=lib/$(OS)/$(ARCH)/libappview.so
 LIBLOADER=lib/$(OS)/$(ARCH)/libloader.a
-SCOPEDYN=bin/$(OS)/$(ARCH)/scopedyn
+APPVIEWDYN=bin/$(OS)/$(ARCH)/appviewdyn
 
 # Currently we enable the address sanitizer by default on x86_64
 # TODO: enable it on aarch64 as well
@@ -53,7 +53,7 @@ endif
 
 ifeq ($(FSAN),true)
 	TEST_FSAN_CFLAGS=-fsanitize=address
-	TEST_FSAN_LD_FLAGS=-Wl,--wrap=scopelibc_malloc -Wl,--wrap=scopelibc_free -Wl,--wrap=scopelibc_calloc -Wl,--wrap=scopelibc_realloc
+	TEST_FSAN_LD_FLAGS=-Wl,--wrap=appviewlibc_malloc -Wl,--wrap=appviewlibc_free -Wl,--wrap=appviewlibc_calloc -Wl,--wrap=appviewlibc_realloc
 endif
 
 include os/linux/$(ARCH).mk
@@ -86,14 +86,14 @@ $(TEST_LIB):
 
 
 ########## Core ##########
-coreall: $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN)
+coreall: $(LIBAPPVIEW) $(LIBLOADER) $(APPVIEWDYN)
 
 corerebuild:
-	@$(RM) $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN)
+	@$(RM) $(LIBAPPVIEW) $(LIBLOADER) $(APPVIEWDYN)
 	@$(MAKE) coreall
 
 coreclean:
-	$(RM) $(LIBSCOPE) $(LIBLOADER) $(SCOPEDYN)
+	$(RM) $(LIBAPPVIEW) $(LIBLOADER) $(APPVIEWDYN)
 	$(RM) test/linux/*test
 
 $(LIBLOADER): $(LOADER_C_FILES)
@@ -103,10 +103,10 @@ $(LIBLOADER): $(LOADER_C_FILES)
 	$(RM) *.o
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
-$(SCOPEDYN): src/loader/scopedyn.c src/loader/attach.c src/loader/loaderutils.c src/loader/libdir.c src/loader/libver.c src/loader/ns.c src/loader/nsinfo.c src/loader/setup.c src/loader/patch.c src/loader/nsfile.c src/loader/inject.c
+$(APPVIEWDYN): src/loader/appviewdyn.c src/loader/attach.c src/loader/loaderutils.c src/loader/libdir.c src/loader/libver.c src/loader/ns.c src/loader/nsinfo.c src/loader/setup.c src/loader/patch.c src/loader/nsfile.c src/loader/inject.c
 	@echo "$${CI:+::group::}Building $@"
 	$(CC) -Wall -g $(LOADER_CFLAGS) \
-	src/loader/scopedyn.c src/loader/attach.c src/loader/loaderutils.c src/loader/libdir.c src/loader/libver.c src/loader/ns.c src/loader/nsinfo.c src/loader/setup.c src/loader/patch.c src/loader/nsfile.c src/loader/inject.c \
+	src/loader/appviewdyn.c src/loader/attach.c src/loader/loaderutils.c src/loader/libdir.c src/loader/libver.c src/loader/ns.c src/loader/nsinfo.c src/loader/setup.c src/loader/patch.c src/loader/nsfile.c src/loader/inject.c \
 	-ldl -lrt -o $@ -I./os/$(OS) $(INCLUDES)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
@@ -118,35 +118,35 @@ else
 	@echo "$${CI:+::group::}Building Library Tests without memory sanitizer"
 endif
 	$(CC) -c $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) $(LIBRARY_C_FILES) $(LIBRARY_INCLUDES) $(LIBRARY_TEST_C_FILES) $(INCLUDES) $(CMOCKA_INCLUDES) $(OS_C_FILES)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/vdsotest vdsotest.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ipctest ipctest.o ipc.o ipc_resp.o cfgutils.o cfg.o mtc.o log.o evtformat.o ctl.o transport.o backoff.o mtcformat.o strset.o com.o scopestdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=jsonConfigurationObject -Wl,--wrap=doAndReplaceConfig
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ostest ostest.o scopestdlib.o dbg.o fn.o utils.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ocitest ocitest.o oci.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/evtutilstest evtutilstest.o evtutils.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/strsettest strsettest.o strset.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/cfgutilstest cfgutilstest.o cfgutils.o cfg.o mtc.o log.o evtformat.o ctl.o transport.o backoff.o mtcformat.o strset.o com.o scopestdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/cfgtest cfgtest.o cfg.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/transporttest transporttest.o transport.o backoff.o scopestdlib.o dbg.o log.o fn.o utils.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/backofftest backofftest.o backoff.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/logtest logtest.o log.o transport.o backoff.o scopestdlib.o dbg.o fn.o utils.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/utilstest utilstest.o scopestdlib.o dbg.o fn.o utils.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/mtctest mtctest.o mtc.o log.o transport.o backoff.o mtcformat.o strset.o com.o ctl.o evtformat.o cfg.o cfgutils.o scopestdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cfgLogStreamEnable
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/evtformattest evtformattest.o evtformat.o log.o transport.o backoff.o mtcformat.o strset.o scopestdlib.o dbg.o cfg.o com.o ctl.o mtc.o circbuf.o cfgutils.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ctltest ctltest.o ctl.o log.o transport.o backoff.o scopestdlib.o dbg.o cfgutils.o cfg.o com.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cbufGet
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpstatetest httpstatetest.o httpstate.o plattime.o strsearch.o fn.o utils.o os.o scopestdlib.o dbg.o test.o com.o cfg.o cfgutils.o mtc.o mtcformat.o strset.o ctl.o transport.o backoff.o linklist.o log.o evtformat.o circbuf.o state.o metriccapture.o report.o evtutils.o httpagg.o httpmatch.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdPostEvent -lrt
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpheadertest httpheadertest.o report.o evtutils.o httpagg.o httpmatch.o state.o com.o httpstate.o metriccapture.o plattime.o fn.o utils.o os.o ctl.o log.o transport.o backoff.o scopestdlib.o dbg.o cfgutils.o cfg.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o strsearch.o scopeelf.o notify.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdSendHttp -Wl,--wrap=cmdPostEvent
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpaggtest httpaggtest.o httpagg.o fn.o utils.o scopestdlib.o dbg.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpmatchtest httpmatchtest.o httpmatch.o linklist.o fn.o utils.o scopestdlib.o dbg.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/reporttest reporttest.o report.o evtutils.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o com.o plattime.o fn.o utils.o os.o ctl.o log.o transport.o backoff.o scopestdlib.o dbg.o cfgutils.o cfg.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o strsearch.o scopeelf.o notify.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdSendEvent -Wl,--wrap=cmdSendMetric
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/mtcformattest mtcformattest.o mtcformat.o strset.o scopestdlib.o dbg.o log.o transport.o backoff.o com.o ctl.o mtc.o evtformat.o cfg.o cfgutils.o linklist.o fn.o utils.o circbuf.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/circbuftest circbuftest.o circbuf.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/linklisttest linklisttest.o linklist.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/comtest comtest.o com.o ctl.o log.o transport.o backoff.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o scopestdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/dbgtest dbgtest.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/vdsotest vdsotest.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ipctest ipctest.o ipc.o ipc_resp.o cfgutils.o cfg.o mtc.o log.o evtformat.o ctl.o transport.o backoff.o mtcformat.o strset.o com.o appviewstdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=jsonConfigurationObject -Wl,--wrap=doAndReplaceConfig
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ostest ostest.o appviewstdlib.o dbg.o fn.o utils.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ocitest ocitest.o oci.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/evtutilstest evtutilstest.o evtutils.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/strsettest strsettest.o strset.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/cfgutilstest cfgutilstest.o cfgutils.o cfg.o mtc.o log.o evtformat.o ctl.o transport.o backoff.o mtcformat.o strset.o com.o appviewstdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/cfgtest cfgtest.o cfg.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/transporttest transporttest.o transport.o backoff.o appviewstdlib.o dbg.o log.o fn.o utils.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/backofftest backofftest.o backoff.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/logtest logtest.o log.o transport.o backoff.o appviewstdlib.o dbg.o fn.o utils.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/utilstest utilstest.o appviewstdlib.o dbg.o fn.o utils.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/mtctest mtctest.o mtc.o log.o transport.o backoff.o mtcformat.o strset.o com.o ctl.o evtformat.o cfg.o cfgutils.o appviewstdlib.o dbg.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cfgLogStreamEnable
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/evtformattest evtformattest.o evtformat.o log.o transport.o backoff.o mtcformat.o strset.o appviewstdlib.o dbg.o cfg.o com.o ctl.o mtc.o circbuf.o cfgutils.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/ctltest ctltest.o ctl.o log.o transport.o backoff.o appviewstdlib.o dbg.o cfgutils.o cfg.o com.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cbufGet
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpstatetest httpstatetest.o httpstate.o plattime.o strsearch.o fn.o utils.o os.o appviewstdlib.o dbg.o test.o com.o cfg.o cfgutils.o mtc.o mtcformat.o strset.o ctl.o transport.o backoff.o linklist.o log.o evtformat.o circbuf.o state.o metriccapture.o report.o evtutils.o httpagg.o httpmatch.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdPostEvent -lrt
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpheadertest httpheadertest.o report.o evtutils.o httpagg.o httpmatch.o state.o com.o httpstate.o metriccapture.o plattime.o fn.o utils.o os.o ctl.o log.o transport.o backoff.o appviewstdlib.o dbg.o cfgutils.o cfg.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o strsearch.o appviewelf.o notify.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdSendHttp -Wl,--wrap=cmdPostEvent
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpaggtest httpaggtest.o httpagg.o fn.o utils.o appviewstdlib.o dbg.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/httpmatchtest httpmatchtest.o httpmatch.o linklist.o fn.o utils.o appviewstdlib.o dbg.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/reporttest reporttest.o report.o evtutils.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o com.o plattime.o fn.o utils.o os.o ctl.o log.o transport.o backoff.o appviewstdlib.o dbg.o cfgutils.o cfg.o mtc.o evtformat.o mtcformat.o strset.o circbuf.o linklist.o strsearch.o appviewelf.o notify.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS) -Wl,--wrap=cmdSendEvent -Wl,--wrap=cmdSendMetric
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/mtcformattest mtcformattest.o mtcformat.o strset.o appviewstdlib.o dbg.o log.o transport.o backoff.o com.o ctl.o mtc.o evtformat.o cfg.o cfgutils.o linklist.o fn.o utils.o circbuf.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/circbuftest circbuftest.o circbuf.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/linklisttest linklisttest.o linklist.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/comtest comtest.o com.o ctl.o log.o transport.o backoff.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o appviewstdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/dbgtest dbgtest.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/glibcvertest glibcvertest.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/selfinterposetest selfinterposetest.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/javabcitest javabcitest.o javabci.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/strsearchtest strsearchtest.o strsearch.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/javabcitest javabcitest.o javabci.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) $(TEST_FSAN_CFLAGS) -o test/$(OS)/strsearchtest strsearchtest.o strsearch.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS) $(TEST_FSAN_LD_FLAGS)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
 # Important note:
@@ -155,10 +155,10 @@ endif
 libtestnofsan: $(LIBRARY_C_FILES) $(LIBRARY_TEST_C_FILES) $(YAML_AR) $(JSON_AR) $(TEST_LIB)
 	@echo "$${CI:+::group::}Building Library Tests without memory sanitizer"
 	$(CC) -c $(TEST_CFLAGS) $(LIBRARY_C_FILES) $(LIBRARY_INCLUDES) $(LIBRARY_TEST_C_FILES) $(INCLUDES) $(CMOCKA_INCLUDES) $(OS_C_FILES)
-	$(CC) $(TEST_CFLAGS) -o test/$(OS)/coredumptest coredumptest.o coredump.o scopestdlib.o dbg.o utils.o fn.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) -o test/$(OS)/snapshottest snapshottest.o snapshot.o coredump.o scopestdlib.o dbg.o utils.o fn.o plattime.o os.o scopeelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) -o test/$(OS)/dnstest dnstest.o scopestdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
-	$(CC) $(TEST_CFLAGS) -o test/$(OS)/detecttest detect.o com.o ctl.o log.o transport.o backoff.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o scopestdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o scopeelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) -o test/$(OS)/coredumptest coredumptest.o coredump.o appviewstdlib.o dbg.o utils.o fn.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) -o test/$(OS)/snapshottest snapshottest.o snapshot.o coredump.o appviewstdlib.o dbg.o utils.o fn.o plattime.o os.o appviewelf.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) -o test/$(OS)/dnstest dnstest.o appviewstdlib.o dbg.o test.o $(TEST_AR) $(TEST_LD_FLAGS)
+	$(CC) $(TEST_CFLAGS) -o test/$(OS)/detecttest detect.o com.o ctl.o log.o transport.o backoff.o evtformat.o circbuf.o mtcformat.o strset.o cfgutils.o cfg.o mtc.o appviewstdlib.o dbg.o linklist.o fn.o utils.o os.o test.o report.o evtutils.o strsearch.o httpagg.o httpmatch.o state.o httpstate.o metriccapture.o plattime.o appviewelf.o notify.o $(TEST_AR) $(TEST_LD_FLAGS)
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 	@echo "$${CI:+::group::}Building Manual Tests"
 	$(CC) $(TEST_CFLAGS) test/manual/passfd.c -lpthread -o test/$(OS)/passfdtest
@@ -180,7 +180,7 @@ runtests:
 	@echo "$${CI:+::group::}Running Tests and Generating Test Coverage"
 	test/unit/execute.sh
 	@[ -z "$(CI)" ] || echo "::endgroup::"
-	# see file:///Users/cribl/scope/coverage/index.html
+	# see file:///Users/cribl/appview/coverage/index.html
 
 libtest:
 	@$(MAKE) libtestnofsan

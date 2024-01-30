@@ -11,7 +11,7 @@ export default function Layout({ children }) {
   return (
     <>
       <Helmet>
-        <meta name="og:image" content={'https://cribl.io/wp-content/uploads/2022/01/thumb.appScope.fullColorWhiteAlt.png'} />
+        <meta name="og:image" content={'https://cribl.io/wp-content/uploads/2022/01/thumb.appAppView.fullColorWhiteAlt.png'} />
       </Helmet>
       <div className="display-xs">
         <MobileHeader />

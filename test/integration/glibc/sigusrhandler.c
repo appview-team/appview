@@ -127,7 +127,7 @@ main(int argc, char *argv[])
 
     printf("Ending execution of %s\n", progname);
 
-    // To generate scope data
+    // To generate appview data
     createAndDeleteDummyFile();
 
     return 0;

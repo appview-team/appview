@@ -10,7 +10,7 @@ import splunk
 import syscalls
 from reporting import print_summary, store_results_to_file
 from runner import Runner
-from scope import ScopeDataCollector, create_listener
+from appview import AppViewDataCollector, create_listener
 from validation import default_test_set_validators
 from watcher import TestWatcher
 
@@ -23,8 +23,8 @@ def main():
                         required=True)
     parser.add_argument("-id", "--execution_id", help="execution id")
     parser.add_argument("-l", "--logs_path", help="path to store the execution results and logs", default="/tmp/")
-    parser.add_argument("-s", "--scope_path", help="path to scope application executable",
-                        default="/usr/lib/libscope.so")
+    parser.add_argument("-s", "--appview_path", help="path to appview application executable",
+                        default="/usr/lib/libappview.so")
     parser.add_argument("-m", "--metric_type", help="metric destination type",
                         choices=["udp", "tcp"],
                         default="udp")
@@ -42,18 +42,18 @@ def main():
     logging.basicConfig(level=log_level, format=format)
 
     logging.info(f"Execution ID: {execution_id}")
-    logging.info(f"Scope path: {args.scope_path}")
+    logging.info(f"AppView path: {args.appview_path}")
     logging.info(f"Logs path: {logs_path}")
     logging.info(f"Metrics destination type: {args.metric_type}")
 
     test_watcher = TestWatcher(execution_id)
     test_watcher.start()
-    scope_data_collector = ScopeDataCollector(args.metric_type)
-    data_listener = create_listener(args.metric_type, scope_data_collector)
+    appview_data_collector = AppViewDataCollector(args.metric_type)
+    data_listener = create_listener(args.metric_type, appview_data_collector)
 
     with data_listener:
         try:
-            runner = Runner(test_watcher, scope_data_collector)
+            runner = Runner(test_watcher, appview_data_collector)
             runner.add_test_set_validators(default_test_set_validators)
             if args.target == 'splunk':
                 splunk.configure(runner, args)
@@ -72,7 +72,7 @@ def main():
             test_watcher.finish_with_error(str(e))
 
     print_summary(test_watcher.get_all_results())
-    store_results_to_file(watcher=test_watcher, path=logs_path, scope_version="")
+    store_results_to_file(watcher=test_watcher, path=logs_path, appview_version="")
     logging.shutdown()
 
     return (0, 1)[test_watcher.has_failures()]

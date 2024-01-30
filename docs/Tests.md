@@ -1,11 +1,11 @@
-# AppScope Integration Tests
+# AppView Integration Tests
 
-We run integration tests here to exercise AppScope in real-world scenarios.
+We run integration tests here to exercise AppView in real-world scenarios.
 Each test has a Docker container image that provides the runtime environment.
 They are self-sufficent and self-executable. The general strategy is to run set
 of tests/challenges against target application or syscall in order to determine
 that target is working correctly normally. Then, to run the same set of tests
-against the same target, but wrapped in AppScope (_scoped_) and compare results
+against the same target, but wrapped in AppView (_viewed_) and compare results
 with raw execution.
 
 ## Configs
@@ -13,8 +13,8 @@ with raw execution.
 Each test has a corresponding _service_ in `docker-compose.yml`. They have a
 corresponding subdirectory with their `Dockerfile` along with any additional
 content that needs to be included in the image. When run, we top-level working
-directory (i.e `../../` from here) is mounted at `/opt/appscope` so the built
-binaries (i.e. `scope` and `libscope.so`) are accessible in the
+directory (i.e `../../` from here) is mounted at `/opt/appview` so the built
+binaries (i.e. `appview` and `libappview.so`) are accessible in the
 container. Since they're in subdirectories in the mount, they can be rebuilt
 and the container will have access to the updated versions without having to
 restart - handy when debugging.
@@ -29,18 +29,18 @@ We're trying to make all of the images as consistent as we can so we can hit
 the ground running when we need to dig into a failure. Here's what we expect
 from each one.
 
-* As mentioned above, the top working directory is mounted at `/opt/appscope`.
-  The Dockerfiles setup softlinks in `/usr/local/scope/bin` and `.../lib` that
-  point to the built binaries in `/opt/appscope`. We add the `bin/` folder to
-  the path too so `scope` is accessible anywhere.
+* As mentioned above, the top working directory is mounted at `/opt/appview`.
+  The Dockerfiles setup softlinks in `/usr/local/appview/bin` and `.../lib` that
+  point to the built binaries in `/opt/appview`. We add the `bin/` folder to
+  the path too so `appview` is accessible anywhere.
 
 * ENTRYPOINT is always `/docker-entrypoint.sh` and CMD defaults to `test`. If
   an alternate CMD is not specified when the container is run, this causes the
-  `/usr/local/scope/scope-test` script to be run. It too is in the PATH. Each
-  test installs their own version of the `scope-test` command.
+  `/usr/local/appview/appview-test` script to be run. It too is in the PATH. Each
+  test installs their own version of the `appview-test` command.
 
 * We _cache_ the container images in Docker Hub repositories for each test
-  named `scopeci/scope-${TEST}-it`. The Makefile will pull them down and use
+  named `appviewci/appview-${TEST}-it`. The Makefile will pull them down and use
   them to speed up building the local versions. We use `make push` to push
   them back up to Docker Hub. 
 
@@ -51,7 +51,7 @@ a list of all the tests.
 
 ```shell
 $ make help
-AppScope Integration Test Runner
+AppView Integration Test Runner
   `make help` - show this info
   `make all` - run all tests
   `make build` - build all test images
@@ -87,12 +87,12 @@ Application, but LogStream capabilities are not tested or used.
 
 ### `syscalls` and `syscalls-alpine`
 
-Tests Linux syscalls supported by Scope using executable syscall unit tests.
+Tests Linux syscalls supported by AppView using executable syscall unit tests.
 Some unit tests provided by [LTP Project][LTP]; others are custom C tests
 located in [syscalls/altp folder](syscalls/altp).
 
 This test is explicitly using `LD_PRELOAD` while other tests are using a mix of
-`scope` and `LD_PRELOAD`. We have been removing use of
+`appview` and `LD_PRELOAD`. We have been removing use of
 `LD_PRELOAD` from some other tests to speed them up but we'll keep it here to
 make sure that startup scheme is getting wrung out.
 

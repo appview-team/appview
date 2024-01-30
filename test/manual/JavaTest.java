@@ -1,4 +1,4 @@
-package io.cribl.scope;
+package io.cribl.appview;
 
 class JavaTest {
   public static final String staticField = "static";

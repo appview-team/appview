@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/criblio/scope/events"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/events"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/util"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -36,7 +36,7 @@ func GetEntries(eventsFile io.ReadSeeker) ([]netEntry, []fileEntry, error) {
 	}
 
 	// Create an async event file reader
-	in := make(chan libscope.EventBody)
+	in := make(chan libappview.EventBody)
 	var readerr error
 	go func() {
 		err := em.Events(eventsFile, in)

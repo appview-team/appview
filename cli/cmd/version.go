@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/criblio/scope/internal"
+	"github.com/appview-team/appview/internal"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +14,12 @@ var versionTag bool
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version [flags]",
-	Short: "Display scope version",
+	Short: "Display appview version",
 	Long:  `Outputs version info.`,
-	Example: `  scope version
-  scope version --date
-  scope version --summary
-  scope version --tag`,
+	Example: `  appview version
+  appview version --date
+  appview version --summary
+  appview version --tag`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		summary := internal.GetGitSummary()

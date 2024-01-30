@@ -16,7 +16,7 @@
 #include <pthread.h>
 #include <dlfcn.h>
 
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "fn.h"
 #include "dbg.h"
 #include "os.h"
@@ -41,21 +41,21 @@
 static int
 get_file_size(const char *path)
 {
-    int fd = scope_open(path, O_RDONLY);
+    int fd = appview_open(path, O_RDONLY);
     struct stat sbuf;
 
     if (fd == -1) {
-        scopeLogError("ERROR: get_file_size:open");
+        appviewLogError("ERROR: get_file_size:open");
         return -1;
     }
 
-    if (scope_fstat(fd, &sbuf) == -1) {
-        scopeLogError("ERROR: get_file_size:fstat");
+    if (appview_fstat(fd, &sbuf) == -1) {
+        appviewLogError("ERROR: get_file_size:fstat");
         return -1;
     }
 
-    if (scope_close(fd) == -1) {
-        scopeLogError("ERROR: get_file_size:close");
+    if (appview_close(fd) == -1) {
+        appviewLogError("ERROR: get_file_size:close");
         return -1;        
     }
 
@@ -88,9 +88,9 @@ load_sections(char *buf, char *addr, size_t mlen)
             sec_name = section_strtab + sections[i].sh_name;
             //sysprint("load_sections: laddr = %p len = 0x%lx end = %p section: %s\n", laddr, len, laddr + len, sec_name);
             if ((type != SHT_NOBITS) && ((flags & SHF_ALLOC) || (flags & SHF_EXECINSTR))) {
-                scope_memmove(laddr, &buf[sections[i].sh_offset], len);
+                appview_memmove(laddr, &buf[sections[i].sh_offset], len);
             } else if (type == SHT_NOBITS) {
-                scope_memset(laddr, 0, len);
+                appview_memset(laddr, 0, len);
             }
 
             sysprint("%s:%d %s addr %p - %p\n",
@@ -105,7 +105,7 @@ static Elf64_Addr
 map_segment(char *buf, Elf64_Phdr *phead)
 {
     int prot;
-    int pgsz = scope_sysconf(_SC_PAGESIZE);
+    int pgsz = appview_sysconf(_SC_PAGESIZE);
     void *addr;
     char *laddr;
     unsigned long lsize;
@@ -124,25 +124,25 @@ map_segment(char *buf, Elf64_Phdr *phead)
     sysprint("%s:%d vaddr 0x%lx size 0x%lx laddr %p\n",
              __FUNCTION__, __LINE__, phead->p_vaddr, (size_t)phead->p_memsz, laddr);
 
-    if ((addr = scope_mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
+    if ((addr = appview_mmap(laddr, ROUND_UP((size_t)lsize, phead->p_align),
 		      prot | PROT_WRITE,
 		      MAP_PRIVATE | MAP_ANONYMOUS,
 		      -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_segment:scope_mmap");
+        appviewLogError("ERROR: load_segment:appview_mmap");
         return -1;
     }
 
     if (laddr != addr) {
-      scope_munmap(addr, ROUND_UP((size_t)lsize, phead->p_align));
-      scopeLogError("ERROR: map_segment:scope_mmap:laddr mismatch. The kernel could not map to an address that the executable requires. This executable is not 'scoped'.");
+      appview_munmap(addr, ROUND_UP((size_t)lsize, phead->p_align));
+      appviewLogError("ERROR: map_segment:appview_mmap:laddr mismatch. The kernel could not map to an address that the executable requires. This executable is not 'viewed'.");
       return -1;
     }
 
     load_sections(buf, (char *)phead->p_vaddr, (size_t)lsize);
 
-    if (((prot & PROT_WRITE) == 0) && (scope_mprotect(laddr, lsize, prot) == -1)) {
-        scope_munmap(addr, ROUND_UP((size_t)lsize, phead->p_align));
-        scopeLogError("ERROR: load_segment:mprotect");
+    if (((prot & PROT_WRITE) == 0) && (appview_mprotect(laddr, lsize, prot) == -1)) {
+        appview_munmap(addr, ROUND_UP((size_t)lsize, phead->p_align));
+        appviewLogError("ERROR: load_segment:mprotect");
         return -1;
     }
 
@@ -154,27 +154,27 @@ static Elf64_Addr
 load_elf(char *buf)
 {
     int i;
-    int pgsz = scope_sysconf(_SC_PAGESIZE);
+    int pgsz = appview_sysconf(_SC_PAGESIZE);
     Elf64_Ehdr *elf = (Elf64_Ehdr *)buf;
     Elf64_Phdr *phead = (Elf64_Phdr *)&buf[elf->e_phoff];
     Elf64_Half pnum = elf->e_phnum;
     Elf64_Half phsize = elf->e_phentsize;
     void *pheadaddr;
 
-    if ((pheadaddr = scope_mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
+    if ((pheadaddr = appview_mmap(NULL, ROUND_UP((size_t)(pnum * phsize), pgsz),
                           PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS,
                           -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("ERROR: load_elf:scope_mmap");
+        appviewLogError("ERROR: load_elf:appview_mmap");
         return (Elf64_Addr)NULL;
     }
 
-    scope_memmove(pheadaddr, phead, (size_t)(pnum * phsize));
+    appview_memmove(pheadaddr, phead, (size_t)(pnum * phsize));
 
     for (i = 0; i < pnum; i++) {
         if (phead[i].p_type == PT_LOAD) {
             if (map_segment(buf, &phead[i]) == -1) {
-                scope_munmap(pheadaddr, ROUND_UP((size_t)(pnum * phsize), pgsz));
+                appview_munmap(pheadaddr, ROUND_UP((size_t)(pnum * phsize), pgsz));
                 return (Elf64_Addr)NULL;
             }
         }
@@ -191,7 +191,7 @@ unmap_all(char *buf, const char **argv)
 
     int flen;
     if ((flen = get_file_size(argv[proc_arg])) == -1) {
-        scopeLogError("ERROR:unmap_all: file size");
+        appviewLogError("ERROR:unmap_all: file size");
         return -1;
     }
 
@@ -222,7 +222,7 @@ copy_strings(char *buf, uint64_t sp, int argc, const char **argv, const char **e
         if (&argv[i] && spp) {
             *spp++ = (char *)argv[i];
         } else {
-            scopeLogError("ERROR:copy_strings: arg entry is not correct");
+            appviewLogError("ERROR:copy_strings: arg entry is not correct");
             return -1;
         }
     }
@@ -251,7 +251,7 @@ copy_strings(char *buf, uint64_t sp, int argc, const char **argv, const char **e
         if ((&environ[i]) && spp) {
             *spp++ = (char *)environ[i];
         } else {
-            scopeLogError("ERROR:copy_strings: environ string is not correct");
+            appviewLogError("ERROR:copy_strings: environ string is not correct");
             return -1;
         }
     }
@@ -262,7 +262,7 @@ copy_strings(char *buf, uint64_t sp, int argc, const char **argv, const char **e
     // This is the destination for the new auxv array
     // The AUX_ENT macro uses elf_info
     elf_info = (Elf64_Addr *)spp;
-    scope_memset(elf_info, 0, sizeof(Elf64_Addr) * ((AT_EXECFN + 1) * 2));
+    appview_memset(elf_info, 0, sizeof(Elf64_Addr) * ((AT_EXECFN + 1) * 2));
 
     /*
      * There is an auxv vector that defines a TLS section from the elf image.
@@ -320,11 +320,11 @@ set_go(char *buf, int argc, const char **argv, const char **env, Elf64_Addr phad
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)buf;
 
     // create a stack (void *)ROUND_UP(laddr + pgsz + HEAP_SIZE, pgsz)  | MAP_FIXED
-    if ((sp = scope_mmap(NULL, STACK_SIZE,
+    if ((sp = appview_mmap(NULL, STACK_SIZE,
                    PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANONYMOUS | MAP_GROWSDOWN | MAP_STACK,
                    -1, (off_t)NULL)) == MAP_FAILED) {
-        scopeLogError("set_go:scope_mmap");
+        appviewLogError("set_go:appview_mmap");
         return -1;
     }
 
@@ -369,7 +369,7 @@ sys_exec(elf_buf_t *ebuf, const char *path, int argc, const char **argv, const c
 
     if (!ebuf || !path || !argv || (argc < 1)) return -1;
 
-    scopeLog(CFG_LOG_DEBUG, "fd:%d sys_exec type:", ehdr->e_type);
+    appviewLog(CFG_LOG_DEBUG, "fd:%d sys_exec type:", ehdr->e_type);
 
     phaddr = load_elf((char *)ebuf->buf);
     if (!phaddr) return -1;

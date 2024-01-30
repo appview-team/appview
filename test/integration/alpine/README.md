@@ -1,6 +1,6 @@
-# Cribl AppScope - Alpine Integration Test
+# Cribl AppView - Alpine Integration Test
 
-This is an integration test to wring out AppScope with musl libc on an Alpine
+This is an integration test to wring out AppView with musl libc on an Alpine
 container. Supporting musl required adjustments in the way we handle console
 IO, DNS lookups, and the Go runtime so we will be focusing there for now.
 

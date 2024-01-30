@@ -1,5 +1,5 @@
 #
-# AppScope - Integration Test Runner
+# AppView - Integration Test Runner
 #
 # See ./README.md for details.
 #
@@ -20,7 +20,7 @@ COMPOSE := $(COMPOSE) -f docker-compose.yml -f docker-compose.$(ARCH).yml
 TESTS := $(shell TAG=$(ARCH) $(COMPOSE) config --services | sort -V)
 
 help:
-	@echo "AppScope Integration Test Runner"
+	@echo "AppView Integration Test Runner"
 	@echo "  \`make help\` - show this info"
 	@echo "  \`make all\` - run all tests, stop of first failure"
 	@echo "  \`make build\` - build all test images"
@@ -80,7 +80,7 @@ $(TESTS):
 	@echo " $(shell date)"
 	@echo " Running \"$@\" Test"
 	@echo "==================================================================="
-	@TAG=$(ARCH) $(COMPOSE) run --rm $(if $(CI),,--name appscope-test-$(@)) $@ || \
+	@TAG=$(ARCH) $(COMPOSE) run --rm $(if $(CI),,--name appview-test-$(@)) $@ || \
 		{ echo >&2 "error: $(@) test failed."; exit 1; }
 
 build: $(addsuffix -build, $(TESTS))
@@ -91,7 +91,7 @@ build: $(addsuffix -build, $(TESTS))
 # every time. That's what ID is for. Should have no effect in CI as the local
 # images list should be empty.
 # --
-%-build: IMAGE=ghcr.io/criblio/appscope-test-$(@:%-build=%):$(ARCH)
+%-build: IMAGE=ghcr.io/criblio/appview-test-$(@:%-build=%):$(ARCH)
 %-build: ID=$(shell $(DOCKER) images -q --filter=reference=$(IMAGE))
 %-build:
 	@[ -n "$(filter $(@:%-build=%),$(TESTS))" ] || \
@@ -103,12 +103,11 @@ build: $(addsuffix -build, $(TESTS))
 	@echo "==================================================================="
 	-@[ -n "$(ID)" -o -n "$(NOPULL)" ] || $(DOCKER) pull $(IMAGE)
 	@TAG=$(ARCH) $(COMPOSE) build \
-		--progress tty \
 		$(@:%-build=%)
 
 push: $(addsuffix -push, $(TESTS))
 
-%-push: IMAGE=ghcr.io/criblio/appscope-test-$(@:%-push=%):$(ARCH)
+%-push: IMAGE=ghcr.io/criblio/appview-test-$(@:%-push=%):$(ARCH)
 %-push:
 	@[ -n "$(filter $(@:%-push=%),$(TESTS))" ] || \
 		{ echo >&2 "error: $(@:%-push=%) isn't a test."; exit 1; }
@@ -132,7 +131,7 @@ push: $(addsuffix -push, $(TESTS))
 	@echo "==================================================================="
 	@TAG=$(ARCH) $(COMPOSE) run --rm \
 		--service-ports \
-		--name appscope-test-$(@:%-shell=%) \
+		--name appview-test-$(@:%-shell=%) \
 		$(@:%-shell=%) $(CMD)
 
 %-exec: CMD?=/bin/bash
@@ -144,7 +143,7 @@ push: $(addsuffix -push, $(TESTS))
 	@echo " $(shell date)"
 	@echo " Exec'ing into Container for \"$(@:%-exec=%)\" Test"
 	@echo "==================================================================="
-	@TAG=$(ARCH) $(DOCKER) exec -it appscope-test-$(@:%-exec=%) $(CMD)
+	@TAG=$(ARCH) $(DOCKER) exec -it appview-test-$(@:%-exec=%) $(CMD)
 
 .PHONY: help all build push $(TESTS) %-build %-push %-shell
 

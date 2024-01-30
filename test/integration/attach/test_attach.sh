@@ -64,19 +64,19 @@ wait_for_proc_start(){
 cd /opt/test-runner
 
 #
-# Detach not scoped process
+# Detach not viewed process
 # 
-starttest detachNotScopedProcess
+starttest detachNotViewedProcess
 
 top -b -d 1 > /dev/null &
 sleep 1
 TOP_PID=`pidof top`
-scope --lddetach $TOP_PID 2> $TEMP_OUTPUT_FILE
+appview --lddetach $TOP_PID 2> $TEMP_OUTPUT_FILE
 if [ $? -eq 0 ]; then
     ERR+=1
 fi
 
-grep "error: libscope does not exist in this process" $TEMP_OUTPUT_FILE > /dev/null
+grep "error: libappview does not exist in this process" $TEMP_OUTPUT_FILE > /dev/null
 if [ $? -ne 0 ]; then
     ERR+=1
 fi
@@ -86,12 +86,12 @@ kill -9 $TOP_PID
 endtest
 
 #
-# Detach unscoped process (library is loaded)
+# Detach unviewd process (library is loaded)
 # 
 
-starttest detachNotScopedProcessLibLoaded
+starttest detachNotViewedProcessLibLoaded
 
-SCOPE_RULES=$DUMMY_RULES_FILE scope -z top -b -d 1 > /dev/null &
+APPVIEW_RULES=$DUMMY_RULES_FILE appview -z top -b -d 1 > /dev/null &
 sleep 1
 TOP_PID=`pidof top`
 
@@ -101,13 +101,13 @@ if [ $THREAD_NO -ne 1 ]; then
     ERR+=1
 fi
 
-ls -l /proc/$TOP_PID/fd | grep memfd:scope_anon > /dev/null
+ls -l /proc/$TOP_PID/fd | grep memfd:appview_anon > /dev/null
 if [ $? -ne 0 ]; then
     # memfd shm segment should be present
     ERR+=1
 fi
 
-scope --lddetach $TOP_PID > $TEMP_OUTPUT_FILE
+appview --lddetach $TOP_PID > $TEMP_OUTPUT_FILE
 if [ $? -ne 0 ]; then
     ERR+=1
 fi
@@ -123,7 +123,7 @@ if [ $THREAD_NO -ne 1 ]; then
     ERR+=1
 fi
 
-ls -l /proc/$TOP_PID/fd | grep memfd:scope_anon > /dev/null
+ls -l /proc/$TOP_PID/fd | grep memfd:appview_anon > /dev/null
 if [ $? -ne 0 ]; then
     # memfd shm segment should be present
     ERR+=1
@@ -134,12 +134,12 @@ kill -9 $TOP_PID
 endtest
 
 #
-# Attach top unscoped process (library is loaded)
+# Attach top unviewd process (library is loaded)
 # 
 
-starttest attachNotScopedProcessFirstAttach
+starttest attachNotViewedProcessFirstAttach
 
-SCOPE_RULES=$DUMMY_RULES_FILE scope -z top -b -d 1 > /dev/null &
+APPVIEW_RULES=$DUMMY_RULES_FILE appview -z top -b -d 1 > /dev/null &
 sleep 1
 TOP_PID=`pidof top`
 
@@ -150,7 +150,7 @@ if [ $THREAD_NO -ne 1 ]; then
 fi
 
 # first attach
-scope --ldattach $TOP_PID > $TEMP_OUTPUT_FILE
+appview --ldattach $TOP_PID > $TEMP_OUTPUT_FILE
 if [ $? -ne 0 ]; then
     ERR+=1
 fi
@@ -167,7 +167,7 @@ if [ $THREAD_NO -ne 2 ]; then
 fi
 
 # Reattach
-scope --ldattach $TOP_PID > $TEMP_OUTPUT_FILE
+appview --ldattach $TOP_PID > $TEMP_OUTPUT_FILE
 grep "Reattaching to pid $TOP_PID" $TEMP_OUTPUT_FILE > /dev/null
 if [ $? -ne 0 ]; then
     ERR+=1
@@ -192,7 +192,7 @@ starttest Top
 top -b -d 1 > /dev/null &
 sleep 1
 TOP_PID=`pidof top`
-scope --ldattach $TOP_PID
+appview --ldattach $TOP_PID
 sleep 1
 evaltest
 
@@ -202,14 +202,14 @@ ERR+=$?
 grep '"proc":"top"' $EVT_FILE | grep fs.close > /dev/null
 ERR+=$?
 
-START_MSG_NO=$(grep "libscopever" "$EVT_FILE" | wc -l)
+START_MSG_NO=$(grep "libappviewver" "$EVT_FILE" | wc -l)
 if [ $START_MSG_NO -lt 1 ]; then
     echo "Number of start msg wrong after attach $START_MSG_NO"
     ERR+=1
 fi
 
 # detach
-scope --lddetach $TOP_PID
+appview --lddetach $TOP_PID
 if [ $? -ne 0 ]; then
     ERR+=1
 fi
@@ -217,14 +217,14 @@ fi
 sleep 10
 
 EVT_FILESIZE=$(stat -c%s "$EVT_FILE")
-START_MSG_NO=$(grep "libscopever" "$EVT_FILE" | wc -l)
+START_MSG_NO=$(grep "libappviewver" "$EVT_FILE" | wc -l)
 if [ $START_MSG_NO -lt 2 ]; then
     echo "Number of start msg wrong after detach $START_MSG_NO"
     ERR+=1
 fi
 
 # reattach
-scope --ldattach $TOP_PID
+appview --ldattach $TOP_PID
 if [ $? -ne 0 ]; then
     echo "Attach wrong status"
     ERR+=1
@@ -233,7 +233,7 @@ fi
 sleep 10
 
 REATTACH_FILESIZE=$(stat -c%s "$EVT_FILE")
-START_MSG_NO=$(grep "libscopever" "$EVT_FILE" | wc -l)
+START_MSG_NO=$(grep "libappviewver" "$EVT_FILE" | wc -l)
 if [ $START_MSG_NO -lt 3 ]; then
     echo "Start msg wrong after reattach $START_MSG_NO"
     ERR+=1
@@ -257,7 +257,7 @@ python3 -m http.server 2> /dev/null &
 sleep 1
 PYTHON_PID=`pidof python3`
 
-scope --ldattach $PYTHON_PID
+appview --ldattach $PYTHON_PID
 curl http://localhost:8000
 sleep 1
 evaltest
@@ -271,7 +271,7 @@ ERR+=$?
 grep -q http.resp $EVT_FILE > /dev/null
 ERR+=$?
 
-scope --lddetach $PYTHON_PID
+appview --lddetach $PYTHON_PID
 ERR+=$?
 sleep 10
 
@@ -286,9 +286,9 @@ fi
 # reattach and update configuration with env variable
 EVENT_DEST_NEW="/opt/test-runner/logs/events_new.log"
 
-unset SCOPE_EVENT_DEST
-SCOPE_EVENT_DEST=file://$EVENT_DEST_NEW scope --ldattach $PYTHON_PID
-export SCOPE_EVENT_DEST=file://$EVT_FILE
+unset APPVIEW_EVENT_DEST
+APPVIEW_EVENT_DEST=file://$EVENT_DEST_NEW appview --ldattach $PYTHON_PID
+export APPVIEW_EVENT_DEST=file://$EVT_FILE
 
 sleep 10
 
@@ -320,7 +320,7 @@ cd /opt/java_http
 java SimpleHttpServer 2> /dev/null &
 sleep 1
 JAVA_PID=`pidof java`
-scope --ldattach $JAVA_PID
+appview --ldattach $JAVA_PID
 curl http://localhost:8000/status
 sleep 1
 evaltest
@@ -346,7 +346,7 @@ ERR+=$?
 grep -q net.close $EVT_FILE > /dev/null
 ERR+=$?
 
-scope --lddetach $JAVA_PID
+appview --lddetach $JAVA_PID
 ERR+=$?
 sleep 10
 
@@ -359,12 +359,12 @@ sleep 10
 #     ERR+=1
 # fi
 # enable the code after fixing TODO in attachCmd
-# CONF_NEW="/opt/test_config/scope_test_cfg.yml"
+# CONF_NEW="/opt/test_config/appview_test_cfg.yml"
 # EVENT_DEST_NEW="/opt/test-runner/logs/events_from_cfg.log"
 
-# unset SCOPE_EVENT_DEST
-# SCOPE_CONF_RELOAD=$CONF_NEW scope --ldattach $JAVA_PID
-# export SCOPE_EVENT_DEST=file://$EVT_FILE
+# unset APPVIEW_EVENT_DEST
+# APPVIEW_CONF_RELOAD=$CONF_NEW appview --ldattach $JAVA_PID
+# export APPVIEW_EVENT_DEST=file://$EVT_FILE
 
 # sleep 10
 
@@ -401,7 +401,7 @@ cd /opt/exec_test/
 wait_for_proc_start "exec_test"
 EXEC_TEST_PID=`pidof exec_test`
 
-scope --ldattach ${EXEC_TEST_PID}
+appview --ldattach ${EXEC_TEST_PID}
 if [ $? -ne 0 ]; then
     echo "attach failed"
     ERR+=1
@@ -431,7 +431,7 @@ cd /opt/exec_test/
 wait_for_proc_start "exec_test"
 EXEC_TEST_PID=`pidof exec_test`
 
-scope --ldattach ${EXEC_TEST_PID}
+appview --ldattach ${EXEC_TEST_PID}
 if [ $? -ne 0 ]; then
     echo "attach failed"
     ERR+=1
@@ -451,7 +451,7 @@ endtest
 
 
 #
-# Processes on the doNotScopeList should not be actively scoped,
+# Processes on the doNotAppViewList should not be actively viewed,
 # unless we're explicitly instructed to.  By "explicitly instructed to"
 # we mean 1) injected into or 2) on the allow list of a rules file.
 #
@@ -459,21 +459,21 @@ endtest
 #
 
 #
-# denied_proc_not_scoped_by_default
+# denied_proc_not_viewed_by_default
 #
-starttest denied_proc_not_scoped_by_default
+starttest denied_proc_not_viewed_by_default
 
 cd /opt/implicit_deny/
-export SCOPE_RULES=false
+export APPVIEW_RULES=false
 
-# the doNotScopeList is based on process name, this systemd-networkd
+# the doNotAppViewList is based on process name, this systemd-networkd
 # is not the real thing.
-scope -z ./systemd-networkd &
+appview -z ./systemd-networkd &
 PID=$!
 
-scope inspect --all | grep systemd-networkd
+appview inspect --all | grep systemd-networkd
 if [ $? -eq "0" ]; then
-    echo "systemd-networkd is actively scoped but shouldn't be"
+    echo "systemd-networkd is actively viewed but shouldn't be"
     ERR+=1
 fi
 
@@ -482,22 +482,22 @@ kill $PID
 endtest
 
 #
-# denied_proc_is_scoped_by_inject
+# denied_proc_is_viewed_by_inject
 #
-starttest denied_proc_is_scoped_by_inject
+starttest denied_proc_is_viewed_by_inject
 
 cd /opt/implicit_deny/
-export SCOPE_RULES=false
+export APPVIEW_RULES=false
 
-# the doNotScopeList is based on process name, this systemd-networkd
+# the doNotAppViewList is based on process name, this systemd-networkd
 # is not the real thing.
 ./systemd-networkd &
 PID=$!
-scope attach $PID
+appview attach $PID
 
-scope inspect --all | grep systemd-networkd
+appview inspect --all | grep systemd-networkd
 if [ $? -ne "0" ]; then
-    echo "systemd-networkd is not actively scoped but should be"
+    echo "systemd-networkd is not actively viewed but should be"
     ERR+=1
 fi
 
@@ -507,29 +507,29 @@ endtest
 
 
 #
-# denied_proc_is_scoped_by_rules_file
+# denied_proc_is_viewed_by_rules_file
 #
-starttest denied_proc_is_scoped_by_rules_file
+starttest denied_proc_is_viewed_by_rules_file
 
 cd /opt/implicit_deny/
-export SCOPE_RULES=${DUMMY_RULES_FILE}2
-echo "allow:" >> $SCOPE_RULES
-echo "- procname: systemd-networkd" >> $SCOPE_RULES
+export APPVIEW_RULES=${DUMMY_RULES_FILE}2
+echo "allow:" >> $APPVIEW_RULES
+echo "- procname: systemd-networkd" >> $APPVIEW_RULES
 
-# the doNotScopeList is based on process name, this systemd-networkd
+# the doNotAppViewList is based on process name, this systemd-networkd
 # is not the real thing.
-scope -z ./systemd-networkd &
+appview -z ./systemd-networkd &
 PID=$!
 sleep 1
-scope inspect --all | grep systemd-networkd
+appview inspect --all | grep systemd-networkd
 if [ $? -ne "0" ]; then
-    echo "systemd-networkd is not actively scoped but should be"
+    echo "systemd-networkd is not actively viewed but should be"
     ERR+=1
 fi
 
 kill $PID
-rm $SCOPE_RULES
-unset SCOPE_RULES
+rm $APPVIEW_RULES
+unset APPVIEW_RULES
 
 endtest
 
@@ -544,29 +544,29 @@ if [ $? -eq "0" ]; then
     # create ld.so.preload
     touch /etc/ld.so.preload
     chmod ga+w /etc/ld.so.preload
-    echo /opt/appscope/lib/linux/$(uname -m)/libscope.so > /etc/ld.so.preload
+    echo /opt/appview/lib/linux/$(uname -m)/libappview.so > /etc/ld.so.preload
 
     # create a filter file
     cd /opt/implicit_allow
-    export SCOPE_FILTER=${DUMMY_FILTER_FILE}2
-    echo "allow:" >> $SCOPE_FILTER
-    echo "- procname: foo" >> $SCOPE_FILTER
+    export APPVIEW_FILTER=${DUMMY_FILTER_FILE}2
+    echo "allow:" >> $APPVIEW_FILTER
+    echo "- procname: foo" >> $APPVIEW_FILTER
 
-    # 1) ld.so.preload enables libscope to be loaded in all procs
-    # 2) the filter file allows only the process foo to be scoped
-    # 3) the implicit allow list overrides the filter and allows runc to be scoped
+    # 1) ld.so.preload enables libappview to be loaded in all procs
+    # 2) the filter file allows only the process foo to be viewed
+    # 3) the implicit allow list overrides the filter and allows runc to be viewed
     ./runc &
 
-    scope inspect --all | grep runc
+    appview inspect --all | grep runc
     if [ $? -ne "0" ]; then
-        echo "runc is not actively scoped but should be"
+        echo "runc is not actively viewed but should be"
         ERR+=1
     fi
 
     kill `pidof runc`
     rm /etc/ld.so.preload
-    rm $SCOPE_FILTER
-    unset SCOPE_FILTER
+    rm $APPVIEW_FILTER
+    unset APPVIEW_FILTER
 
     endtest
 
@@ -575,18 +575,18 @@ if [ $? -eq "0" ]; then
     # create ld.so.preload
     touch /etc/ld.so.preload
     chmod ga+w /etc/ld.so.preload
-    echo /opt/appscope/lib/linux/$(uname -m)/libscope.so > /etc/ld.so.preload
+    echo /opt/appview/lib/linux/$(uname -m)/libappview.so > /etc/ld.so.preload
 
     # create a filter file
     cd /opt/exec_test
-    export SCOPE_FILTER=${DUMMY_FILTER_FILE}2
-    echo "allow:" >> $SCOPE_FILTER
-    echo "- procname: exec_test" >> $SCOPE_FILTER
+    export APPVIEW_FILTER=${DUMMY_FILTER_FILE}2
+    echo "allow:" >> $APPVIEW_FILTER
+    echo "- procname: exec_test" >> $APPVIEW_FILTER
 
-    echo "using filter file: $SCOPE_FILTER"
-    cat $SCOPE_FILTER
+    echo "using filter file: $APPVIEW_FILTER"
+    cat $APPVIEW_FILTER
 
-    # libscope loaded due to ld.so.preload, interposed due to rules file
+    # libappview loaded due to ld.so.preload, interposed due to rules file
     ./exec_test 0 &
 
     wait_for_proc_start "exec_test"
@@ -602,8 +602,8 @@ if [ $? -eq "0" ]; then
     fi
 
     rm /etc/ld.so.preload
-    rm $SCOPE_FILTER
-    unset SCOPE_FILTER
+    rm $APPVIEW_FILTER
+    unset APPVIEW_FILTER
 
     endtest
 

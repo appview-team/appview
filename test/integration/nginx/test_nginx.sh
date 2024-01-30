@@ -5,7 +5,7 @@ FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0
 EVT_FILE="/tmp/events.json"
 MTC_FILE="/tmp/metrics.json"
-LOG_FILE="/tmp/scope.log"
+LOG_FILE="/tmp/appview.log"
 
 starttest(){
     CURRENT_TEST=$1
@@ -54,8 +54,8 @@ endtest(){
 # Init test
 starttest "nginx http1"
 
-# Run scoped nginx
-scope run -- nginx
+# Run viewed nginx
+appview run -- nginx
 sleep 2
 
 # Make a http request with curl, to the nginx server
@@ -102,8 +102,8 @@ endtest
 # Init test
 starttest "nginx http1 tls"
 
-# Run scoped nginx
-scope run -- nginx
+# Run viewed nginx
+appview run -- nginx
 sleep 2
 
 # Make a http request with curl, to the nginx server
@@ -150,8 +150,8 @@ endtest
 # Init test
 starttest "nginx http2"
 
-# Run scoped nginx
-scope run -- nginx
+# Run viewed nginx
+appview run -- nginx
 sleep 2
 
 # Make a http request with curl, to the nginx server
@@ -198,8 +198,8 @@ endtest
 # Init test
 starttest "nginx http2 tls"
 
-# Run scoped nginx
-scope run -- nginx
+# Run viewed nginx
+appview run -- nginx
 sleep 2
 
 # Make a http request with curl, to the nginx server

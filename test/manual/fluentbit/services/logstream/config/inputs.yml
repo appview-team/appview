@@ -1,5 +1,5 @@
 inputs:
-  in_appscope:
+  in_appview:
     disabled: false
     host: 0.0.0.0
     tls:
@@ -10,5 +10,5 @@ inputs:
     staleChannelFlushMs: 10000
     authType: manual
     authToken: ""
-    type: appscope
+    type: appview
     port: 10090

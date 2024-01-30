@@ -1,8 +1,8 @@
 #define _GNU_SOURCE
 #include "snapshot.h"
 #include "test.h"
-#include "scopestdlib.h"
-#include "scopetypes.h"
+#include "appviewstdlib.h"
+#include "appviewtypes.h"
 #include "fn.h"
 #include <ftw.h>
 #include <signal.h>
@@ -61,10 +61,10 @@ snapshotSigSegvTest(void **state)
             exit(EXIT_FAILURE);
         }
     }
-    scope_snprintf(dirPath, sizeof(dirPath), "/tmp/appscope/%d/", cpid);
+    appview_snprintf(dirPath, sizeof(dirPath), "/tmp/appview/%d/", cpid);
 
     // Verify if specifed action was performed
-    int res = scope_stat(dirPath, &fileState);
+    int res = appview_stat(dirPath, &fileState);
     assert_int_equal(res, 0);
     assert_true(S_ISDIR(fileState.st_mode));
     // cfg is missing becase  g_cfg.cfgstr is not initialized
@@ -75,19 +75,19 @@ snapshotSigSegvTest(void **state)
                                             };
 
 
-    dirp = scope_opendir(dirPath);
+    dirp = appview_opendir(dirPath);
     assert_non_null(dirp);
 
-    while ((entry = scope_readdir(dirp)) != NULL) {
+    while ((entry = appview_readdir(dirp)) != NULL) {
         if (entry->d_type == DT_REG) {
             for (int i = 0; i < PREFIX_NO; ++i) {
-                if (scope_strstr(entry->d_name, snapFilePrefixes[i].name)) {
+                if (appview_strstr(entry->d_name, snapFilePrefixes[i].name)) {
                     snapFilePrefixes[i].present = TRUE;
                 }
             }
         }
     }
-    scope_closedir(dirp);
+    appview_closedir(dirp);
 
     for (int i = 0; i < PREFIX_NO; ++i) {
         assert_true(snapFilePrefixes[i].present);

@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
 int nsForkAndExec(pid_t, pid_t, bool);
 bool nsSetNsRootDir(const char *, pid_t, const char *);

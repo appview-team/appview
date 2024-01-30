@@ -92,7 +92,7 @@ createDynConfigFile(pid_t pid) {
 }
 
 int
-load_and_attach(pid_t pid, char *scopeLibPath)
+load_and_attach(pid_t pid, char *appviewLibPath)
 {
     char *exe_path = NULL;
     elf_buf_t *ebuf;
@@ -114,7 +114,7 @@ load_and_attach(pid_t pid, char *scopeLibPath)
     }
 
     if (is_static(ebuf->buf) == TRUE) {
-        fprintf(stderr, "error: can't attach to the static executable: %s\nNote that the executable can be 'scoped' using the command 'scope run -- %s'\n", exe_path, exe_path);
+        fprintf(stderr, "error: can't attach to the static executable: %s\nNote that the executable can be 'viewed' using the command 'appview run -- %s'\n", exe_path, exe_path);
         free(exe_path);
         freeElf(ebuf->buf, ebuf->len);
         return EXIT_FAILURE;
@@ -124,7 +124,7 @@ load_and_attach(pid_t pid, char *scopeLibPath)
     freeElf(ebuf->buf, ebuf->len);
 
     printf("Attaching to process %d\n", pid);
-    int ret = injectScope(pid, scopeLibPath);
+    int ret = injectAppView(pid, appviewLibPath);
 
     // done
     return ret;
@@ -136,16 +136,16 @@ load_and_attach(pid_t pid, char *scopeLibPath)
  * of attach cases. 4 commands in all.
  *
  * Load and attach:
- * libscope is not loaded. This case is
+ * libappview is not loaded. This case is
  * handled in function load_and_attach().
  *
  * First attach:
- * libscope is loaded and we are not interposing
- * functions, not scoped. This is the first time
- * libscope will have been attached.
+ * libappview is loaded and we are not interposing
+ * functions, not viewed. This is the first time
+ * libappview will have been attached.
  *
  * Reattach:
- * libscope is loaded, the process has been attached
+ * libappview is loaded, the process has been attached
  * in one form at least once previously.
  */
 int
@@ -206,7 +206,7 @@ attach(pid_t pid)
     }
 
     if (first_attach == FALSE) {
-        const char *cmd = "SCOPE_CMD_ATTACH=true\n";
+        const char *cmd = "APPVIEW_CMD_ATTACH=true\n";
         if (write(fd, cmd, strlen(cmd)) <= 0) {
             perror("write() failed");
             close(fd);
@@ -223,26 +223,26 @@ attach(pid_t pid)
     /*
     * Reload the configuration during first attach & reattach if we want to apply
     * config from a environment variable
-    * Handle SCOPE_CONF_RELOAD in first order because of "processReloadConfig" logic
+    * Handle APPVIEW_CONF_RELOAD in first order because of "processReloadConfig" logic
     * is done in two steps:
     * - first - create a configuration based on path (default one or custom one)
     * - second - process env variables existing in the process (cfgProcessEnvironment)
-    * We append rest of the SCOPE_ variables after since in this way we ovewrite the ones
+    * We append rest of the APPVIEW_ variables after since in this way we ovewrite the ones
     * which was set by cfgProcessEnvironment in second step.
     * TODO: Handle the file and env variables
     */
-    char *scopeConfReload = getenv("SCOPE_CONF_RELOAD");
-    if (!scopeConfReload) {
-        dprintf(fd, "SCOPE_CONF_RELOAD=TRUE\n");
+    char *appviewConfReload = getenv("APPVIEW_CONF_RELOAD");
+    if (!appviewConfReload) {
+        dprintf(fd, "APPVIEW_CONF_RELOAD=TRUE\n");
     } else {
-        dprintf(fd, "SCOPE_CONF_RELOAD=%s\n", scopeConfReload);
+        dprintf(fd, "APPVIEW_CONF_RELOAD=%s\n", appviewConfReload);
     }
 
     for (i = 0; environ[i]; ++i) {
         size_t envLen = strlen(environ[i]);
         if ((envLen > 6) &&
-            (strncmp(environ[i], "SCOPE_", 6) == 0) &&
-            (!strstr(environ[i], "SCOPE_CONF_RELOAD"))) {
+            (strncmp(environ[i], "APPVIEW_", 6) == 0) &&
+            (!strstr(environ[i], "APPVIEW_CONF_RELOAD"))) {
                 dprintf(fd, "%s\n", environ[i]);
         }
     }
@@ -292,13 +292,13 @@ detach(pid_t pid)
     bool first_attach = FALSE;
     uint64_t rc;
 
-    // Check process exists and that the libscope library exists in the process
-    rc = findLibrary("libscope.so", pid, FALSE, NULL, 0);
+    // Check process exists and that the libappview library exists in the process
+    rc = findLibrary("libappview.so", pid, FALSE, NULL, 0);
     if (rc == -1) {
         printf("error: PID not a current process: %d\n", pid);
         return EXIT_FAILURE;
     } else if (rc == 0) {
-        fprintf(stderr, "error: libscope does not exist in this process %d\n", pid);
+        fprintf(stderr, "error: libappview does not exist in this process %d\n", pid);
         return EXIT_FAILURE;
     }
 
@@ -365,7 +365,7 @@ detach(pid_t pid)
         }
     }
 
-    const char *cmd = "SCOPE_CMD_ATTACH=false\n";
+    const char *cmd = "APPVIEW_CMD_ATTACH=false\n";
     if (write(fd, cmd, strlen(cmd)) <= 0) {
         perror("write() failed");
         close(fd);

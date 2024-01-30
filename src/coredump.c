@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 
 #include "coredump.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "utils.h"
 #include "google/coredumper.h"
 

@@ -4,8 +4,8 @@ import { useStaticQuery, graphql } from "gatsby";
 import StarCount from "./widgets/StarCount";
 import Download from "./widgets/Download";
 import CriblSiteNav from "./criblSiteNav";
-import logo from "../images/logo-appscope.svg";
-import "../scss/_appScopeNav.scss";
+import logo from "../images/logo-appview.svg";
+import "../scss/_appAppViewNav.scss";
 
 export default function Header() {
   const data = useStaticQuery(graphql`
@@ -27,7 +27,7 @@ export default function Header() {
       <Container
         fluid
         className="nav-container"
-        id="appscopeNav"
+        id="appviewNav"
         style={{ backgroundColor: "#fff !important" }}
       >
         <Col>
@@ -35,9 +35,9 @@ export default function Header() {
             <Nav.Item className="branding">
               <Nav.Link href="/">
                 <img
-                  className="appscope-logo"
+                  className="appview-logo"
                   src={logo}
-                  alt="AppScope"
+                  alt="AppView"
                   width="100"
                 />
               </Nav.Link>
@@ -56,7 +56,7 @@ export default function Header() {
             })}
           </Nav>
         </Col>
-        <Col className="appscope-nav-widgets">
+        <Col className="appview-nav-widgets">
           <StarCount />
           <Download btnText="Download" />
         </Col>

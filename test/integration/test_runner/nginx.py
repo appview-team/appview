@@ -12,18 +12,18 @@ class NetworkMetricsCollectedValidator(TestExecutionValidator):
     def __init__(self, applicable_tests: List[str]):
         self.applicable_tests = applicable_tests
 
-    def should_validate(self, name: str, scoped: bool) -> bool:
-        return scoped and name in self.applicable_tests
+    def should_validate(self, name: str, viewed: bool) -> bool:
+        return viewed and name in self.applicable_tests
 
-    def validate(self, test_data: Any, scope_messages: List[str]) -> TestResult:
+    def validate(self, test_data: Any, appview_messages: List[str]) -> TestResult:
         return validate_all(
-            (any("net.tx" in msg for msg in scope_messages if "#proc:nginx" in msg), "No 'net.tx' metrics is collected"),
-            (any("net.rx" in msg for msg in scope_messages if "#proc:nginx" in msg), "No 'net.rx' metrics is collected")
+            (any("net.tx" in msg for msg in appview_messages if "#proc:nginx" in msg), "No 'net.tx' metrics is collected"),
+            (any("net.rx" in msg for msg in appview_messages if "#proc:nginx" in msg), "No 'net.rx' metrics is collected")
         )
 
 
 def configure(runner: Runner, config):
-    app_controller = SubprocessAppController(["nginx", "-g", "daemon off;"], "nginx", config.scope_path,
+    app_controller = SubprocessAppController(["nginx", "-g", "daemon off;"], "nginx", config.appview_path,
                                              config.logs_path)
     get_home_page = TestGetUrl(url="http://localhost/", requests=10000, app_controller=app_controller)
     post_file = TestPostToUrl(url="http://localhost/log/", requests=10000, post_file="/opt/test-runner/post.json",

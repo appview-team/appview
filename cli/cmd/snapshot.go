@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/snapshot"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/snapshot"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ import (
 var snapshotCmd = &cobra.Command{
 	Use:   "snapshot [PID]",
 	Short: "Create a snapshot for a process",
-	Long:  `Create a snapshot for a process. Snapshot file/s will be created in /tmp/appscope/[PID]/.`,
+	Long:  `Create a snapshot for a process. Snapshot file/s will be created in /tmp/appview/[PID]/.`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()

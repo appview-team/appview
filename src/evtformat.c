@@ -9,7 +9,7 @@
 #include "evtformat.h"
 #include "strset.h"
 #include "com.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 
 // This is ugly, but...
@@ -58,6 +58,7 @@ static enum_map_t watchTypeMap[] = {
     {"net",          CFG_SRC_NET},
     {"fs",           CFG_SRC_FS},
     {"dns",          CFG_SRC_DNS},
+    {"sec",          CFG_SRC_SEC},
     {NULL,                    -1}
 };
 
@@ -104,6 +105,7 @@ static const char *valueFilterDefault[] = {
     DEFAULT_SRC_NET_VALUE,
     DEFAULT_SRC_FS_VALUE,
     DEFAULT_SRC_DNS_VALUE,
+    DEFAULT_SRC_SEC_VALUE,
 };
 
 static const char *fieldFilterDefault[] = {
@@ -115,6 +117,7 @@ static const char *fieldFilterDefault[] = {
     DEFAULT_SRC_NET_FIELD,
     DEFAULT_SRC_FS_FIELD,
     DEFAULT_SRC_DNS_FIELD,
+    DEFAULT_SRC_SEC_FIELD,
 };
 
 static const char *nameFilterDefault[] = {
@@ -126,6 +129,7 @@ static const char *nameFilterDefault[] = {
     DEFAULT_SRC_NET_NAME,
     DEFAULT_SRC_FS_NAME,
     DEFAULT_SRC_DNS_NAME,
+    DEFAULT_SRC_SEC_NAME,
 };
 
 static unsigned srcEnabledDefault[] = {
@@ -137,6 +141,7 @@ static unsigned srcEnabledDefault[] = {
     DEFAULT_SRC_NET,
     DEFAULT_SRC_FS,
     DEFAULT_SRC_DNS,
+    DEFAULT_SRC_SEC,
 };
 
 
@@ -165,7 +170,7 @@ filterSet(local_re_t *re, const char *str, const char *default_val)
 evt_fmt_t *
 evtFormatCreate(void)
 {
-    evt_fmt_t *evt = scope_calloc(1, sizeof(evt_fmt_t));
+    evt_fmt_t *evt = appview_calloc(1, sizeof(evt_fmt_t));
     if (!evt) {
         DBG(NULL);
         return NULL;
@@ -194,12 +199,12 @@ evtFormatDestroyTags(custom_tag_t*** tags)
     custom_tag_t** t = *tags;
     int i = 0;
     while (t[i]) {
-        scope_free(t[i]->name);
-        scope_free(t[i]->value);
-        scope_free(t[i]);
+        appview_free(t[i]->name);
+        appview_free(t[i]->value);
+        appview_free(t[i]);
         i++;
     }
-    scope_free(t);
+    appview_free(t);
     *tags = NULL;
 }
 
@@ -218,7 +223,7 @@ evtFormatDestroy(evt_fmt_t **evt)
 
     evtFormatDestroyTags(&edestroy->tags);
 
-    scope_free(edestroy);
+    appview_free(edestroy);
     *evt = NULL;
 }
 
@@ -337,11 +342,11 @@ evtFormatCustomTagsSet(evt_fmt_t* fmt, custom_tag_t** tags)
 
     if (!tags || !*tags) return;
 
-    // get a count of how big to scope_calloc
+    // get a count of how big to appview_calloc
     int num = 0;
     while(tags[num]) num++;
 
-    fmt->tags = scope_calloc(1, sizeof(custom_tag_t*) * (num+1));
+    fmt->tags = appview_calloc(1, sizeof(custom_tag_t*) * (num+1));
     if (!fmt->tags) {
         DBG(NULL);
         return;
@@ -349,14 +354,14 @@ evtFormatCustomTagsSet(evt_fmt_t* fmt, custom_tag_t** tags)
 
     int i, j = 0;
     for (i = 0; i<num; i++) {
-        custom_tag_t* t = scope_calloc(1, sizeof(custom_tag_t));
-        char* n = scope_strdup(tags[i]->name);
-        char* v = scope_strdup(tags[i]->value);
+        custom_tag_t* t = appview_calloc(1, sizeof(custom_tag_t));
+        char* n = appview_strdup(tags[i]->name);
+        char* v = appview_strdup(tags[i]->value);
         if (!t || !n || !v) {
             DBG("t=%p n=%p v=%p", t, n, v);
-            if (t) scope_free (t);
-            if (n) scope_free (n);
-            if (v) scope_free (v);
+            if (t) appview_free (t);
+            if (n) appview_free (n);
+            if (v) appview_free (v);
             continue;
         }
         t->name = n;
@@ -378,10 +383,10 @@ anyValueFieldMatches(regex_t *filter, event_t *metric)
     valbuf[0]='\0';
     switch ( metric->value.type ) {
         case FMT_INT:
-            scope_snprintf(valbuf, sizeof(valbuf), "%lld", metric->value.integer);
+            appview_snprintf(valbuf, sizeof(valbuf), "%lld", metric->value.integer);
             break;
         case FMT_FLT:
-            scope_snprintf(valbuf, sizeof(valbuf), "%.2f", metric->value.floating);
+            appview_snprintf(valbuf, sizeof(valbuf), "%.2f", metric->value.floating);
             break;
         default:
             DBG(NULL);
@@ -400,7 +405,7 @@ anyValueFieldMatches(regex_t *filter, event_t *metric)
         if (fld->value_type == FMT_STR) {
             str = fld->value.str;
         } else if (fld->value_type == FMT_NUM) {
-            if (scope_snprintf(valbuf, sizeof(valbuf), "%lld", fld->value.num) > 0) {
+            if (appview_snprintf(valbuf, sizeof(valbuf), "%lld", fld->value.num) > 0) {
                 str = valbuf;
             }
         }
@@ -464,7 +469,7 @@ rateLimitMessage(proc_id_t *proc, watch_t src, unsigned maxEvtPerSec)
     event_format_t event;
 
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
 
     event.timestamp = tv.tv_sec + tv.tv_usec/1e6;
     event.src = "notice";
@@ -472,7 +477,7 @@ rateLimitMessage(proc_id_t *proc, watch_t src, unsigned maxEvtPerSec)
     event.uid = 0ULL;
 
     char string[128];
-    if (scope_snprintf(string, sizeof(string), "Truncated metrics. Your rate exceeded %u metrics per second", maxEvtPerSec) == -1) {
+    if (appview_snprintf(string, sizeof(string), "Truncated metrics. Your rate exceeded %u metrics per second", maxEvtPerSec) == -1) {
         return NULL;
     }
     event.data = cJSON_CreateString(string);
@@ -589,7 +594,7 @@ evtFormatHelper(evt_fmt_t *evt, event_t *metric, uint64_t uid, proc_id_t *proc, 
     event_format_t event;
 
     struct timeval tv;
-    scope_gettimeofday(&tv, NULL);
+    appview_gettimeofday(&tv, NULL);
     
     regex_t *filter;
 

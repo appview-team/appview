@@ -18,15 +18,15 @@
 #include "backoff.h"
 #include "dbg.h"
 #include "os.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "fn.h"
 #include "utils.h"
 #include "transport.h"
 #include "utils.h"
 
 // Yuck.  Avoids naming conflict between our src/wrap.c and libssl.a
-#define SSL_read SCOPE_SSL_read
-#define SSL_write SCOPE_SSL_write
+#define SSL_read APPVIEW_SSL_read
+#define SSL_write APPVIEW_SSL_write
 #include "openssl/ssl.h"
 #include "openssl/err.h"
 #undef SSL_read
@@ -109,7 +109,7 @@ struct _transport_t
 };
 
 // This is *not* realtime safe; it's shared between all transports in a
-// process.  It's used by scopeGetaddrinfo() to avoid a bug seen in
+// process.  It's used by appviewGetaddrinfo() to avoid a bug seen in
 // node.js processes.  See transportReconnect() below for details.
 static struct addrinfo *g_cached_addr = NULL;
 
@@ -120,13 +120,13 @@ newTransport(void)
 {
     transport_t *t;
 
-    t = scope_calloc(1, sizeof(transport_t));
+    t = appview_calloc(1, sizeof(transport_t));
     if (!t) {
         DBG(NULL);
         return NULL;
     }
 
-    t->getaddrinfo = scope_getaddrinfo;
+    t->getaddrinfo = appview_getaddrinfo;
     t->origGetaddrinfo = t->getaddrinfo;  // store a copy
 
     t->backoff = backoffCreate();
@@ -158,15 +158,15 @@ placeDescriptor(int fd, transport_t *t)
     int i, dupfd;
 
     for (i = next_fd_to_try; i >= DEFAULT_MIN_FD; i--) {
-        if ((scope_fcntl(i, F_GETFD) == -1) && (scope_errno == EBADF)) {
+        if ((appview_fcntl(i, F_GETFD) == -1) && (appview_errno == EBADF)) {
 
             // This fd is available, try to dup it
-            if ((dupfd = scope_dup2(fd, i)) == -1) continue;
-            scope_close(fd);
+            if ((dupfd = appview_dup2(fd, i)) == -1) continue;
+            appview_close(fd);
 
             // Set close on exec. (dup2 does not preserve FD_CLOEXEC)
-            int flags = scope_fcntl(dupfd, F_GETFD, 0);
-            if (scope_fcntl(dupfd, F_SETFD, flags | FD_CLOEXEC) == -1) {
+            int flags = appview_fcntl(dupfd, F_GETFD, 0);
+            if (appview_fcntl(dupfd, F_SETFD, flags | FD_CLOEXEC) == -1) {
                 DBG("%d", dupfd);
             }
 
@@ -175,7 +175,7 @@ placeDescriptor(int fd, transport_t *t)
         }
     }
     DBG("%d", t->type);
-    scope_close(fd);
+    appview_close(fd);
     return -1;
 }
 
@@ -222,7 +222,7 @@ transportConnection(transport_t *trans)
             return trans->local.sock;
         case CFG_FILE:
             if (trans->file.stream) {
-                return scope_fileno(trans->file.stream);
+                return appview_fileno(trans->file.stream);
             } else {
                 return -1;
             }
@@ -246,9 +246,9 @@ transportNeedsConnection(transport_t *trans)
             if (osNeedsConnect(trans->net.sock)) {
                 DBG("fd:%d, tls:%d", trans->net.sock, trans->net.tls.enable);
                 if (trans->net.tls.enable) {
-                    scopeLogInfo("fd:%d tls session closed remotely", trans->net.sock);
+                    appviewLogInfo("fd:%d tls session closed remotely", trans->net.sock);
                 } else {
-                    scopeLogInfo("fd:%d tcp connection closed remotely", trans->net.sock);
+                    appviewLogInfo("fd:%d tcp connection closed remotely", trans->net.sock);
                 }
                 transportDisconnect(trans);
                 return TRUE;
@@ -259,7 +259,7 @@ transportNeedsConnection(transport_t *trans)
             // closed by our process.  (errno == EBADF) Stream buffering
             // makes it harder to know when this has happened.
             if ((trans->file.stream) &&
-                (scope_fcntl(scope_fileno(trans->file.stream), F_GETFD) == -1)) {
+                (appview_fcntl(appview_fileno(trans->file.stream), F_GETFD) == -1)) {
                 DBG(NULL);
                 transportDisconnect(trans);
             }
@@ -299,7 +299,7 @@ loadRootCertFile(transport_t *trans)
         };
 
         for (i=0; i<sizeof(rootFileList)/sizeof(char*); ++i) {
-            if (!scope_access(rootFileList[i], R_OK)) {
+            if (!appview_access(rootFileList[i], R_OK)) {
                 cafile = (char*)rootFileList[i];
                 break;
             }
@@ -310,7 +310,7 @@ loadRootCertFile(transport_t *trans)
     if (trans->net.tls.validateserver && !loc_rv) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
-        scopeLogInfo("fd:%d error setting tls cacertpath: \"%s\" : %s", trans->net.sock, cafile, err);
+        appviewLogInfo("fd:%d error setting tls cacertpath: \"%s\" : %s", trans->net.sock, cafile, err);
         // We're not treating this as a hard error at this point.
         // Let the process proceed; validation below will likely fail
         // and might provide more meaningful info.
@@ -325,7 +325,7 @@ shutdownTlsSession(transport_t *trans)
         if (ret < 0) {
             // protocol error occurred
             int ssl_err = SSL_get_error(trans->net.tls.ssl, ret);
-            scopeLogInfo("Client SSL_shutdown failed: ssl_err=%d\n", ssl_err);
+            appviewLogInfo("Client SSL_shutdown failed: ssl_err=%d\n", ssl_err);
         }
         SSL_free(trans->net.tls.ssl);
         trans->net.tls.ssl = NULL;
@@ -337,8 +337,8 @@ shutdownTlsSession(transport_t *trans)
     }
 
     if (trans->net.sock != -1) {
-        scope_shutdown(trans->net.sock, SHUT_RDWR);
-        scope_close(trans->net.sock);
+        appview_shutdown(trans->net.sock, SHUT_RDWR);
+        appview_close(trans->net.sock);
         trans->net.sock = -1;
     }
 }
@@ -353,7 +353,7 @@ transportInit(void)
 static void
 handle_tls_destroy(void)
 {
-    scopeLogInfo("detected beginning of process exit sequence");
+    appviewLogInfo("detected beginning of process exit sequence");
 
     if (handleExit_fn) handleExit_fn();
 }
@@ -417,13 +417,13 @@ static int
 establishTlsSession(transport_t *trans)
 {
     if (!trans || trans->net.sock == -1) return FALSE;
-    scopeLogInfo("fd:%d establishing tls session", trans->net.sock);
+    appviewLogInfo("fd:%d establishing tls session", trans->net.sock);
 
     trans->net.tls.ctx = SSL_CTX_new(TLS_method());
     if (!trans->net.tls.ctx) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
-        scopeLogInfo("fd:%d error creating tls context: %s", trans->net.sock, err);
+        appviewLogInfo("fd:%d error creating tls context: %s", trans->net.sock, err);
         trans->net.failure_reason = TLS_CONTEXT_FAIL;
         goto err;
     }
@@ -434,7 +434,7 @@ establishTlsSession(transport_t *trans)
     if (!trans->net.tls.ssl) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
-        scopeLogInfo("fd:%d error creating tls session: %s", trans->net.sock, err);
+        appviewLogInfo("fd:%d error creating tls session: %s", trans->net.sock, err);
         trans->net.failure_reason = TLS_SESSION_FAIL;
         goto err;
     }
@@ -442,7 +442,7 @@ establishTlsSession(transport_t *trans)
     if (!SSL_set_fd(trans->net.tls.ssl, trans->net.sock)) {
         char err[256] = {0};
         ERR_error_string_n(ERR_peek_last_error() , err, sizeof(err));
-        scopeLogInfo("fd:%d error setting tls on socket: %d : %s", trans->net.sock, trans->net.sock, err);
+        appviewLogInfo("fd:%d error setting tls on socket: %d : %s", trans->net.sock, trans->net.sock, err);
         trans->net.failure_reason = TLS_SOCKET_FAIL;
         goto err;
     }
@@ -464,18 +464,18 @@ establishTlsSession(transport_t *trans)
             FD_SET(trans->net.sock, &fds);
             int select_rv;
             if (ssl_err == SSL_ERROR_WANT_READ) {
-                select_rv = scope_select(trans->net.sock+1, &fds, NULL, NULL, &tv);
+                select_rv = appview_select(trans->net.sock+1, &fds, NULL, NULL, &tv);
             } else { //    SSL_ERROR_WANT_WRITE
-                select_rv = scope_select(trans->net.sock+1, NULL, &fds, NULL, &tv);
+                select_rv = appview_select(trans->net.sock+1, NULL, &fds, NULL, &tv);
             }
             if (select_rv > 0) continue; // Yes!  time to try SSL_connect again
 
             // At this point something went wrong with the SSL_connect process.
             // Report the information we have and cleanup.
             if (select_rv == 0) {
-                scopeLogInfo("fd:%d error establishing tls connection (timeout)", trans->net.sock);
+                appviewLogInfo("fd:%d error establishing tls connection (timeout)", trans->net.sock);
             } else {
-                scopeLogInfo("fd:%d error establishing tls connection (select): errno=%d", trans->net.sock, scope_errno);
+                appviewLogInfo("fd:%d error establishing tls connection (select): errno=%d", trans->net.sock, appview_errno);
             }
             trans->net.failure_reason = TLS_CONN_FAIL;
             goto err;
@@ -485,14 +485,14 @@ establishTlsSession(transport_t *trans)
         // Report the information we can and cleanup.
         char err[256] = {0};
         ERR_error_string_n(ssl_err, err, sizeof(err));
-        scopeLogInfo("fd:%d error establishing tls connection: %s %s %d", trans->net.sock, sslErrStr(ssl_err), err, scope_errno);
+        appviewLogInfo("fd:%d error establishing tls connection: %s %s %d", trans->net.sock, sslErrStr(ssl_err), err, appview_errno);
         trans->net.failure_reason = TLS_CONN_FAIL;
         goto err;
     }
 
     // This improves the delivery but we're unsure of what the cost is
     // in terms of network usage.
-    // See https://github.com/criblio/appscope/issues/781
+    // See https://github.com/criblio/appview/issues/781
     //
     // BIO_set_tcp_ndelay(trans->net.sock, TRUE);
 
@@ -502,7 +502,7 @@ establishTlsSession(transport_t *trans)
         if (cert) {
             X509_free(cert);  // Looks good.  Free it immediately
         } else {
-            scopeLogInfo("fd:%d error accessing peer certificate for tls server validation",
+            appviewLogInfo("fd:%d error accessing peer certificate for tls server validation",
                                                   trans->net.sock);
             trans->net.failure_reason = TLS_CERT_FAIL;
             goto err;
@@ -511,13 +511,13 @@ establishTlsSession(transport_t *trans)
         long ver_rc = SSL_get_verify_result(trans->net.tls.ssl);
         if (ver_rc != X509_V_OK) {
             const char *err = X509_verify_cert_error_string(ver_rc);
-            scopeLogInfo("fd:%d tls server validation failed : \"%s\"", trans->net.sock, err);
+            appviewLogInfo("fd:%d tls server validation failed : \"%s\"", trans->net.sock, err);
             trans->net.failure_reason = TLS_VERIFY_FAIL;
             goto err;
         }
     }
 
-    scopeLogInfo("fd:%d tls session established", trans->net.sock);
+    appviewLogInfo("fd:%d tls session established", trans->net.sock);
     return TRUE;
 err:
     shutdownTlsSession(trans);
@@ -534,20 +534,20 @@ transportDisconnect(transport_t *trans)
             // appropriate for both tls and non-tls connections...
             shutdownTlsSession(trans);
             if (trans->net.pending_connect != -1) {
-                scope_close(trans->net.pending_connect);
+                appview_close(trans->net.pending_connect);
                 trans->net.pending_connect = -1;
             }
             break;
         case CFG_FILE:
             if (!trans->file.stdout && !trans->file.stderr) {
-                if (trans->file.stream) scope_fclose(trans->file.stream);
+                if (trans->file.stream) appview_fclose(trans->file.stream);
             }
             trans->file.stream = NULL;
             break;
         case CFG_UNIX:
         case CFG_EDGE:
             if (trans->local.sock != -1) {
-                scope_close(trans->local.sock);
+                appview_close(trans->local.sock);
                 trans->local.sock = -1;
             }
             break;
@@ -584,7 +584,7 @@ transportDisconnect(transport_t *trans)
 // successful connection.  Look ma, no spinlocks!  See transportReconnect()
 // below for more info.
 static int
-scopeGetaddrinfo(const char *node, const char *service,
+appviewGetaddrinfo(const char *node, const char *service,
                   const struct addrinfo *hints,
                   struct addrinfo **res)
 {
@@ -602,15 +602,15 @@ getExistingConnectionAddr(transport_t *trans)
     // Clear the address value
     socklen_t addrsize = sizeof(trans->net.gai_addr);
     struct sockaddr *addr = (struct sockaddr*)&trans->net.gai_addr;
-    scope_memset(addr, 0, addrsize);
+    appview_memset(addr, 0, addrsize);
 
     // lookup the address
-    if (scope_getpeername(trans->net.sock, addr, &addrsize)) {
+    if (appview_getpeername(trans->net.sock, addr, &addrsize)) {
         DBG(NULL);
         goto exit;
     }
 
-    int res = scope_copyaddrinfo(addr, addrsize, &ai);
+    int res = appview_copyaddrinfo(addr, addrsize, &ai);
     if (res) {
         DBG(NULL);
     }
@@ -652,7 +652,7 @@ transportReconnect(transport_t *trans)
 
             transportDisconnect(trans);          // Never keep the parents connection.
             if (g_cached_addr) {
-                trans->getaddrinfo = scopeGetaddrinfo;
+                trans->getaddrinfo = appviewGetaddrinfo;
                 transportConnect(trans);         // Will use g_cached_addr
                 trans->getaddrinfo = trans->origGetaddrinfo;
             }
@@ -676,7 +676,7 @@ setSocketBlocking(transport_t *trans, int sock, bool block)
 {
     if (!trans) return 0;
 
-    int current_flags = scope_fcntl(sock, F_GETFL, NULL);
+    int current_flags = appview_fcntl(sock, F_GETFL, NULL);
     if (current_flags < 0) return FALSE;
 
     int desired_flags;
@@ -690,7 +690,7 @@ setSocketBlocking(transport_t *trans, int sock, bool block)
     if (current_flags == desired_flags) return TRUE;
 
     // fcntl returns 0 if successful
-    return (scope_fcntl(sock, F_SETFL, desired_flags) == 0);
+    return (appview_fcntl(sock, F_SETFL, desired_flags) == 0);
 }
 
 static int
@@ -709,9 +709,9 @@ checkPendingSocketStatus(transport_t *trans)
     fd_set pending_results;
     FD_ZERO(&pending_results);
     FD_SET(trans->net.pending_connect, &pending_results);
-    rc = scope_select(FD_SETSIZE, NULL, &pending_results, NULL, &tv);
+    rc = appview_select(FD_SETSIZE, NULL, &pending_results, NULL, &tv);
     if (rc < 0) {
-        if (scope_errno == EINTR) {
+        if (appview_errno == EINTR) {
           return 0;
         }
         DBG(NULL);
@@ -726,11 +726,11 @@ checkPendingSocketStatus(transport_t *trans)
     // socket that failed to connect and remove it from the pending list.
     int opt;
     socklen_t optlen = sizeof(opt);
-    if ((scope_getsockopt(trans->net.pending_connect, SOL_SOCKET, SO_ERROR, (void*)(&opt), &optlen) < 0)
+    if ((appview_getsockopt(trans->net.pending_connect, SOL_SOCKET, SO_ERROR, (void*)(&opt), &optlen) < 0)
             || opt) {
-        scopeLogInfo("fd:%d connect failed", trans->net.pending_connect);
+        appviewLogInfo("fd:%d connect failed", trans->net.pending_connect);
 
-        scope_close(trans->net.pending_connect);
+        appview_close(trans->net.pending_connect);
         trans->net.pending_connect = -1;
         return 0;
     }
@@ -757,7 +757,7 @@ checkPendingSocketStatus(transport_t *trans)
         opt=IPPROTO_TCP;
 #endif
 #endif
-        if (scope_setsockopt(trans->net.sock, opt, TCP_QUICKACK, &on, sizeof(on))) {
+        if (appview_setsockopt(trans->net.sock, opt, TCP_QUICKACK, &on, sizeof(on))) {
             DBG("%d %s %s", trans->net.sock, trans->net.host, trans->net.port);
         }
     }
@@ -779,7 +779,7 @@ checkPendingSocketStatus(transport_t *trans)
     }
 
     // We have a connected socket!  Woot!
-    scopeLogInfo("fd:%d connect to %s:%s was successful", trans->net.sock, trans->net.host, trans->net.port);
+    appviewLogInfo("fd:%d connect to %s:%s was successful", trans->net.sock, trans->net.host, trans->net.port);
     trans->connect_attempts = 0;
     trans->net.failure_reason = NO_FAIL;
     backoffReset(trans->backoff);
@@ -792,7 +792,7 @@ freeAddressList(transport_t *trans)
 {
     if (!trans || !trans->net.addr.list) return;
 
-    scope_freeaddrinfo(trans->net.addr.list);
+    appview_freeaddrinfo(trans->net.addr.list);
     trans->net.addr.entries = 0;
     trans->net.addr.list = NULL;
     trans->net.addr.next = NULL;
@@ -826,7 +826,7 @@ getAddressList(transport_t *trans)
                            trans->net.port,
                            &hints, &addr_list)) {
         char *type = (trans->type == CFG_UDP) ? "udp" : "tcp";
-        scopeLogInfo("DNS lookup for %s %s:%s failed", type, trans->net.host, trans->net.port);
+        appviewLogInfo("DNS lookup for %s %s:%s failed", type, trans->net.host, trans->net.port);
         trans->net.failure_reason = DNS_FAIL;
 
         return 0;
@@ -871,15 +871,15 @@ socketConnectionStart(transport_t *trans)
     struct addrinfo* addr;
     while ((addr = getNextAddressListEntry(trans))) {
         int sock;
-        sock = scope_socket(addr->ai_family,
+        sock = appview_socket(addr->ai_family,
                            addr->ai_socktype,
                            addr->ai_protocol);
 
         if (sock == -1) continue;
 
         // Set the socket to close on exec
-        int flags = scope_fcntl(sock, F_GETFD, 0);
-        if (scope_fcntl(sock, F_SETFD, flags | FD_CLOEXEC) == -1) {
+        int flags = appview_fcntl(sock, F_GETFD, 0);
+        if (appview_fcntl(sock, F_SETFD, flags | FD_CLOEXEC) == -1) {
             DBG("%d %s %s", sock, trans->net.host, trans->net.port);
         }
 
@@ -904,25 +904,25 @@ socketConnectionStart(transport_t *trans)
             portptr = &addr6_ptr->sin6_port;
         } else {
             DBG("%d %s %s %d", sock, trans->net.host, trans->net.port, addr->ai_family);
-            scope_close(sock);
+            appview_close(sock);
             continue;
         }
         char addrstr[INET6_ADDRSTRLEN];
-        scope_inet_ntop(addr->ai_family, addrptr, addrstr, sizeof(addrstr));
-        unsigned short port = scope_ntohs(*portptr);
-        scope_errno = 0;
-        if (scope_connect(sock, addr->ai_addr, addr->ai_addrlen) == -1) {
+        appview_inet_ntop(addr->ai_family, addrptr, addrstr, sizeof(addrstr));
+        unsigned short port = appview_ntohs(*portptr);
+        appview_errno = 0;
+        if (appview_connect(sock, addr->ai_addr, addr->ai_addrlen) == -1) {
 
-            if (scope_errno != EINPROGRESS) {
-                scopeLogInfo("fd:%d connect to %s:%d failed", sock, addrstr, port);
+            if (appview_errno != EINPROGRESS) {
+                appviewLogInfo("fd:%d connect to %s:%d failed", sock, addrstr, port);
                 trans->net.failure_reason = CONN_FAIL;
 
                 // We could create a sock, but not connect.  Clean up.
-                scope_close(sock);
+                appview_close(sock);
                 continue;
             }
 
-            scopeLogInfo("fd:%d connect to %s:%d is pending", sock, addrstr, port);
+            appviewLogInfo("fd:%d connect to %s:%d is pending", sock, addrstr, port);
             trans->net.failure_reason = CONN_FAIL;
 
             trans->net.pending_connect = sock;
@@ -934,7 +934,7 @@ socketConnectionStart(transport_t *trans)
             // connect on udp sockets normally succeeds immediately.
             trans->net.sock = placeDescriptor(sock, trans);
             if (trans->net.sock != -1) {
-                scopeLogInfo("fd:%d connect to %s:%d was successful", trans->net.sock, addrstr, port);
+                appviewLogInfo("fd:%d connect to %s:%d was successful", trans->net.sock, addrstr, port);
                 trans->connect_attempts = 0;
                 trans->net.failure_reason = NO_FAIL;
                 backoffReset(trans->backoff);
@@ -955,17 +955,17 @@ transportConnectFile(transport_t *t)
 
     // if stdout/stderr, set stream and skip everything else in the function.
     if (t->file.stdout) {
-        t->file.stream = scope_stdout;
+        t->file.stream = appview_stdout;
         goto out;
     } else if (t->file.stderr) {
-        t->file.stream = scope_stderr;
+        t->file.stream = appview_stderr;
         goto out;
     }
 
     int fd;
-    fd = scope_open(t->file.path, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
+    fd = appview_open(t->file.path, O_CREAT|O_WRONLY|O_APPEND|O_CLOEXEC, 0666);
     if (fd == -1) {
-        scopeLogInfo("(%s) file create/append failed", t->file.path);
+        appviewLogInfo("(%s) file create/append failed", t->file.path);
         transportDisconnect(t);
         return 0;
     }
@@ -977,12 +977,12 @@ transportConnectFile(transport_t *t)
     }
 
     // Needed because umask affects open permissions
-    if (scope_fchmod(fd, 0666) == -1) {
+    if (appview_fchmod(fd, 0666) == -1) {
         DBG("%d %s", fd, t->file.path);
     }
 
     FILE *f;
-    if (!(f = scope_fdopen(fd, "a"))) {
+    if (!(f = appview_fdopen(fd, "a"))) {
         transportDisconnect(t);
         return 0;
     }
@@ -1002,7 +1002,7 @@ transportConnectFile(transport_t *t)
         default:
             DBG("%d", t->file.buf_policy);
     }
-    if (scope_setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
+    if (appview_setvbuf(t->file.stream, NULL, buf_mode, BUFSIZ)) {
         DBG(NULL);
     }
 
@@ -1012,7 +1012,7 @@ out:
         char *path = t->file.path;
         if (t->file.stdout) path = "stdout";
         if (t->file.stderr) path = "stderr";
-        scopeLogInfo("fd:%d (%s) file connect successful", scope_fileno(t->file.stream), path);
+        appviewLogInfo("fd:%d (%s) file connect successful", appview_fileno(t->file.stream), path);
     }
     t->connect_attempts = 0;
     backoffReset(t->backoff);
@@ -1058,18 +1058,18 @@ transportConnect(transport_t *trans)
             trans->connect_attempts++;
 
             // Edge path needs to be recomputed on every connection attempt.
-            if (trans->local.path) scope_free(trans->local.path);
+            if (trans->local.path) appview_free(trans->local.path);
             trans->local.path = edgePath();
             if (!trans->local.path) {
-                scopeLogInfo("edge connect failed: edge socket not found");
+                appviewLogInfo("edge connect failed: edge socket not found");
                 return 0;
             }
-            int pathlen = scope_strlen(trans->local.path);
+            int pathlen = appview_strlen(trans->local.path);
             if (pathlen >= sizeof(trans->local.addr.sun_path)) return 0;
 
-            scope_memset(&trans->local.addr, 0, sizeof(trans->local.addr));
+            appview_memset(&trans->local.addr, 0, sizeof(trans->local.addr));
             trans->local.addr.sun_family = AF_UNIX;
-            scope_strncpy(trans->local.addr.sun_path, trans->local.path, pathlen);
+            appview_strncpy(trans->local.addr.sun_path, trans->local.path, pathlen);
             trans->local.addr_len = pathlen + sizeof(sa_family_t) + 1;
 
             // Keep going!  (no break or return here!)
@@ -1077,21 +1077,21 @@ transportConnect(transport_t *trans)
         case CFG_UNIX:
             if (trans->type == CFG_UNIX) trans->connect_attempts++;
 
-            if ((trans->local.sock = scope_socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+            if ((trans->local.sock = appview_socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
                 DBG("%d %s", trans->local.sock, trans->local.path);
                 return 0;
             }
 
             // Set close on exec
-            int flags = scope_fcntl(trans->local.sock, F_GETFD, 0);
-            if (scope_fcntl(trans->local.sock, F_SETFD, flags | FD_CLOEXEC) == -1) {
+            int flags = appview_fcntl(trans->local.sock, F_GETFD, 0);
+            if (appview_fcntl(trans->local.sock, F_SETFD, flags | FD_CLOEXEC) == -1) {
                 DBG("%d %s", trans->local.sock, trans->local.path);
             }
 
-            if (scope_connect(trans->local.sock, (const struct sockaddr *)&trans->local.addr,
+            if (appview_connect(trans->local.sock, (const struct sockaddr *)&trans->local.addr,
                              trans->local.addr_len) == -1) {
-                scopeLogInfo("fd:%d (%s) connect failed", trans->local.sock, trans->local.path);
-                scope_close(trans->local.sock);
+                appviewLogInfo("fd:%d (%s) connect failed", trans->local.sock, trans->local.path);
+                appview_close(trans->local.sock);
                 trans->local.sock = -1;
                 return 0;
             }
@@ -1100,7 +1100,7 @@ transportConnect(transport_t *trans)
             trans->local.sock = placeDescriptor(trans->local.sock, trans);
 
             // We have a connection
-            scopeLogInfo("fd:%d (%s) connect successful", trans->local.sock, trans->local.path);
+            appviewLogInfo("fd:%d (%s) connect successful", trans->local.sock, trans->local.path);
             trans->connect_attempts = 0;
             backoffReset(trans->backoff);
             break;
@@ -1124,16 +1124,16 @@ transportCreateTCP(const char *host, const char *port, unsigned int enable,
     if (!trans) return trans;
 
     trans->type = CFG_TCP;
-    if (scope_asprintf(&trans->configStr, "tcp://%s:%s", host, port) < 0) {
+    if (appview_asprintf(&trans->configStr, "tcp://%s:%s", host, port) < 0) {
         trans->configStr = NULL;
     }
     trans->net.sock = -1;
     trans->net.pending_connect = -1;
-    trans->net.host = scope_strdup(host);
-    trans->net.port = scope_strdup(port);
+    trans->net.host = appview_strdup(host);
+    trans->net.port = appview_strdup(port);
     trans->net.tls.enable = enable;
     trans->net.tls.validateserver = validateserver;
-    trans->net.tls.cacertpath = (cacertpath) ? scope_strdup(cacertpath) : NULL;
+    trans->net.tls.cacertpath = (cacertpath) ? appview_strdup(cacertpath) : NULL;
 
     if (!trans->configStr || !trans->net.host || !trans->net.port) {
         DBG(NULL);
@@ -1157,13 +1157,13 @@ transportCreateUdp(const char* host, const char* port)
     if (!t) return t;
 
     t->type = CFG_UDP;
-    if (scope_asprintf(&t->configStr, "udp://%s:%s", host, port) < 0) {
+    if (appview_asprintf(&t->configStr, "udp://%s:%s", host, port) < 0) {
         t->configStr = NULL;
     }
     t->net.sock = -1;
     t->net.pending_connect = -1;
-    t->net.host = scope_strdup(host);
-    t->net.port = scope_strdup(port);
+    t->net.host = appview_strdup(host);
+    t->net.port = appview_strdup(port);
 
     if (!t->configStr || !t->net.host || !t->net.port) {
         DBG(NULL);
@@ -1186,10 +1186,10 @@ transportCreateFile(const char* path, cfg_buffer_t buf_policy)
     if (!t) return NULL; 
 
     t->type = CFG_FILE;
-    if (scope_asprintf(&t->configStr, "file://%s", path) < 0) {
+    if (appview_asprintf(&t->configStr, "file://%s", path) < 0) {
         t->configStr = NULL;
     }
-    t->file.path = scope_strdup(path);
+    t->file.path = appview_strdup(path);
     if (!t->configStr || !t->file.path) {
         DBG("%s", path);
         transportDestroy(&t);
@@ -1198,8 +1198,8 @@ transportCreateFile(const char* path, cfg_buffer_t buf_policy)
     t->file.buf_policy = buf_policy;
 
     // See if path is "stdout" or "stderr"
-    t->file.stdout = !scope_strcmp(path, "stdout");
-    t->file.stderr = !scope_strcmp(path, "stderr");
+    t->file.stdout = !appview_strcmp(path, "stdout");
+    t->file.stderr = !appview_strcmp(path, "stderr");
 
     transportConnect(t);
 
@@ -1213,22 +1213,22 @@ transportCreateUnix(const char *path)
 
     if (!path) goto err;
 
-    int pathlen = scope_strlen(path);
+    int pathlen = appview_strlen(path);
     if (pathlen >= sizeof(trans->local.addr.sun_path)) goto err;
 
     if (!(trans = newTransport())) goto err;
 
     trans->type = CFG_UNIX;
-    if (scope_asprintf(&trans->configStr, "unix://%s", path) < 0) {
+    if (appview_asprintf(&trans->configStr, "unix://%s", path) < 0) {
         trans->configStr = NULL;
         goto err;
     }
     trans->local.sock = -1;
-    if (!(trans->local.path = scope_strdup(path))) goto err;
+    if (!(trans->local.path = appview_strdup(path))) goto err;
 
-    scope_memset(&trans->local.addr, 0, sizeof(trans->local.addr));
+    appview_memset(&trans->local.addr, 0, sizeof(trans->local.addr));
     trans->local.addr.sun_family = AF_UNIX;
-    scope_strncpy(trans->local.addr.sun_path, path, pathlen);
+    appview_strncpy(trans->local.addr.sun_path, path, pathlen);
     trans->local.addr_len = pathlen + sizeof(sa_family_t);
     if (path[0] == '@') {
         // The socket is abstract
@@ -1257,7 +1257,7 @@ transportCreateEdge(void)
     if (!(trans = newTransport())) goto err;
 
     trans->type = CFG_EDGE;
-    if (!(trans->configStr = scope_strdup("edge"))) goto err;
+    if (!(trans->configStr = appview_strdup("edge"))) goto err;
     trans->local.sock = -1;
     trans->local.path = NULL;
 
@@ -1279,27 +1279,27 @@ transportDestroy(transport_t **transport)
 
     transport_t *trans = *transport;
 
-    if (trans->configStr) scope_free(trans->configStr);
+    if (trans->configStr) appview_free(trans->configStr);
 
     switch (trans->type) {
         case CFG_UDP:
         case CFG_TCP:
             transportDisconnect(trans);
-            if (trans->net.host) scope_free(trans->net.host);
-            if (trans->net.port) scope_free(trans->net.port);
-            if (trans->net.tls.cacertpath) scope_free(trans->net.tls.cacertpath);
+            if (trans->net.host) appview_free(trans->net.host);
+            if (trans->net.port) appview_free(trans->net.port);
+            if (trans->net.tls.cacertpath) appview_free(trans->net.tls.cacertpath);
             freeAddressList(trans);
             break;
         case CFG_UNIX:
         case CFG_EDGE:
-            if (trans->local.path) scope_free(trans->local.path);
+            if (trans->local.path) appview_free(trans->local.path);
             transportDisconnect(trans);
             break;
         case CFG_FILE:
-            if (trans->file.path) scope_free(trans->file.path);
+            if (trans->file.path) appview_free(trans->file.path);
             if (!trans->file.stdout && !trans->file.stderr) {
                 // if stdout/stderr, we didn't open stream, so don't close it
-                if (trans->file.stream) scope_fclose(trans->file.stream);
+                if (trans->file.stream) appview_fclose(trans->file.stream);
             }
             break;
         default:
@@ -1308,7 +1308,7 @@ transportDestroy(transport_t **transport)
 
     backoffDestroy(&trans->backoff);
 
-    scope_free(trans);
+    appview_free(trans);
     *transport = NULL;
 }
 
@@ -1328,9 +1328,9 @@ tcpSendPlain(transport_t *trans, const char *msg, size_t len)
 
     while (bytes_to_send > 0) {
         if (g_ismusl == TRUE) {
-            rc = scope_syscall(SYS_sendto, trans->net.sock, &msg[bytes_sent], bytes_to_send, flags, NULL, 0);
+            rc = appview_syscall(SYS_sendto, trans->net.sock, &msg[bytes_sent], bytes_to_send, flags, NULL, 0);
         } else {
-            rc = scope_send(trans->net.sock, &msg[bytes_sent], bytes_to_send, flags);
+            rc = appview_send(trans->net.sock, &msg[bytes_sent], bytes_to_send, flags);
         }
 
         if (rc <= 0) break;
@@ -1344,7 +1344,7 @@ tcpSendPlain(transport_t *trans, const char *msg, size_t len)
     }
 
     if (rc < 0) {
-        switch (scope_errno) {
+        switch (appview_errno) {
         case EBADF:
         case EPIPE:
             DBG(NULL);
@@ -1372,7 +1372,7 @@ tcpSendTls(transport_t *trans, const char *msg, size_t len)
 
         rc = 0;
         ERR_clear_error(); // to make SSL_get_error reliable
-        rc = SCOPE_SSL_write(trans->net.tls.ssl, &msg[bytes_sent], bytes_to_send);
+        rc = APPVIEW_SSL_write(trans->net.tls.ssl, &msg[bytes_sent], bytes_to_send);
         if (rc <= 0) {
             err = SSL_get_error(trans->net.tls.ssl, rc);
         }
@@ -1405,13 +1405,13 @@ transportSend(transport_t *trans, const char *msg, size_t len)
             if (trans->net.sock != -1) {
                 int rc;
                 if (g_ismusl == TRUE) {
-                    rc = scope_syscall(SYS_sendto, trans->net.sock, msg, len, 0, NULL, 0);
+                    rc = appview_syscall(SYS_sendto, trans->net.sock, msg, len, 0, NULL, 0);
                 } else {
-                    rc = scope_send(trans->net.sock, msg, len, 0);
+                    rc = appview_send(trans->net.sock, msg, len, 0);
                 }
 
                 if (rc < 0) {
-                    switch (scope_errno) {
+                    switch (appview_errno) {
                     case EBADF:
                         DBG(NULL);
                         transportDisconnect(trans);
@@ -1436,9 +1436,9 @@ transportSend(transport_t *trans, const char *msg, size_t len)
         case CFG_FILE:
             if (trans->file.stream) {
                 size_t msg_size = len;
-                int bytes = scope_fwrite(msg, 1, msg_size, trans->file.stream);
+                int bytes = appview_fwrite(msg, 1, msg_size, trans->file.stream);
                 if (bytes != msg_size) {
-                    if (scope_errno == EBADF) {
+                    if (appview_errno == EBADF) {
                         DBG("%d %d", bytes, msg_size);
                         transportDisconnect(trans);
                         transportConnect(trans);
@@ -1458,13 +1458,13 @@ transportSend(transport_t *trans, const char *msg, size_t len)
 #endif
                 int rc;
                 if (g_ismusl == TRUE) {
-                    rc = scope_syscall(SYS_sendto, trans->local.sock, msg, len, flags, NULL, 0);
+                    rc = appview_syscall(SYS_sendto, trans->local.sock, msg, len, flags, NULL, 0);
                 } else {
-                    rc = scope_send(trans->local.sock, msg, len, flags);
+                    rc = appview_send(trans->local.sock, msg, len, flags);
                 }
 
                 if (rc < 0) {
-                    switch (scope_errno) {
+                    switch (appview_errno) {
                     case EBADF:
                     case EPIPE:
                         DBG(NULL);
@@ -1497,7 +1497,7 @@ transportFlush(transport_t* t)
         case CFG_TCP:
             break;
         case CFG_FILE:
-            if (scope_fflush(t->file.stream) == EOF) {
+            if (appview_fflush(t->file.stream) == EOF) {
                 DBG(NULL);
             }
             break;

@@ -1,12 +1,12 @@
 package start
 
 import (
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/run"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/run"
 	"github.com/rs/zerolog/log"
 )
 
-// Start installs libscope
+// Start installs libappview
 func Start(rootdir string) error {
 	// Create a history directory for logs
 	rc := run.Config{}

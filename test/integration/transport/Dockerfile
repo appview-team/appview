@@ -13,7 +13,7 @@ ENV CRIBL_NOAUTH=1
 COPY transport/cribl/ /opt/cribl/local/cribl/
 
 RUN mkdir -p /opt/test/bin
-COPY transport/scope-test /opt/test/bin
+COPY transport/appview-test /opt/test/bin
 
 COPY transport/plainClient.go /opt/test/bin
 RUN cd /opt/test/bin && \
@@ -27,17 +27,17 @@ RUN cd /opt/test/bin && \
 RUN  cd /opt/test/bin && \
      CGO_ENABLED=0 go build -o plainClientStatic plainClient.go
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY transport/scope-test /usr/local/scope/
+COPY transport/appview-test /usr/local/appview/
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

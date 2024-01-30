@@ -60,7 +60,7 @@ extern void osInitJavaAgent(void);
 extern int osGetPageProt(unsigned long);
 extern int osGetExePath(pid_t, char **);
 extern bool osTimerStop(void);
-extern bool osIsScopeHandlerActive(void);
+extern bool osIsAppViewHandlerActive(void);
 extern void osSetAppSigaction(const struct sigaction *);
 extern void osGetAppSigaction(struct sigaction *const);
 extern bool osCallAppSigaction(int, siginfo_t *, void *);

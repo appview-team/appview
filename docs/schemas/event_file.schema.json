@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/event_file.schema.json",
+  "$id": "https://appview.dev/docs/schemas/event_file.schema.json",
   "type": "object",
-  "title": "AppScope `file` Event",
+  "title": "AppView `file` Event",
   "description": "Structure of the `file` event",
   "examples": [{"type":"evt","id":"ubuntu-sh- /usr/bin/which /usr/bin/firefox","_channel":"13468365092424","body":{"sourcetype":"file","_time":1643735941.602952,"source":"/var/log/firefox.log","host":"ubuntu","proc":"sh","cmd":"/bin/sh /usr/bin/which /usr/bin/firefox","pid":6545,"data":{"message":"/usr/bin/firefox\n"}}}],
   "required": [

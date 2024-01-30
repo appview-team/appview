@@ -13,9 +13,9 @@ import (
 // serviceCmd represents the service command
 var serviceCmd = &cobra.Command{
 	Use:     "service SERVICE [flags]",
-	Short:   "Configure a systemd/OpenRC service to be scoped",
-	Long:    `Configures the specified systemd/OpenRC service to be scoped upon starting.`,
-	Example: `  scope service cribl -c tls://in.my-instance.cribl.cloud:10090`,
+	Short:   "Configure a systemd/OpenRC service to be viewed",
+	Long:    `Configures the specified systemd/OpenRC service to be viewed upon starting.`,
+	Example: `  appview service cribl -c tls://in.my-instance.cribl.cloud:10090`,
 	Args:    cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// service name is the first and only argument

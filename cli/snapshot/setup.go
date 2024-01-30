@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/run"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/run"
+	"github.com/appview-team/appview/util"
 )
 
 // Copy of start/setup.go createWorkDir
@@ -39,6 +39,6 @@ func CreateWorkDir(cmd string) {
 	// Populate working directory
 	// Create Log file
 	filePerms := os.FileMode(0644)
-	internal.CreateLogFile(filepath.Join(WorkDir, "scope.log"), filePerms)
+	internal.CreateLogFile(filepath.Join(WorkDir, "appview.log"), filePerms)
 	internal.SetDebug()
 }

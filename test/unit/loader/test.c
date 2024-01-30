@@ -4,8 +4,8 @@
 
 #include "test.h"
 
-unsigned long g_libscopesz;
-unsigned long g_scopedynsz;
+unsigned long g_libappviewsz;
+unsigned long g_appviewdynsz;
 
 int
 groupSetup(void** state)

@@ -4,18 +4,18 @@ title: Removing
 
 ## Removing
 
-You can remove AppScope by simply deleting the binary, along with the rest of the contents of the `SCOPE_HOME` directory. For example, if your `SCOPE_HOME` directory is `/opt/appscope/`:
+You can remove AppView by simply deleting the binary, along with the rest of the contents of the `APPVIEW_HOME` directory. For example, if your `APPVIEW_HOME` directory is `/opt/appview/`:
 
 ```
-rm -rf /opt/appscope/
+rm -rf /opt/appview/
 ```
 
 Then delete the associated history directory:
 
 ```
 cd ~
-rm -rf .scope/
+rm -rf .appview/
 ```
 </br>
 
-Currently scope’d applications will continue to run. To remove the AppScope library from a running process, use `scope detach <process_ID>`.
+Currently appview’d applications will continue to run. To remove the AppView library from a running process, use `appview detach <process_ID>`.

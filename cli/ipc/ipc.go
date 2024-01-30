@@ -56,7 +56,7 @@ func ipcEnd() {
 
 // ipcDispatcher dispatches IPC communication to the process specified by the pid.
 // Returns the bytes array
-func ipcDispatcher(scopeReq []byte, pidCtx IpcPidCtx) (*IpcResponseCtx, error) {
+func ipcDispatcher(appviewReq []byte, pidCtx IpcPidCtx) (*IpcResponseCtx, error) {
 	ipcStart()
 	defer ipcEnd()
 	ipc, err := newIPC(pidCtx)
@@ -65,7 +65,7 @@ func ipcDispatcher(scopeReq []byte, pidCtx IpcPidCtx) (*IpcResponseCtx, error) {
 	}
 	defer ipc.destroyIPC()
 
-	err = ipc.sendIpcRequest(scopeReq)
+	err = ipc.sendIpcRequest(appviewReq)
 	if err != nil {
 		return nil, fmt.Errorf("%w %v", errRequest, pidCtx.Pid)
 	}
@@ -164,7 +164,7 @@ func newIPC(pidCtx IpcPidCtx) (*ipcObj, error) {
 	}
 
 	//  Create message queue to Write into it
-	sender, err := nsnewMsgQWriter(fmt.Sprintf("ScopeIPCIn.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
+	sender, err := nsnewMsgQWriter(fmt.Sprintf("AppViewIPCIn.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
 	if err != nil {
 		if !ipcSame {
 			ipcNsRestore()
@@ -173,7 +173,7 @@ func newIPC(pidCtx IpcPidCtx) (*ipcObj, error) {
 	}
 
 	// Create message queue to Read from it
-	receiver, err := nsnewMsgQReader(fmt.Sprintf("ScopeIPCOut.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
+	receiver, err := nsnewMsgQReader(fmt.Sprintf("AppViewIPCOut.%d", ipcPid), nsUid, nsGid, restoreUid, restoreGid)
 	if err != nil {
 		sender.destroy()
 		if !ipcSame {
@@ -246,44 +246,44 @@ func (ipc *ipcObj) frameMeta(remainBytes int) ([]byte, error) {
 	return metadata, nil
 }
 
-// prepareFrame preparet the scope message
-func (ipc *ipcObj) prepareFrame(remain int, scopeData []byte, offset int) ([]byte, int, error) {
+// prepareFrame preparet the appview message
+func (ipc *ipcObj) prepareFrame(remain int, appviewData []byte, offset int) ([]byte, int, error) {
 	frame, _ := ipc.frameMeta(remain)
 	maxPossibleDataLen := ipc.sender.cap - len(frame) - 1
 	if maxPossibleDataLen < 0 {
 		return frame, -1, errRequest
 	}
 
-	scopeFrameDataSize := maxPossibleDataLen
+	appviewFrameDataSize := maxPossibleDataLen
 	if remain < maxPossibleDataLen {
-		scopeFrameDataSize = remain
+		appviewFrameDataSize = remain
 	}
 
-	frameScopeData := scopeData[offset : offset+scopeFrameDataSize]
+	frameAppViewData := appviewData[offset : offset+appviewFrameDataSize]
 
-	frame = append(frame, frameScopeData...)
+	frame = append(frame, frameAppViewData...)
 	frame = append(frame, 0)
 
-	return frame, scopeFrameDataSize, nil
+	return frame, appviewFrameDataSize, nil
 }
 
 // sendIpcRequest puts the request in message queue (the message can be splited by the frames)
-func (ipc *ipcObj) sendIpcRequest(scopeMsg []byte) error {
-	scopeMsgDataRemain := len(scopeMsg)
-	var scopeMsgOffset int
-	for scopeMsgDataRemain != 0 {
+func (ipc *ipcObj) sendIpcRequest(appviewMsg []byte) error {
+	appviewMsgDataRemain := len(appviewMsg)
+	var appviewMsgOffset int
+	for appviewMsgDataRemain != 0 {
 
-		frame, dataSize, err := ipc.prepareFrame(scopeMsgDataRemain, scopeMsg, scopeMsgOffset)
+		frame, dataSize, err := ipc.prepareFrame(appviewMsgDataRemain, appviewMsg, appviewMsgOffset)
 		if err != nil {
 			return err
 		}
 
-		scopeMsgOffset += dataSize
-		scopeMsgDataRemain -= dataSize
+		appviewMsgOffset += dataSize
+		appviewMsgDataRemain -= dataSize
 
 		// Handling the last frame
 		//  - change the request type metaReqJsonPartial -> metaReqJson
-		if scopeMsgDataRemain == 0 {
+		if appviewMsgDataRemain == 0 {
 			frame = bytes.Replace(frame, []byte("req\":1"), []byte("req\":0"), 1)
 		}
 
@@ -296,7 +296,7 @@ func (ipc *ipcObj) sendIpcRequest(scopeMsg []byte) error {
 	return nil
 }
 
-// ipcGetMsgSeparatorIndex returns index of Meta and Scope message separator
+// ipcGetMsgSeparatorIndex returns index of Meta and AppView message separator
 func ipcGetMsgSeparatorIndex(msg []byte) int {
 	return bytes.Index(msg, []byte("\x00"))
 }
@@ -324,7 +324,7 @@ func UnmarshalMeta(msg []byte, metaResp *metaResponse) error {
 }
 
 // parseIpcFrame parses single frame in IPC communication
-// returns frame metadata, scope message and error
+// returns frame metadata, appview message and error
 func parseIpcFrame(msg []byte) (metaResponse, []byte, error) {
 	var metaResp metaResponse
 	var err error
@@ -343,15 +343,15 @@ func parseIpcFrame(msg []byte) (metaResponse, []byte, error) {
 	}
 
 	// Skip the separator
-	scopeData := msg[sepIndx+1:]
+	appviewData := msg[sepIndx+1:]
 
-	return metaResp, scopeData, nil
+	return metaResp, appviewData, nil
 }
 
 // receiveIpcResponse receives the whole message from process endpoint
 func (ipc *ipcObj) receiveIpcResponse() (*IpcResponseCtx, error) {
 	listenForResponseTransmission := true
-	var scopeMsg []byte
+	var appviewMsg []byte
 	var lastRespStatus respStatus
 	firstFrame := true
 	var previousFrameRemainBytes int
@@ -363,7 +363,7 @@ func (ipc *ipcObj) receiveIpcResponse() (*IpcResponseCtx, error) {
 			return nil, err
 		}
 
-		ipcFrameMeta, scopeFrame, err := parseIpcFrame(msg)
+		ipcFrameMeta, appviewFrame, err := parseIpcFrame(msg)
 		if err != nil {
 			return nil, err
 		}
@@ -384,9 +384,9 @@ func (ipc *ipcObj) receiveIpcResponse() (*IpcResponseCtx, error) {
 		if lastRespStatus != ResponseOKwithContent {
 			listenForResponseTransmission = false
 		}
-		scopeMsg = append(scopeMsg, scopeFrame...)
+		appviewMsg = append(appviewMsg, appviewFrame...)
 		firstFrame = false
 	}
 
-	return &IpcResponseCtx{scopeMsg, lastRespStatus}, nil
+	return &IpcResponseCtx{appviewMsg, lastRespStatus}, nil
 }

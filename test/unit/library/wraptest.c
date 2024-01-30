@@ -15,7 +15,7 @@
 #include "cfg.h"
 #include "cfgutils.h"
 #include "dbg.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "wrap.h"
 
 extern uint64_t getDuration(uint64_t);
@@ -31,10 +31,10 @@ extern int osInitTSC(struct rtconfig_t *);
 rtconfig g_cfg = {0};
 
 /*
- * The env var SCOPE_HOME is set in
+ * The env var APPVIEW_HOME is set in
  * the Makefile or script that runs 
  * this test. It points to a config
- * file in scope/test/conf/scope.yml.
+ * file in appview/test/conf/appview.yml.
  * Using a config file for test we ensure
  * we have debug logs enabled and that 
  * we know the path to the log file
@@ -54,7 +54,7 @@ testFSDuration(void** state)
     assert_int_equal(cfgMtcVerbosity(cfg), CFG_MAX_VERBOSITY);
    
     // Start the duration timer with a read
-    fd = open("./scope_env.sh", O_RDONLY);
+    fd = open("./appview_env.sh", O_RDONLY);
     assert_return_code(fd, errno);
 
     rc = read(fd, buf, 16);
@@ -88,10 +88,10 @@ testFSDuration(void** state)
 }
 
 /*
- * The env var SCOPE_HOME is set in
+ * The env var APPVIEW_HOME is set in
  * the Makefile or script that runs 
  * this test. It points to a config
- * file in scope/test/conf/scope.yml.
+ * file in appview/test/conf/appview.yml.
  * Using a config file for test we ensure
  * we have debug logs enabled and that 
  * we know the path to the log file

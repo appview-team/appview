@@ -21,50 +21,50 @@ echo "==============================================="
 echo "             Testing Redis                     "
 echo "==============================================="
 if [ "$(wait_for_port 6379)" ]; then
-    # Looking for "source":"net.app" events from scoped Redis client.
-    # Note that the `protocol[*].detect` entry in scope.yml is `true` to start.
+    # Looking for "source":"net.app" events from viewed Redis client.
+    # Note that the `protocol[*].detect` entry in appview.yml is `true` to start.
 
-    # Should not get the event with SCOPE_EVENT_NET=false
+    # Should not get the event with APPVIEW_EVENT_NET=false
     rm -f /opt/test-runner/logs/events.log
-	SCOPE_EVENT_NET=false scope -z redis-cli SET detect hello >/dev/null 2>&1
+	APPVIEW_EVENT_NET=false appview -z redis-cli SET detect hello >/dev/null 2>&1
 	if grep net.app /opt/test-runner/logs/events.log > /dev/null; then
-        echo "fail: got event with detect:true,  SCOPE_EVENT_NET=false"
+        echo "fail: got event with detect:true,  APPVIEW_EVENT_NET=false"
         ERR+=1
     else
-        echo "pass: no  event with detect:true,  SCOPE_EVENT_NET=false"
+        echo "pass: no  event with detect:true,  APPVIEW_EVENT_NET=false"
     fi
 
-    # Should get the event when SCOPE_EVENT_NET=true
+    # Should get the event when APPVIEW_EVENT_NET=true
     rm -f /opt/test-runner/logs/events.log
-	SCOPE_EVENT_NET=true scope -z redis-cli SET detect hello >/dev/null 2>&1
+	APPVIEW_EVENT_NET=true appview -z redis-cli SET detect hello >/dev/null 2>&1
 	if grep net.app /opt/test-runner/logs/events.log > /dev/null; then
-        echo "pass: got event with detect:true,  SCOPE_EVENT_NET=true"
+        echo "pass: got event with detect:true,  APPVIEW_EVENT_NET=true"
     else
-        echo "fail: no  event with detect:true,  SCOPE_EVENT_NET=true"
+        echo "fail: no  event with detect:true,  APPVIEW_EVENT_NET=true"
         ERR+=1
     fi
 
-    # Set detect:false in scope.yml
-    sed -i 's/detect: true/detect: false/' /opt/test-runner/bin/scope.yml
+    # Set detect:false in appview.yml
+    sed -i 's/detect: true/detect: false/' /opt/test-runner/bin/appview.yml
 
-    # Should not get the event when SCOPE_EVENT_NET=false
+    # Should not get the event when APPVIEW_EVENT_NET=false
     rm -f /opt/test-runner/logs/events.log
-	SCOPE_EVENT_NET=true scope -z redis-cli SET detect hello >/dev/null 2>&1
+	APPVIEW_EVENT_NET=true appview -z redis-cli SET detect hello >/dev/null 2>&1
 	if grep net.app /opt/test-runner/logs/events.log > /dev/null; then
-        echo "fail: got event with detect:false, SCOPE_EVENT_NET=false"
+        echo "fail: got event with detect:false, APPVIEW_EVENT_NET=false"
         ERR+=1
     else
-        echo "pass: no  event with detect:false, SCOPE_EVENT_NET=false"
+        echo "pass: no  event with detect:false, APPVIEW_EVENT_NET=false"
     fi
 
-    # Should not get the event when SCOPE_EVENT_NET=true
+    # Should not get the event when APPVIEW_EVENT_NET=true
     rm -f /opt/test-runner/logs/events.log
-	SCOPE_EVENT_NET=true scope -z redis-cli SET detect hello >/dev/null 2>&1
+	APPVIEW_EVENT_NET=true appview -z redis-cli SET detect hello >/dev/null 2>&1
 	if grep net.app /opt/test-runner/logs/events.log > /dev/null; then
-        echo "fail: got event with detect:false, SCOPE_EVENT_NET=true"
+        echo "fail: got event with detect:false, APPVIEW_EVENT_NET=true"
         ERR+=1
     else
-        echo "pass: no  event with detect:false, SCOPE_EVENT_NET=true"
+        echo "pass: no  event with detect:false, APPVIEW_EVENT_NET=true"
     fi
 
 	if [ $ERR -eq 0 ]; then
@@ -87,7 +87,7 @@ if [ "x86_64" = "$(uname -m)" ]; then # x86_64 only
 	echo "             Testing Mongo                     "
 	echo "==============================================="
 	if [ "$(wait_for_port 27017)" ]; then
-		scope -z mongo /opt/test-runner/bin/mongo.js
+		appview -z mongo /opt/test-runner/bin/mongo.js
 		grep net.app /opt/test-runner/logs/events.log > /dev/null
 		MONGO_ERR+=$?
 		grep '"protocol":"Mongo"' /opt/test-runner/logs/events.log > /dev/null

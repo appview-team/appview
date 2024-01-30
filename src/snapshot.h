@@ -2,7 +2,7 @@
 #define __SNAPSHOT_H__
 
 #include <signal.h>
-#include "scopetypes.h"
+#include "appviewtypes.h"
 /*
  *  Manage snapshot
  *  IMPORTANT NOTE:

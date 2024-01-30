@@ -47,13 +47,13 @@ Can contain:
 
 ### Security
 
-Only AppScope team members can approve and merge PR's.
+Only AppView team members can approve and merge PR's.
 
-AppScope team members must have MFA on their GitHub account ; and use a GPG key to sign commits. 
+AppView team members must have MFA on their GitHub account ; and use a GPG key to sign commits. 
 
 ## Coding Style
 
-TBD - Please see the open [discussion](https://github.com/criblio/appscope/discussions/1245) on coding style.
+TBD - Please see the open [discussion](https://github.com/criblio/appview/discussions/1245) on coding style.
 
 ## Testing
 
@@ -77,14 +77,14 @@ Unit Tests for the Go code live in `cli/__package__/`.
 
 ## Documentation
 
-With every release, we should update user documentation. User documentation lives in the `website` directory, and is published to [appscope.dev](https://appscope.dev).
+With every release, we should update user documentation. User documentation lives in the `website` directory, and is published to [appview.dev](https://appview.dev).
 
 ## Compatibility
 
-Please keep in mind the current set of [limitations and requirements](https://appscope.dev/docs/requirements) for using AppScope. We want to ensure that we maintain or shrink these where possible, and avoid growing them.
-For example, we want to AppScope to work on all popular linux distributions and versions; on glibc and musl environments ; with apps written in any language, etc.
+Please keep in mind the current set of [limitations and requirements](https://appview.dev/docs/requirements) for using AppView. We want to ensure that we maintain or shrink these where possible, and avoid growing them.
+For example, we want to AppView to work on all popular linux distributions and versions; on glibc and musl environments ; with apps written in any language, etc.
 
-We want to maintain backwards compatibility with previous versions of AppScope in almost all cases.
+We want to maintain backwards compatibility with previous versions of AppView in almost all cases.
 
 We want to maintain our current licensing terms found in `LICENSE`.
 
@@ -134,36 +134,13 @@ We want to maintain our current licensing terms found in `LICENSE`.
 We use GitHub Workflows and Actions to automate CI/CD tasks for the project
 when changes are made in the repository.
 
-The [`build`](../.github/workflows/build.yml) workflow builds the code and runs
-the unit tests with every push, on every branch. When the tests pass, some
-additional steps are taken depending on the trigger.
-
-* The `scope` binary and other artifacts of the build are pushed to our
-  [CDN](#cdn) for release tags and pushes to any branch.
-
-* We build [container images](#container-images) and push them to Docker Hub
-  for release tags.
-
-* We run our [integration tests](../test/integration/) for pull requests to
-  the default and release branches. We build and push the container images
-  these tests use up to Docker Hub on pushes to the default branch.
-
-The [`website`](../.github/workflows/website.yml) workflow handles building and
-deploying the [`website/`](../website/) content to <https://staging.appscope.dev/>
-and <https://appscope.dev/>. The staging website is intended to always reflect
-the master branch. The production website is updated only when a "web" tag
-has been applied and pushed. See the build script in that folder for details.
-
-The [`update_latest`](../.github/workflows/update_latest.yml) workflow updates
-the value returned by `https://cdn.cribl.io/dl/scope/latest`, and updates
-the `latest` tag at `https://hub.docker.com/r/cribl/scope/tags`. This workflow
-is run manually, and does not have any automatic triggers.
+See [MAINTAINERS.md](MAINTAINERS.md) for more info.
 
 ## Container Images
 
 We build and push container images to the
-[`cribl/scope`](https://hub.docker.com/r/cribl/scope) and
-[`cribl/scope-demo`](https://hub.docker.com/r/cribl/scope-demo)
+[`cribl/appview`](https://hub.docker.com/r/cribl/appview) and
+[`cribl/appview-demo`](https://hub.docker.com/r/cribl/appview-demo)
 repositories at Docker Hub. See [`docker/`](../docker/) for details on how
 those images are built.
 
@@ -171,11 +148,11 @@ We currently build these for release `v*` tags and tag the images to match with
 the leading `v` stripped off.
 
 ```text
-docker run --rm -it cribl/scope:latest
+docker run --rm -it cribl/appview:latest
 ```
 or
 ```text
-docker run --rm -it cribl/scope:1.1.3
+docker run --rm -it cribl/appview:1.1.3
 ```
 
 ## Tag Usage

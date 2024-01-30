@@ -12,14 +12,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/util"
 )
 
-func environNoScope() []string {
+func environNoAppView() []string {
 	env := []string{}
 	for _, envVar := range os.Environ() {
-		if !strings.HasPrefix(envVar, "SCOPE") {
+		if !strings.HasPrefix(envVar, "APPVIEW") {
 			env = append(env, envVar)
 		}
 	}
@@ -28,7 +28,7 @@ func environNoScope() []string {
 
 // CreateAll outputs all bundled files to a given path
 func CreateAll(path string) error {
-	files := []string{"libscope.so", "scope.yml"}
+	files := []string{"libappview.so", "appview.yml"}
 	perms := []os.FileMode{0755, 0644}
 	for i, f := range files {
 		b, err := Asset(fmt.Sprintf("build/%s", f))
@@ -197,7 +197,7 @@ func (rc *Config) populateWorkDir(args []string, attach bool) {
 	}
 
 	// Create Log file
-	internal.CreateLogFile(filepath.Join(rc.WorkDir, "scope.log"), filePerms)
+	internal.CreateLogFile(filepath.Join(rc.WorkDir, "appview.log"), filePerms)
 
 	// Create Metrics file
 	if rc.sc.Metric.Transport.TransportType == "file" {
@@ -232,9 +232,9 @@ func (rc *Config) populateWorkDir(args []string, attach bool) {
 	}
 
 	// Create config file
-	scYamlPath := filepath.Join(rc.WorkDir, "scope.yml")
+	scYamlPath := filepath.Join(rc.WorkDir, "appview.yml")
 	if rc.UserConfig == "" {
-		err := rc.WriteScopeConfig(scYamlPath, filePerms)
+		err := rc.WriteAppViewConfig(scYamlPath, filePerms)
 		util.CheckErrSprintf(err, "%v", err)
 	} else {
 		input, err := os.ReadFile(rc.UserConfig)
@@ -262,7 +262,7 @@ func (rc *Config) populateWorkDir(args []string, attach bool) {
 // Open to race conditions, but having a duplicate ID is only a UX bug rather than breaking
 // so keeping it simple and avoiding locking etc
 func GetSessionID() string {
-	countFile := filepath.Join(util.ScopeHome(), "count")
+	countFile := filepath.Join(util.AppViewHome(), "count")
 	lastSessionID := 0
 	lastSessionBytes, err := os.ReadFile(countFile)
 	if err == nil {
@@ -278,7 +278,7 @@ func GetSessionID() string {
 
 // HistoryDir returns the history directory
 func HistoryDir() string {
-	return filepath.Join(util.ScopeHome(), "history")
+	return filepath.Join(util.AppViewHome(), "history")
 }
 
 func (rc *Config) buildMetricsDest() string {
@@ -365,39 +365,39 @@ func (rc *Config) CreateWorkDirBasic(cmd string) {
 	// Populate working directory
 	// Create Log file
 	filePerms := os.FileMode(0644)
-	internal.CreateLogFile(filepath.Join(rc.WorkDir, "scope.log"), filePerms)
+	internal.CreateLogFile(filepath.Join(rc.WorkDir, "appview.log"), filePerms)
 	internal.SetDebug()
 }
 
-// GetAppScopeVerDir returns the directory path which will be used for handling the scope file
-// /usr/lib/appscope/<version>/
+// GetAppViewVerDir returns the directory path which will be used for handling the appview file
+// /usr/lib/appview/<version>/
 // or
-// /tmp/appscope/<version>/
-func GetAppScopeVerDir() (string, error) {
+// /tmp/appview/<version>/
+func GetAppViewVerDir() (string, error) {
 	version := internal.GetNormalizedVersion()
-	var appscopeVersionPath string
+	var appviewVersionPath string
 
-	// Check /usr/lib/appscope only for official version
+	// Check /usr/lib/appview only for official version
 	if !internal.IsVersionDev() {
-		appscopeVersionPath = filepath.Join("/usr/lib/appscope/", version)
-		if _, err := os.Stat(appscopeVersionPath); err != nil {
-			if err := os.MkdirAll(appscopeVersionPath, 0755); err != nil {
-				return appscopeVersionPath, err
+		appviewVersionPath = filepath.Join("/usr/lib/appview/", version)
+		if _, err := os.Stat(appviewVersionPath); err != nil {
+			if err := os.MkdirAll(appviewVersionPath, 0755); err != nil {
+				return appviewVersionPath, err
 			}
-			err := os.Chmod(appscopeVersionPath, 0755)
-			return appscopeVersionPath, err
+			err := os.Chmod(appviewVersionPath, 0755)
+			return appviewVersionPath, err
 		}
-		return appscopeVersionPath, nil
+		return appviewVersionPath, nil
 	}
 
-	appscopeVersionPath = filepath.Join("/tmp/appscope/", version)
-	if _, err := os.Stat(appscopeVersionPath); err != nil {
-		if err := os.MkdirAll(appscopeVersionPath, 0777); err != nil {
-			return appscopeVersionPath, err
+	appviewVersionPath = filepath.Join("/tmp/appview/", version)
+	if _, err := os.Stat(appviewVersionPath); err != nil {
+		if err := os.MkdirAll(appviewVersionPath, 0777); err != nil {
+			return appviewVersionPath, err
 		}
-		err := os.Chmod(appscopeVersionPath, 0777)
-		return appscopeVersionPath, err
+		err := os.Chmod(appviewVersionPath, 0777)
+		return appviewVersionPath, err
 	}
-	return appscopeVersionPath, nil
+	return appviewVersionPath, nil
 
 }

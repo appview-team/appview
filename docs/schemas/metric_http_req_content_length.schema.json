@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/metric_http_req_content_length.schema.json",
+  "$id": "https://appview.dev/docs/schemas/metric_http_req_content_length.schema.json",
   "type": "object",
-  "title": "AppScope `http.req.content_length` Metric",
+  "title": "AppView `http.req.content_length` Metric",
   "description": "Structure of the `http.req.content_length` metric",
   "examples": [{"type":"metric","body":{"_metric":"http.req.content_length","_metric_type":"counter","_value":38,"http_target":"/echo/post/json","numops":1,"proc":"curl","pid":525,"host":"272cc69a120a","unit":"byte","summary":"true","_time":1644230452.63037}}],
   "required": [

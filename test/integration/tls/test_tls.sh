@@ -41,8 +41,8 @@ endtest(){
     rm -f $EVT_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 evalPayload(){
     PAYLOADERR=0
@@ -80,7 +80,7 @@ evalPayload(){
 #
 starttest OpenSSL
 cd /opt/test
-scope -z ./curlssl/src/curl --head https://cribl.io
+appview -z ./curlssl/src/curl --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -99,7 +99,7 @@ endtest
 # gnutls
 #
 starttest gnutls
-scope -z ./curltls/src/curl --head https://cribl.io
+appview -z ./curltls/src/curl --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -118,7 +118,7 @@ endtest
 # nss
 #
 starttest nss
-scope -z curl --head https://cribl.io
+appview -z curl --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -137,7 +137,7 @@ endtest
 # node.js
 #
 starttest "node.js"
-scope -z node /opt/test-runner/bin/nodehttp.ts > /dev/null
+appview -z node /opt/test-runner/bin/nodehttp.ts > /dev/null
 evaltest
 
 grep http.req $EVT_FILE | grep net_peer_ip | grep net_peer_port | grep net_host_ip | grep net_host_port > /dev/null
@@ -161,7 +161,7 @@ starttest Ruby
 RUBY_HTTP_START=$(grep "http\." $EVT_FILE 2>/dev/null | grep -c 10101)
 (cd /opt/test-runner/ruby && ./server.rb 10101 &)
 sleep 1
-(cd /opt/test-runner/ruby && scope -z ./client.rb 127.0.0.1 10101)
+(cd /opt/test-runner/ruby && appview -z ./client.rb 127.0.0.1 10101)
 sleep 1
 evaltest
 RUBY_HTTP_END=$(grep "http\." $EVT_FILE 2>/dev/null | grep -c 10101)
@@ -183,7 +183,7 @@ starttest Python
 /opt/rh/rh-python38/root/usr/bin/python3.8 /opt/test-runner/bin/testssl.py create_certs
 /opt/rh/rh-python38/root/usr/bin/python3.8 /opt/test-runner/bin/testssl.py start_server&
 sleep 1
-scope -z /opt/rh/rh-python38/root/usr/bin/python3.8 /opt/test-runner/bin/testssl.py run_client
+appview -z /opt/rh/rh-python38/root/usr/bin/python3.8 /opt/test-runner/bin/testssl.py run_client
 sleep 1
 evaltest
 
@@ -204,7 +204,7 @@ if [ "aarch64" != "$(uname -m)" ]; then
 	# Rust
 	#
 	starttest Rust
-	scope -z /opt/test-runner/bin/http_test > /dev/null
+	appview -z /opt/test-runner/bin/http_test > /dev/null
 	sleep 1
 	evaltest
 
@@ -226,7 +226,7 @@ fi
 #
 starttest php
 PHP_HTTP_START=$(grep "http\." $EVT_FILE | grep -c sslclient.php)
-scope -z php /opt/test-runner/php/sslclient.php > /dev/null
+appview -z php /opt/test-runner/php/sslclient.php > /dev/null
 evaltest
 
 PHP_HTTP_END=$(grep "http\." $EVT_FILE | grep -c sslclient.php)
@@ -246,10 +246,10 @@ endtest
 #
 starttest apache
 APACHE_HTTP_START=$(grep "http\." $EVT_FILE | grep -c httpd)
-scope -z httpd -k start
+appview -z httpd -k start
 sleep 2
-scope -z curl -k https://localhost:443/ > /dev/null
-scope -z httpd -k stop
+appview -z curl -k https://localhost:443/ > /dev/null
+appview -z httpd -k stop
 evaltest
 sleep 5
 APACHE_HTTP_END=$(grep "http\." $EVT_FILE | grep -c httpd)
@@ -263,8 +263,8 @@ ERR+=$?
 
 endtest
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

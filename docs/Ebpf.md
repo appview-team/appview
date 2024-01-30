@@ -40,8 +40,8 @@ In turn, to access a scalar object within an object read directly:
 [![](https://mermaid.ink/img/pako:eNp1Uk1PwzAM_SuRTyBtf6AHJLaWG6ft1qDKJGat1iRVPkBo23_HSweZppFD8my_96wkPoBymqCCncepF9taWsHruQ3RJxVFxLDvZiylnQbN-6XEgYi9J9QdwzexXD6J1UMpMlOM9EljkaSzxibzTj48zp1WWXfcfrmjWLdXPFZZ_2-3WbzO4rotnM6ioTChoquugXzJ51DYUOo2dMoZ4yyji3GdjZv2rgMrE3cyODHa_aGbu95xbbLrS3vLYNHAr8KHcsnGzIYFGPIGB82fczhnJMSeDEmoGGr0ewnSnpiXJo2RGj1E56Fib1oApug231b9xjOnHpD_2UD1gWPgLGXN6zwBeRBOPwXmvKk?type=png)](https://mermaid.live/edit#pako:eNp1Uk1PwzAM_SuRTyBtf6AHJLaWG6ft1qDKJGat1iRVPkBo23_HSweZppFD8my_96wkPoBymqCCncepF9taWsHruQ3RJxVFxLDvZiylnQbN-6XEgYi9J9QdwzexXD6J1UMpMlOM9EljkaSzxibzTj48zp1WWXfcfrmjWLdXPFZZ_2-3WbzO4rotnM6ioTChoquugXzJ51DYUOo2dMoZ4yyji3GdjZv2rgMrE3cyODHa_aGbu95xbbLrS3vLYNHAr8KHcsnGzIYFGPIGB82fczhnJMSeDEmoGGr0ewnSnpiXJo2RGj1E56Fib1oApug231b9xjOnHpD_2UD1gWPgLGXN6zwBeRBOPwXmvKk)
 
 
-### Scope Daemon in a Container
-The scope daemon command installs an eBPF module and listens for events on a corresponding eBPF map. There are a couple of requirements needed to utilize eBPF in a container. A libbpf package needs to be installed and a mount point is required when the container is started.
+### AppView Daemon in a Container
+The appview daemon command installs an eBPF module and listens for events on a corresponding eBPF map. There are a couple of requirements needed to utilize eBPF in a container. A libbpf package needs to be installed and a mount point is required when the container is started.
 
 #### Example Dockerfile for Ubuntu 20 & 22:
 
@@ -64,6 +64,6 @@ The libbpf tools are not available as packages for Ubuntu 18. Therefore, we have
 
 #### Example docker run command:
 
-`docker run -d -it --rm --cap-add=SYS_ADMIN -v <path_where_scope_exists>/:/opt/appscope --name bcon -v /sys/kernel/debug:/sys/kernel/debug:ro bpfcon /opt/appscope/scope daemon`
+`docker run -d -it --rm --cap-add=SYS_ADMIN -v <path_where_appview_exists>/:/opt/appview --name bcon -v /sys/kernel/debug:/sys/kernel/debug:ro bpfcon /opt/appview/appview daemon`
 
-In the example run command a path where the scope executable exists is used. Not required. Just makes it easier.
+In the example run command a path where the appview executable exists is used. Not required. Just makes it easier.

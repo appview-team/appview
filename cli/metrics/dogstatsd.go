@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// parseDogStatsd parses Scope's dogstatsd output
+// parseDogStatsd parses AppView's dogstatsd output
 // Not general purpose. Ignores sampling which is allowed in the format.
 // Assumes tags come after metric type
 func parseDogStatsd(line string) (ret Metric) {

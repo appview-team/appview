@@ -12,8 +12,8 @@ import (
 	"sync"
 
 	linq "github.com/ahmetb/go-linq/v3"
-	"github.com/criblio/scope/metrics"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/metrics"
+	"github.com/appview-team/appview/util"
 	"github.com/guptarohit/asciigraph"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -33,9 +33,9 @@ var metricsCmd = &cobra.Command{
 	Use:   "metrics [flags]",
 	Short: "Outputs metrics for a session",
 	Long:  `Outputs metrics for a session.`,
-	Example: `  scope metrics
-  scope metrics -m net.error,fs.error
-  scope metrics -m net.tx -g
+	Example: `  appview metrics
+  appview metrics -m net.error,fs.error
+  appview metrics -m net.tx -g
 	`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {

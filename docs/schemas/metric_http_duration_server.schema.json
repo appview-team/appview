@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/metric_http_duration_server.schema.json",
+  "$id": "https://appview.dev/docs/schemas/metric_http_duration_server.schema.json",
   "type": "object",
-  "title": "AppScope `http.duration.server` Metric",
+  "title": "AppView `http.duration.server` Metric",
   "description": "Structure of the `http.duration.server` metric",
   "required": [
     "type",

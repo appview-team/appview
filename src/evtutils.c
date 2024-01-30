@@ -3,18 +3,18 @@
 #include "dbg.h"
 #include "evtutils.h"
 #include "report.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 #include "state_private.h"
 
 
 static protocol_info *
 evtProtoAllocHttpBase(void)
 {
-    protocol_info *proto = scope_calloc(1, sizeof(protocol_info));
-    http_post *post = scope_calloc(1, sizeof(http_post));
+    protocol_info *proto = appview_calloc(1, sizeof(protocol_info));
+    http_post *post = appview_calloc(1, sizeof(http_post));
     if (!proto || !post) {
-        if (post) scope_free(post);
-        if (proto) scope_free(proto);
+        if (post) appview_free(post);
+        if (proto) appview_free(proto);
         return NULL;
     }
 
@@ -42,11 +42,11 @@ protocol_info *
 evtProtoAllocHttp2Frame(uint32_t frameLen)
 {
     protocol_info *proto = evtProtoAllocHttpBase();
-    char *frame = scope_malloc(frameLen);
+    char *frame = appview_malloc(frameLen);
     if (!proto || !frame) {
         DBG(NULL);
         if (proto) evtProtoFree(proto);
-        if (frame) scope_free(frame);
+        if (frame) appview_free(frame);
         return NULL;
     }
 
@@ -62,12 +62,12 @@ evtProtoAllocDetect(const char * const protocolName)
 {
     if (!protocolName) return NULL;
 
-    protocol_info *proto = scope_calloc(1, sizeof(protocol_info));
-    char *protname = scope_strdup(protocolName);
+    protocol_info *proto = appview_calloc(1, sizeof(protocol_info));
+    char *protname = appview_strdup(protocolName);
     if (!proto || !protname) {
         DBG(NULL);
-        if (protname) scope_free(protname);
-        if (proto) scope_free(proto);
+        if (protname) appview_free(protname);
+        if (proto) appview_free(proto);
         return NULL;
     }
 
@@ -86,14 +86,14 @@ evtProtoFree(protocol_info *proto)
     if ((proto->ptype == EVT_HREQ) || (proto->ptype == EVT_HRES) || (proto->ptype == EVT_H2FRAME)) {
         http_post *post = (http_post *)proto->data;
         if (post) {
-            if (post->hdr) scope_free(post->hdr);
-            scope_free(post);
+            if (post->hdr) appview_free(post->hdr);
+            appview_free(post);
         }
     } else if (proto->ptype == EVT_DETECT) {
         // proto->data is a pointer to a strdup'd string
-        if (proto->data) scope_free(proto->data);
+        if (proto->data) appview_free(proto->data);
     }
-    scope_free(proto);
+    appview_free(proto);
     return TRUE;
 }
 
@@ -107,35 +107,35 @@ evtFree(evt_type *event)
         {
             // Alloc'd in postNetState. There are no nested allocations.
             // net_info *net = (net_info *)event;
-            scope_free(event);
+            appview_free(event);
             break;
         }
         case EVT_FS:
         {
             // Alloc'd in postFSState. There are no nested allocations.
             // fs_info *fs = (fs_info *)event;
-            scope_free(event);
+            appview_free(event);
             break;
         }
         case EVT_ERR:
         {
             // Alloc'd in postStatErrState. There are no nested allocations.
             // stat_err_info *staterr = (stat_err_info *)event;
-            scope_free(event);
+            appview_free(event);
             break;
         }
         case EVT_STAT:
         {
             // Alloc'd in postStatErrState. There are no nested allocations.
             // stat_err_info *staterr = (stat_err_info *)event;
-            scope_free(event);
+            appview_free(event);
             break;
         }
         case EVT_DNS:
         {
             // Alloc'd in postDNSState. There are no nested allocations.
             // net_info *net = (net_info *)event;
-            scope_free(event);
+            appview_free(event);
             break;
         }
         case EVT_PROTO:
@@ -146,9 +146,16 @@ evtFree(evt_type *event)
             evtProtoFree(proto);
             break;
         }
+        case EVT_SEC:
+        {
+            // Alloc'd in fileSecurity, dnsSecurity, gotSecurity, netSecurity
+            // security_info_t *sec = (security_info_t *)event;
+            appview_free(event);
+            break;
+        }
         default:
             DBG(NULL);
-            scope_free(event);
+            appview_free(event);
     }
     return TRUE;
 }

@@ -84,8 +84,8 @@ build/openssl/libssl.a build/openssl/libcrypto.a:
 	@mkdir build/openssl
 	cd build/openssl && ../../openssl/Configure no-engine no-async no-tests no-unit-test no-threads && make -j$(nproc)
 	# Yuck.  Avoids naming conflict between our wrap.c and libssl.a
-	objcopy --redefine-sym SSL_read=SCOPE_SSL_read build/openssl/libssl.a
-	objcopy --redefine-sym SSL_write=SCOPE_SSL_write build/openssl/libssl.a
+	objcopy --redefine-sym SSL_read=APPVIEW_SSL_read build/openssl/libssl.a
+	objcopy --redefine-sym SSL_write=APPVIEW_SSL_write build/openssl/libssl.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libcrypto.a
 	objcopy --redefine-syms redefine_syms.lst build/openssl/libssl.a
 	@[ -z "$(CI)" ] || echo "::endgroup::"
@@ -117,7 +117,7 @@ build/libunwind/src/.libs/libunwind.a:
 	cd build/libunwind && autoreconf -fvi ../../libunwind && ../../libunwind/configure --disable-weak-backtrace --disable-pthread-api --disable-shared --disable-minidebuginfo --disable-documentation --disable-tests CFLAGS=-fPIC && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/libunwind/src/.libs/libunwind.a
 	if [ "x86_64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym dl_iterate_phdr=SCOPE_DlIteratePhdr build/libunwind/src/.libs/libunwind.a; \
+		objcopy --redefine-sym dl_iterate_phdr=APPVIEW_DlIteratePhdr build/libunwind/src/.libs/libunwind.a; \
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
@@ -128,7 +128,7 @@ build/libunwind/src/.libs/libunwind.a:
 	cd build/coredumper && autoreconf -fvi ../../coredumper && ../../coredumper/configure CFLAGS=-fPIC --disable-shared && $(MAKE)
 	objcopy --redefine-syms redefine_syms.lst build/coredumper/.libs/libcoredumper.a
 	if [ "aarch64" = "$(ARCH)" ]; then \
-		objcopy --redefine-sym getcontext=unw_scope_getcontext build/coredumper/.libs/libcoredumper.a; \
+		objcopy --redefine-sym getcontext=unw_appview_getcontext build/coredumper/.libs/libcoredumper.a; \
 	fi
 	@[ -z "$(CI)" ] || echo "::endgroup::"
 
@@ -139,7 +139,7 @@ build/musl/lib/libc.a:
 # To enable debug please add below --enable-debug --enable-optimize=no
 	cd build/musl && ../../musl/configure --disable-shared --disable-wrapper CFLAGS=$(DISABLE_X28) && $(MAKE)
 	cp build/musl/lib/libc.a build/musl/lib/libc_orig.a
-	objcopy --prefix-symbols=scopelibc_ build/musl/lib/libc.a
+	objcopy --prefix-symbols=appviewlibc_ build/musl/lib/libc.a
 # TODO verify if the code below be done via mfloat-abi=soft not sure if aarch64 support soft though
 # https://developer.arm.com/documentation/dui0774/b/compiler-command-line-options/-mfloat-abi
 # -mgeneral-regs-only maybe ? https://gcc.gnu.org/onlinedocs/gcc/AArch64-Options.html

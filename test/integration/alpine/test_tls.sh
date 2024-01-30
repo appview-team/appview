@@ -42,8 +42,8 @@ endtest(){
     touch $EVT_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 evalPayload(){
     PAYLOADERR=0
@@ -80,7 +80,7 @@ evalPayload(){
 #
 starttest OpenSSL
 cd /opt/test
-scope -z /opt/test/curl-ssl --http1.1 --head https://cribl.io
+appview -z /opt/test/curl-ssl --http1.1 --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -107,7 +107,7 @@ endtest
 # gnutls
 #
 starttest gnutls
-scope -z /opt/test/curl-tls --http1.1 --head https://cribl.io
+appview -z /opt/test/curl-tls --http1.1 --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -132,7 +132,7 @@ endtest
 # nss
 #
 starttest nss
-scope -z /opt/test/curl-nss --http1.1 --head https://cribl.io
+appview -z /opt/test/curl-nss --http1.1 --head https://cribl.io
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -157,7 +157,7 @@ endtest
 # node.js
 #
 starttest "node.js"
-scope -z node /opt/test/bin/nodehttp.ts > /dev/null
+appview -z node /opt/test/bin/nodehttp.ts > /dev/null
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -179,9 +179,9 @@ starttest Ruby
 echo "Creating key files for ruby client and server"
 (cd /opt/test/bin && openssl req -x509 -newkey rsa:4096 -keyout priv.pem -out cert.pem -days 365 -nodes -subj "/C=US/ST=California/L=San Francisco/O=Cribl/OU=Cribl/CN=localhost")
 RUBY_HTTP_START=$(grep "http\." $EVT_FILE | grep 10101 | wc -l)
-(cd /opt/test/bin && scope -z ./server.rb 10101 &)
+(cd /opt/test/bin && appview -z ./server.rb 10101 &)
 sleep 1
-(cd /opt/test/bin && scope -z ./client.rb 127.0.0.1 10101)
+(cd /opt/test/bin && appview -z ./client.rb 127.0.0.1 10101)
 sleep 1
 evaltest
 RUBY_HTTP_END=$(grep "http\." $EVT_FILE | grep 10101 | wc -l)
@@ -200,10 +200,10 @@ endtest
 # Python
 #
 starttest Python
-scope -z python3 /opt/test/bin/testssl.py create_certs
-scope -z python3 /opt/test/bin/testssl.py start_server&
+appview -z python3 /opt/test/bin/testssl.py create_certs
+appview -z python3 /opt/test/bin/testssl.py start_server&
 sleep 1
-scope -z python3 /opt/test/bin/testssl.py run_client
+appview -z python3 /opt/test/bin/testssl.py run_client
 sleep 1
 evaltest
 
@@ -222,7 +222,7 @@ endtest
 # Rust
 #
 starttest Rust
-scope -z /opt/test/bin/http_test > /dev/null
+appview -z /opt/test/bin/http_test > /dev/null
 evaltest
 
 grep http.req $EVT_FILE > /dev/null
@@ -242,7 +242,7 @@ endtest
 #
 starttest php
 PHP_HTTP_START=$(grep "http\." $EVT_FILE | grep sslclient.php | wc -l)
-scope -z php /opt/test/bin/sslclient.php > /dev/null
+appview -z php /opt/test/bin/sslclient.php > /dev/null
 evaltest
 
 PHP_HTTP_END=$(grep "http\." $EVT_FILE | grep sslclient.php | wc -l)
@@ -262,9 +262,9 @@ endtest
 #
 starttest apache
 APACHE_HTTP_START=$(grep "http\." $EVT_FILE | grep httpd | wc -l)
-scope -z httpd -k start
-scope -z curl -k https://localhost:443/
-scope -z httpd -k stop
+appview -z httpd -k start
+appview -z curl -k https://localhost:443/
+appview -z httpd -k stop
 evaltest
 APACHE_HTTP_END=$(grep "http\." $EVT_FILE | grep httpd | wc -l)
 
@@ -277,8 +277,8 @@ ERR+=$?
 
 endtest
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

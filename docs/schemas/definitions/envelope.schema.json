@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://appscope.dev/docs/schemas/definitions/envelope.schema.json",
-  "title": "Schema for the AppScope event/metric envelope",
-  "description": "A set of basic facts that AppScope uses to describe each event or metric.",
+  "$id": "https://appview.dev/docs/schemas/definitions/envelope.schema.json",
+  "title": "Schema for the AppView event/metric envelope",
+  "description": "A set of basic facts that AppView uses to describe each event or metric.",
   "$defs": {
     "_channel": {
       "title": "_channel",
@@ -28,9 +28,9 @@
     },
     "format": {
       "title": "format",
-      "description": "Specifies the format for output of events and metrics from AppScope. See `scope.yml`.",
+      "description": "Specifies the format for output of events and metrics from AppView. See `appview.yml`.",
       "type": "string",
-      "enum": ["scope", "ndjson"]
+      "enum": ["appview", "ndjson"]
     },
     "id": {
       "title": "id",

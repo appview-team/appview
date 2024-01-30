@@ -1,10 +1,10 @@
 #! /bin/bash
 
 LTP=$HOME/ltp/testcases/kernel/
-LIBSCOPE=$HOME/scope/lib/linux/libscope.so
+LIBAPPVIEW=$HOME/appview/lib/linux/libappview.so
 
 run_test() {
-if PATH=$PATH:$LTP/$1 LD_PRELOAD=$LIBSCOPE $LTP/$1/$2
+if PATH=$PATH:$LTP/$1 LD_PRELOAD=$LIBAPPVIEW $LTP/$1/$2
 then
     echo "PASS"
 else

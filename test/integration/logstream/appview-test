@@ -1,0 +1,6 @@
+#!/bin/bash
+python3.8 \
+    /opt/test-runner/app.py \
+    -t cribl \
+    -l /opt/test-runner/logs/ \
+    -s /usr/local/appview/lib/libappview.so

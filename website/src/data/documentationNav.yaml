@@ -1,35 +1,35 @@
-- name: About AppScope
+- name: About AppView
   child: 
     - name: Overview
       path: /docs/overview
 
-    - name: How AppScope Works
+    - name: How AppView Works
       path: /docs/how-works
 
-    - name: Working With AppScope
+    - name: Working With AppView
       path: /docs/working-with
 
-    - name: Events and Metrics in AppScope
+    - name: Events and Metrics in AppView
       path: /docs/events-and-metrics
 
     - name: Cool, but What Can I Do with It?
-      path: /docs/what-do-with-scope
+      path: /docs/what-do-with-appview
 
-- name: Solving Problems with AppScope
+- name: Solving Problems with AppView
   child: 
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis
 
-- name: Using AppScope With Cribl Edge
+- name: Using AppView With Cribl Edge
   child: 
     - name: Cribl Edge on a Host
-      path: /docs/edgescope-host
+      path: /docs/edgeappview-host
     - name: Cribl Edge in Docker 
-      path: /docs/edgescope-docker
+      path: /docs/edgeappview-docker
     - name: Cribl Edge in Kubernetes
-      path: /docs/edgescope-k8s
+      path: /docs/edgeappview-k8s
 
-- name: Getting AppScope
+- name: Getting AppView
   child: 
     - name: Requirements 
       path: /docs/requirements
@@ -43,7 +43,7 @@
     - name: Removing
       path: /docs/removing
 
-- name: Using AppScope
+- name: Using AppView
   child: 
     - name: Using the CLI
       path: /docs/cli-using

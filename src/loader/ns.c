@@ -16,12 +16,12 @@
 #include "nsinfo.h"
 #include "nsfile.h"
 #include "setup.h"
-#include "scopetypes.h"
+#include "appviewtypes.h"
 
-#define SCOPE_CRONTAB "* * * * * root /tmp/att%d.sh\n"
-#define SCOPE_START_SCRIPT "#! /bin/bash\nrm /etc/cron.d/cron\n%s start -f < %s\nrm -- $0\n"
-#define SCOPE_STOP_SCRIPT "#! /bin/bash\nrm /etc/cron.d/cron\n%s stop -f\nrm -- $0\n"
-#define SCOPE_ATTACH_SCRIPT "#! /bin/bash\nrm /etc/cron.d/scope%d\n%s --ldattach %d\nrm -- $0\n"
+#define APPVIEW_CRONTAB "* * * * * root /tmp/att%d.sh\n"
+#define APPVIEW_START_SCRIPT "#! /bin/bash\nrm /etc/cron.d/cron\n%s start -f < %s\nrm -- $0\n"
+#define APPVIEW_STOP_SCRIPT "#! /bin/bash\nrm /etc/cron.d/cron\n%s stop -f\nrm -- $0\n"
+#define APPVIEW_ATTACH_SCRIPT "#! /bin/bash\nrm /etc/cron.d/appview%d\n%s --ldattach %d\nrm -- $0\n"
 
 // NS Action types
 typedef enum {
@@ -104,7 +104,7 @@ createCron(const char *hostPrefixPath, const char *script, pid_t pid) {
 
     // Create and write to the /etc/cron.d/<cronfile> entry
     memset(path, 0, PATH_MAX);
-    if (snprintf(path, sizeof(path), "%s/etc/cron.d/scope%d", hostPrefixPath, pid) < 0) {
+    if (snprintf(path, sizeof(path), "%s/etc/cron.d/appview%d", hostPrefixPath, pid) < 0) {
         perror("createCron: /etc/cron.d/cron error: snprintf() failed\n");
         fprintf(stderr, "path: %s\n", path);
         return FALSE;
@@ -115,7 +115,7 @@ createCron(const char *hostPrefixPath, const char *script, pid_t pid) {
         return FALSE;
     }
     // Write cronfile contents
-    if (snprintf(cronjob, sizeof(cronjob), SCOPE_CRONTAB, pid) < 0) {
+    if (snprintf(cronjob, sizeof(cronjob), APPVIEW_CRONTAB, pid) < 0) {
         perror("createCron: sprintf() failed\n");
         return FALSE;
     }
@@ -236,7 +236,7 @@ getSelfNamespace(const char *ns) {
 static bool
 joinChildNamespace(pid_t hostPid, bool joinPidNs) {
     bool status = FALSE;
-    size_t scopeSize = 0;
+    size_t appviewSize = 0;
     size_t cfgSize = 0;
     mkdir_status_t dirRes = MKDIR_STATUS_ERR_OTHER;
 
@@ -249,13 +249,13 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
         return status;
     }
 
-    char *scopeMem = setupLoadFileIntoMem(&scopeSize, path);
-    if (scopeMem == NULL) {
+    char *appviewMem = setupLoadFileIntoMem(&appviewSize, path);
+    if (appviewMem == NULL) {
         return status;
     }
 
     // Configuration is optional
-    char *scopeCfgMem = setupLoadFileIntoMem(&cfgSize, getenv("SCOPE_CONF_PATH"));
+    char *appviewCfgMem = setupLoadFileIntoMem(&cfgSize, getenv("APPVIEW_CONF_PATH"));
 
    /*
     * Reassociate current process to the "child namespace"
@@ -274,7 +274,7 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
         goto cleanupMem;
     }
 
-    char *workdirPath = getenv("SCOPE_HOST_WORKDIR_PATH");
+    char *workdirPath = getenv("APPVIEW_HOST_WORKDIR_PATH");
     if (workdirPath) {
         memset(path, 0, PATH_MAX);
         libdirCreateDirIfMissing(workdirPath, 0777, nsUid, nsGid);
@@ -285,68 +285,68 @@ joinChildNamespace(pid_t hostPid, bool joinPidNs) {
         libdirCreateDirIfMissing(path, 0777, nsUid, nsGid);
     }
 
-    const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
+    const char *loaderVersion = libverNormalizedVersion(APPVIEW_VER);
     bool isDevVersion = libverIsNormVersionDev(loaderVersion);
 
-    /* For official version try to use /usr/lib/appscope */
+    /* For official version try to use /usr/lib/appview */
     // TODO this seems wrong? write to /usr/lib only if root (not if dev==true)
     if (isDevVersion == FALSE) {
         memset(path, 0, PATH_MAX);
-        snprintf(path, PATH_MAX, "/usr/lib/appscope/%s/", loaderVersion);
+        snprintf(path, PATH_MAX, "/usr/lib/appview/%s/", loaderVersion);
         dirRes = libdirCreateDirIfMissing(path, 0755, nsUid, nsGid);
         if (dirRes <= MKDIR_STATUS_EXISTS) {
-            strncat(path, "scope", sizeof(path) - 1);
-            status = extractMemToFile(scopeMem, scopeSize, path, 0775, isDevVersion, nsUid, nsGid);
+            strncat(path, "appview", sizeof(path) - 1);
+            status = extractMemToFile(appviewMem, appviewSize, path, 0775, isDevVersion, nsUid, nsGid);
         }
     }
 
-    /* For dev version or if extract for official version try to use /tmp/appscope path */
+    /* For dev version or if extract for official version try to use /tmp/appview path */
     // TODO this seems wrong? write to /tmp only if nonroot (not if dev==false)
     if (status == FALSE) {
         memset(path, 0, PATH_MAX);
-        snprintf(path, PATH_MAX, "/tmp/appscope/%s/", loaderVersion);
+        snprintf(path, PATH_MAX, "/tmp/appview/%s/", loaderVersion);
         dirRes = libdirCreateDirIfMissing(path, 0777, nsUid, nsGid);
         if (dirRes <= MKDIR_STATUS_EXISTS) {
-            strncat(path, "scope", sizeof(path) - 1);
-            status = extractMemToFile(scopeMem, scopeSize, path, 0775, isDevVersion, nsUid, nsGid);
+            strncat(path, "appview", sizeof(path) - 1);
+            status = extractMemToFile(appviewMem, appviewSize, path, 0775, isDevVersion, nsUid, nsGid);
         }
     }
 
-    /* Cleanup if extraction of scope fails */
+    /* Cleanup if extraction of appview fails */
     if (status == FALSE) {
         goto cleanupMem;
     }
 
-    if (scopeCfgMem) {
-        char scopeCfgPath[PATH_MAX] = {0};
+    if (appviewCfgMem) {
+        char appviewCfgPath[PATH_MAX] = {0};
 
-        // extract scope.yml configuration
+        // extract appview.yml configuration
         if (workdirPath) {
-            snprintf(scopeCfgPath, sizeof(scopeCfgPath), "%s/scope.yml", workdirPath);
+            snprintf(appviewCfgPath, sizeof(appviewCfgPath), "%s/appview.yml", workdirPath);
         } else {
-            snprintf(scopeCfgPath, sizeof(scopeCfgPath), "/tmp/scope%d.yml", hostPid);
+            snprintf(appviewCfgPath, sizeof(appviewCfgPath), "/tmp/appview%d.yml", hostPid);
         }
-        status = extractMemToFile(scopeCfgMem, cfgSize, scopeCfgPath, 0664, TRUE, nsUid, nsGid);
-        // replace the SCOPE_CONF_PATH with namespace path
-        setenv("SCOPE_CONF_PATH", scopeCfgPath, 1);
+        status = extractMemToFile(appviewCfgMem, cfgSize, appviewCfgPath, 0664, TRUE, nsUid, nsGid);
+        // replace the APPVIEW_CONF_PATH with namespace path
+        setenv("APPVIEW_CONF_PATH", appviewCfgPath, 1);
     }   
 
 cleanupMem:
-    munmap(scopeMem, scopeSize);
+    munmap(appviewMem, appviewSize);
 
-    if (scopeCfgMem) {
-        munmap(scopeCfgMem, cfgSize);
+    if (appviewCfgMem) {
+        munmap(appviewCfgMem, cfgSize);
     }
 
     return status;
 }
 
 /*
- * Check if libscope.so is loaded in specified PID
+ * Check if libappview.so is loaded in specified PID
  * Returns TRUE if library is loaded, FALSE otherwise.
  */
 static bool
-isLibScopeLoaded(pid_t pid)
+isLibAppViewLoaded(pid_t pid)
 {
     char mapsPath[PATH_MAX] = {0};
     char buffer[9076];
@@ -362,7 +362,7 @@ isLibScopeLoaded(pid_t pid)
     }
 
     while (fgets(buffer, sizeof(buffer), fd)) {
-        if (strstr(buffer, "libscope.so")) {
+        if (strstr(buffer, "libappview.so")) {
             status = TRUE;
             break;
         }
@@ -389,7 +389,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, bool ldattach)
 {
     char *opStatus = "Detach";
     char *childOp = "-d";
-    bool libLoaded = isLibScopeLoaded(parentPid);
+    bool libLoaded = isLibAppViewLoaded(parentPid);
 
     if (ldattach) {
         childOp = "-a";
@@ -400,7 +400,7 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, bool ldattach)
     }
     /*
     * TODO In case of Reattach/Detach - when libLoaded = TRUE
-    * We only need the mount namespace to /dev/shm but currently scope
+    * We only need the mount namespace to /dev/shm but currently appview
     * also check the pid namespace
     */
 
@@ -429,15 +429,15 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, bool ldattach)
             return EXIT_FAILURE;
         }
 
-        const char *loaderVersion = libverNormalizedVersion(SCOPE_VER);
+        const char *loaderVersion = libverNormalizedVersion(APPVIEW_VER);
         bool isDevVersion = libverIsNormVersionDev(loaderVersion);
 
-        snprintf(loaderInChildPath, PATH_MAX, "/usr/lib/appscope/%s/scope", loaderVersion);
+        snprintf(loaderInChildPath, PATH_MAX, "/usr/lib/appview/%s/appview", loaderVersion);
         if (access(loaderInChildPath, R_OK) || isDevVersion) {
             memset(loaderInChildPath, 0, PATH_MAX);
-            snprintf(loaderInChildPath, PATH_MAX, "/tmp/appscope/%s/scope", loaderVersion);
+            snprintf(loaderInChildPath, PATH_MAX, "/tmp/appview/%s/appview", loaderVersion);
             if (access(loaderInChildPath, R_OK)) {
-                fprintf(stderr, "error: access scope failed\n");
+                fprintf(stderr, "error: access appview failed\n");
                 free(execArgv);
                 return EXIT_FAILURE;
             }
@@ -467,8 +467,8 @@ nsForkAndExec(pid_t parentPid, pid_t nsPid, bool ldattach)
 
 // TODO migrate to cmdAttach
 // Change to the target mount namespace
-// Extract scope into that namespace
-// Extract a cron script into that namespace to run `scope --ldattach [pid]`
+// Extract appview into that namespace
+// Extract a cron script into that namespace to run `appview --ldattach [pid]`
 // Optionally copy a config into the target mnt ns
 int
 nsAttach(pid_t pid, const char *rootDir)
@@ -477,9 +477,9 @@ nsAttach(pid_t pid, const char *rootDir)
     int ret = EXIT_SUCCESS;
     size_t cfgSize = 0;
     char script[1024];
-    char *scopePath = NULL;
-    char scopeCfgPath[PATH_MAX] = {0};
-    char scopeCmd[PATH_MAX] = {0};
+    char *appviewPath = NULL;
+    char appviewCfgPath[PATH_MAX] = {0};
+    char appviewCmd[PATH_MAX] = {0};
     char path[PATH_MAX] = {0};
     unsigned char *file = NULL;
     size_t file_len;
@@ -521,9 +521,9 @@ nsAttach(pid_t pid, const char *rootDir)
 
 
     // Configuration is optionally loaded into memory while in the origin namespace
-    char *scopeCfgMem = setupLoadFileIntoMem(&cfgSize, getenv("SCOPE_CONF_PATH"));
+    char *appviewCfgMem = setupLoadFileIntoMem(&cfgSize, getenv("APPVIEW_CONF_PATH"));
 
-    // Extract library from scope binary into memory while in the origin namespace
+    // Extract library from appview binary into memory while in the origin namespace
     if ((file_len = getAsset(STATIC_LOADER_FILE, &file)) == -1) {
         fprintf(stderr, "nsAttach getAsset failed\n");
         ret = EXIT_FAILURE;
@@ -541,7 +541,7 @@ nsAttach(pid_t pid, const char *rootDir)
         goto out;
     }
 
-    // Extract the scope loader
+    // Extract the appview loader
     if (libdirExtract(file, file_len, nsUid, nsGid, STATIC_LOADER_FILE)) {
         fprintf(stderr, "nsAttach extract failed\n");
         ret = EXIT_FAILURE;
@@ -550,21 +550,21 @@ nsAttach(pid_t pid, const char *rootDir)
 
     // Create script and cron job to perform the attach 
 
-    scopePath = (char *)libdirGetPath(STATIC_LOADER_FILE);
-    if (!scopePath) {
+    appviewPath = (char *)libdirGetPath(STATIC_LOADER_FILE);
+    if (!appviewPath) {
         fprintf(stderr, "error: nsAttach: failed to get loader path\n");
         ret = EXIT_FAILURE;
         goto out;
     }
 
-    if (!strncpy(scopeCmd, scopePath, sizeof(scopeCmd))) {
+    if (!strncpy(appviewCmd, appviewPath, sizeof(appviewCmd))) {
         perror("error: nsAttach: strncpy failed\n");
         ret = EXIT_FAILURE;
         goto out;
     }
 
     // Set up the working directory in the target ns, to match the origin ns working directory
-    char *workdirPath = getenv("SCOPE_HOST_WORKDIR_PATH");
+    char *workdirPath = getenv("APPVIEW_HOST_WORKDIR_PATH");
     if (workdirPath) {
         memset(path, 0, PATH_MAX);
         libdirCreateDirIfMissing(workdirPath, 0777, nsUid, nsGid);
@@ -579,26 +579,26 @@ nsAttach(pid_t pid, const char *rootDir)
     }
 
     // If a config was loaded into memory, extract it into the target ns and update
-    // the scope command to include the config env var
-    if (scopeCfgMem) {
-        if (snprintf(scopeCfgPath, sizeof(scopeCfgPath), "%s/scope%d.yml", workdirPath, hostPid) < 0) {
+    // the appview command to include the config env var
+    if (appviewCfgMem) {
+        if (snprintf(appviewCfgPath, sizeof(appviewCfgPath), "%s/appview%d.yml", workdirPath, hostPid) < 0) {
             perror("error: nsAttach: snprintf() failed\n");
             ret = EXIT_FAILURE;
             goto out;
         }
-        if (!extractMemToFile(scopeCfgMem, cfgSize, scopeCfgPath, 0664, TRUE, nsUid, nsGid)) {
+        if (!extractMemToFile(appviewCfgMem, cfgSize, appviewCfgPath, 0664, TRUE, nsUid, nsGid)) {
             fprintf(stderr, "error: nsAttach: failed to extract config to target ns\n");
             ret = EXIT_FAILURE;
             goto out;
         }
-        if (snprintf(scopeCmd, sizeof(scopeCmd), "SCOPE_CONF_PATH=%s %s", scopeCfgPath, scopePath) < 0) {
+        if (snprintf(appviewCmd, sizeof(appviewCmd), "APPVIEW_CONF_PATH=%s %s", appviewCfgPath, appviewPath) < 0) {
             perror("error: nsAttach: snprintf() failed\n");
             ret = EXIT_FAILURE;
             goto out;
         }
     }
 
-    if (snprintf(script, sizeof(script), SCOPE_ATTACH_SCRIPT, hostPid, scopeCmd, hostPid) < 0) {
+    if (snprintf(script, sizeof(script), APPVIEW_ATTACH_SCRIPT, hostPid, appviewCmd, hostPid) < 0) {
         perror("error: nsAttach: sprintf() failed\n");
         ret = EXIT_FAILURE;
         goto out;
@@ -612,7 +612,7 @@ nsAttach(pid_t pid, const char *rootDir)
 
 out:
     if (file) munmap(file, file_len);
-    if (scopeCfgMem) munmap(scopeCfgMem, cfgSize);
+    if (appviewCfgMem) munmap(appviewCfgMem, cfgSize);
 
     return ret;
 }

@@ -20,24 +20,24 @@ COPY sshd/ssh_test.sh /opt/test-runner
 
 RUN service ssh start
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_EVENT_DEST=file:///opt/test-runner/events.log
-ENV SCOPE_LOG_DEST=file:///opt/test-runner/scope.log
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_EVENT_DEST=file:///opt/test-runner/events.log
+ENV APPVIEW_LOG_DEST=file:///opt/test-runner/appview.log
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY sshd/scope-test /usr/local/scope/scope-test
+COPY sshd/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

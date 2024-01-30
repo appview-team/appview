@@ -63,21 +63,21 @@ RUN cd /opt/telemetry-demo/src/currencyservice/ \
     && cmake -DCMAKE_BUILD_TYPE=Release .. \
     && make -j$(nproc) install
 
-ENV SCOPE_CRIBL_ENABLE=false
+ENV APPVIEW_CRIBL_ENABLE=false
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-RUN echo "export PATH=/usr/local/scope:/usr/local/scope/bin:${PATH}" >/etc/profile.d/path.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+RUN echo "export PATH=/usr/local/appview:/usr/local/appview/bin:${PATH}" >/etc/profile.d/path.sh
 
-COPY scope-profile.sh /etc/profile.d/scope.sh
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
      mkdir -p /opt/test-runner/logs/ && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview
 
-COPY opentelemetry/scope-test /usr/local/scope/scope-test
+COPY opentelemetry/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

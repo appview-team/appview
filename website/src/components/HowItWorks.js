@@ -19,7 +19,7 @@ export default function HowItWorks() {
         }
       }
 
-      file(relativePath: { eq: "AppScope-system-level-design.png" }) {
+      file(relativePath: { eq: "AppView-system-level-design.png" }) {
         childImageSharp {
           fluid {
             sizes
@@ -54,7 +54,7 @@ export default function HowItWorks() {
         <Col xs={12} md={6}>
           <Img
             fluid={data.file.childImageSharp.fluid}
-            alt="AppScope Machine"
+            alt="AppView Machine"
             style={{ maxWidth: 90 + "%", margin: "10px auto" }}
           />
         </Col>

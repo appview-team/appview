@@ -1,4 +1,4 @@
-// gcc -g test/manual/dns_response_parse.c -lresolv -o ~/scope/utils/dp 
+// gcc -g test/manual/dns_response_parse.c -lresolv -o ~/appview/utils/dp 
 
 #include <unistd.h>
 #include <sys/stat.h>

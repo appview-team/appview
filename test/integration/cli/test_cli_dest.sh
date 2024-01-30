@@ -39,14 +39,14 @@ endtest(){
     rm -f $DEST_FILE
 }
 
-export SCOPE_PAYLOAD_ENABLE=true
-export SCOPE_PAYLOAD_HEADER=true
+export APPVIEW_PAYLOAD_ENABLE=true
+export APPVIEW_PAYLOAD_HEADER=true
 
 ### change current directory
 cd /opt/test-runner
 
 #
-# scope metricdest file socket
+# appview metricdest file socket
 #
 
 starttest metricdest_file_socket
@@ -54,7 +54,7 @@ starttest metricdest_file_socket
 nc -lU $FILE_SOCKET > $DEST_FILE &
 ERR+=$?
 
-scope run --metricdest=unix://$FILE_SOCKET ls
+appview run --metricdest=unix://$FILE_SOCKET ls
 ERR+=$?
 
 count=$(grep '"type":"metric"' $DEST_FILE | wc -l)
@@ -70,7 +70,7 @@ fi
 endtest
 
 #
-# scope eventdest file socket
+# appview eventdest file socket
 #
 
 starttest eventdest_file_socket
@@ -78,7 +78,7 @@ starttest eventdest_file_socket
 nc -lU $FILE_SOCKET > $DEST_FILE &
 ERR+=$?
 
-scope run --eventdest=unix://$FILE_SOCKET ls
+appview run --eventdest=unix://$FILE_SOCKET ls
 ERR+=$?
 
 # "type":"metric" appears in the proc start event 
@@ -96,7 +96,7 @@ fi
 endtest
 
 #
-# scope cribldest file socket
+# appview cribldest file socket
 #
 
 starttest cribldest_file_socket
@@ -104,13 +104,13 @@ starttest cribldest_file_socket
 nc -lU $FILE_SOCKET > $DEST_FILE &
 ERR+=$?
 
-PRE_SCOPE_CRIBL_ENABLE=$SCOPE_CRIBL_ENABLE
-unset SCOPE_CRIBL_ENABLE
+PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
+unset APPVIEW_CRIBL_ENABLE
 
-scope run --cribldest=unix://$FILE_SOCKET ls
+appview run --cribldest=unix://$FILE_SOCKET ls
 ERR+=$?
 
-export SCOPE_CRIBL_ENABLE=$PRE_SCOPE_CRIBL_ENABLE
+export APPVIEW_CRIBL_ENABLE=$PRE_APPVIEW_CRIBL_ENABLE
 
 
 count=$(grep '"type":"metric"' $DEST_FILE | wc -l)
@@ -125,8 +125,8 @@ fi
 
 endtest
 
-unset SCOPE_PAYLOAD_ENABLE
-unset SCOPE_PAYLOAD_HEADER
+unset APPVIEW_PAYLOAD_ENABLE
+unset APPVIEW_PAYLOAD_HEADER
 
 if (( $FAILED_TEST_COUNT == 0 )); then
     echo ""

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"os"
 
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/run"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/run"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
@@ -23,7 +23,7 @@ func Stop(rc *run.Config) error {
 	// Validate user has root permissions
 	if err := util.UserVerifyRootPerm(); err != nil {
 		log.Error().
-			Msg("Scope stop requires administrator privileges")
+			Msg("AppView stop requires administrator privileges")
 		return err
 	}
 
@@ -34,10 +34,10 @@ func Stop(rc *run.Config) error {
 	// Empty the global rules file
 	////////////////////////////////////////////
 
-	var rulesFile libscope.Rules
+	var rulesFile libappview.Rules
 
 	// Write the rules contents to a temporary path
-	rulesFilePath := "/tmp/scope_rules"
+	rulesFilePath := "/tmp/appview_rules"
 	file, err := os.OpenFile(rulesFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Error creating/opening %s", rulesFilePath)
@@ -79,7 +79,7 @@ func Stop(rc *run.Config) error {
 	}
 
 	////////////////////////////////////////////
-	// Detach from all scoped processes
+	// Detach from all viewed processes
 	////////////////////////////////////////////
 
 	procs, err := util.HandleInputArg("", "", rc.Rootdir, false, false, false, false)

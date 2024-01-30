@@ -11,13 +11,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/criblio/scope/events"
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/run"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/events"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/run"
+	"github.com/appview-team/appview/util"
 )
 
-// Session represents a scoped run
+// Session represents a viewed run
 type Session struct {
 	ID           int           `json:"id"`
 	Cmd          string        `json:"cmd"`
@@ -37,8 +37,8 @@ type Session struct {
 	EventsDestPath    string `json:"eventsdestpath"`
 	CmdDirPath        string `json:"cmddirpath"`
 	PayloadsPath      string `json:"payloadspath"`
-	ScopeLogPath      string `json:"scopelogpath"`
-	LibscopeLogPath   string `json:"libscopelogpath"`
+	AppViewLogPath      string `json:"appviewlogpath"`
+	LibappviewLogPath   string `json:"libappviewlogpath"`
 }
 
 // SessionList represents a list of sessions
@@ -48,7 +48,7 @@ type SessionList []Session
 func GetSessions() (ret SessionList) {
 	histDir := run.HistoryDir()
 	files, err := ioutil.ReadDir(histDir)
-	util.CheckErrSprintf(err, "No prior sessions found. Have you tried `scope run`?\nerror listing: %v", err)
+	util.CheckErrSprintf(err, "No prior sessions found. Have you tried `appview run`?\nerror listing: %v", err)
 	re := regexp.MustCompile(`([^_]+)_(\d+)_(\d+)_(\d+)`)
 	for _, f := range files {
 		vals := re.FindStringSubmatch(f.Name())
@@ -71,8 +71,8 @@ func GetSessions() (ret SessionList) {
 			MetricsFormatPath: filepath.Join(workDir, "metric_format"),
 			EventsDestPath:    filepath.Join(workDir, "event_dest"),
 			PayloadsPath:      filepath.Join(workDir, "payloads"),
-			ScopeLogPath:      filepath.Join(workDir, "scope.log"),
-			LibscopeLogPath:   filepath.Join(workDir, "libscope.log"),
+			AppViewLogPath:      filepath.Join(workDir, "appview.log"),
+			LibappviewLogPath:   filepath.Join(workDir, "libappview.log"),
 		})
 	}
 	sort.Slice(ret, func(i, j int) bool { return ret[i].ID < ret[j].ID })
@@ -154,7 +154,7 @@ func (sessions SessionList) CountAndDuration() (ret SessionList) {
 		} else {
 			file, err := os.Open(s.EventsPath)
 			if err == nil {
-				in := make(chan libscope.EventBody)
+				in := make(chan libappview.EventBody)
 				// There may be lines which aren't actually events, so iterate over the last 5 and hope we catch a timestamp
 				go events.EventReader(file, 0, util.MatchSkipN(s.EventCount-1), in)
 				for e := range in {

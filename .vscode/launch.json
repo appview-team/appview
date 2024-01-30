@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(go) scope command",
+            "name": "(go) appview command",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -15,7 +15,7 @@
             // "args": ["attach", "8896"]
         },
         {
-            "name": "(go) sudo scope daemon",
+            "name": "(go) sudo appview daemon",
             "type": "go",
             "request": "launch",
             "mode": "debug",
@@ -36,7 +36,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
-                { "name":"LD_PRELOAD", "value":"lib/linux/x86_64/libscope.so"}
+                { "name":"LD_PRELOAD", "value":"lib/linux/x86_64/libappview.so"}
             ],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -59,7 +59,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [
-                { "name":"LD_PRELOAD", "value":"lib/linux/aarch64/libscope.so"}
+                { "name":"LD_PRELOAD", "value":"lib/linux/aarch64/libappview.so"}
             ],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -74,10 +74,10 @@
             ]
         },
         {
-            "name": "(gdb) ldscope curl x86_64",
+            "name": "(gdb) ldappview curl x86_64",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/linux/x86_64/ldscope",
+            "program": "${workspaceFolder}/bin/linux/x86_64/ldappview",
             "args": ["curl", "--http2-prior-knowledge", "nghttp2.org/robots.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -95,10 +95,10 @@
             ]
         },
         {
-            "name": "(gdb) ldscope curl aarch64",
+            "name": "(gdb) ldappview curl aarch64",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/bin/linux/aarch64/ldscope",
+            "program": "${workspaceFolder}/bin/linux/aarch64/ldappview",
             "args": ["curl", "--http2-prior-knowledge", "nghttp2.org/robots.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

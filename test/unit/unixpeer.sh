@@ -1,9 +1,9 @@
 #! /bin/bash
 
-export SCOPE_CRIBL_ENABLE=false
-export SCOPE_EVENT_METRIC=true
-export SCOPE_EVENT_DEST=file:///tmp/scope_peer.log
-export LD_PRELOAD=./lib/linux/$(uname -m)/libscope.so
+export APPVIEW_CRIBL_ENABLE=false
+export APPVIEW_EVENT_METRIC=true
+export APPVIEW_EVENT_DEST=file:///tmp/appview_peer.log
+export LD_PRELOAD=./lib/linux/$(uname -m)/libappview.so
 
 declare -i ERR=0
 

@@ -3,9 +3,9 @@
 #
 
 # The build environment's top level bin/linux/ folder is mounted at
-# /usr/local/scope/bin and lib/linux is at /usr/local/scope/lib. We are
+# /usr/local/appview/bin and lib/linux is at /usr/local/appview/lib. We are
 # preloading the library automatically here.
-set environment LD_PRELOAD=/usr/local/scope/lib/libscope.so
+set environment LD_PRELOAD=/usr/local/appview/lib/libappview.so
 
 handle SIGUSR2 pass nostop
 set print elements 0
@@ -14,4 +14,4 @@ set detach-on-fork on
 set breakpoint pending on
 
 # The top-level directory if the build environment are mounted here.
-set directories /opt/appscope
+set directories /opt/appview

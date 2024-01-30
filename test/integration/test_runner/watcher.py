@@ -15,12 +15,12 @@ class TestWatcher:
         self.__has_failures = False
         self.execution_error = None
 
-    def test_execution_completed(self, name: str, duration: int, scoped: bool, result: TestResult, scope_messages: List[str], test_data: Any):
+    def test_execution_completed(self, name: str, duration: int, viewed: bool, result: TestResult, appview_messages: List[str], test_data: Any):
         test_results = self.__results[name]
-        result_to_update = test_results.scoped_execution_data if scoped else test_results.unscoped_execution_data
+        result_to_update = test_results.viewed_execution_data if viewed else test_results.unviewd_execution_data
         result_to_update.result = result
         result_to_update.duration = duration
-        result_to_update.scope_messages = scope_messages
+        result_to_update.appview_messages = appview_messages
         result_to_update.test_data = test_data
 
     def test_validated(self, name, passed, error=None):

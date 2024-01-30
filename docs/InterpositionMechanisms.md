@@ -1,6 +1,6 @@
 # Interposition Mechanisms
 
-In the document AppScope Design, we outlined how AppScope uses function interpositioning as a means to extract information from applications, in user mode, at run time. In this document, we want to provide an overview of a few (among many available) interposition mechanisms that we&#39;ve found valuable in building AppScope. This document delves into application development details, and will be of particular interest to developers interested in application performance.
+In the document AppView Design, we outlined how AppView uses function interpositioning as a means to extract information from applications, in user mode, at run time. In this document, we want to provide an overview of a few (among many available) interposition mechanisms that we&#39;ve found valuable in building AppView. This document delves into application development details, and will be of particular interest to developers interested in application performance.
 
 ## Library Preload
 

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	linq "github.com/ahmetb/go-linq/v3"
-	"github.com/criblio/scope/flows"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/flows"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -36,12 +36,12 @@ var flowsCmd = &cobra.Command{
 	Use:   "flows [flags] <ID>",
 	Short: "Observed flows from the session, potentially including payloads",
 	Long:  `Displays observed flows from the given session. If run with payload capture on, outputs full payloads from the flow.`,
-	Example: `  scope flows                # Displays all flows
-  scope flows 124x3c         # Displays more info about the flow
-  scope flows --in 124x3c    # Displays the inbound payload of that flow
-  scope flows --out 124x3c   # Displays the outbound payload of that flow
-  scope flows -p 0.0.0.0/24  # Displays flows in that subnet range
-  scope flows --sort net_host_port --reverse  # Sort flows by ascending host port
+	Example: `  appview flows                # Displays all flows
+  appview flows 124x3c         # Displays more info about the flow
+  appview flows --in 124x3c    # Displays the inbound payload of that flow
+  appview flows --out 124x3c   # Displays the outbound payload of that flow
+  appview flows -p 0.0.0.0/24  # Displays flows in that subnet range
+  appview flows --sort net_host_port --reverse  # Sort flows by ascending host port
 `,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

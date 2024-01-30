@@ -61,7 +61,7 @@ func GetPodmanPids(rootdir string) ([]int, error) {
 
 // Get the List of PID(s) related to specific container runtime
 func getContainerRuntimePids(rootdir, runtimeProc string) ([]int, error) {
-	runtimeContPids, err := PidScopeMapByProcessName(rootdir, runtimeProc)
+	runtimeContPids, err := PidAppViewMapByProcessName(rootdir, runtimeProc)
 	if err != nil {
 		return nil, err
 	}
@@ -86,11 +86,11 @@ func getContainerRuntimePids(rootdir, runtimeProc string) ([]int, error) {
 }
 
 /*
- * Detect whether or not scope was executed inside a container
+ * Detect whether or not appview was executed inside a container
  * What is a reasonable algorithm for determining if the current process is in a container?
  * Checking ~/.dockerenv doesn't work for non-docker containers
  * Checking hierarchies in /proc/1/cgroup == / works in some case. However, some hierarchies
- * on non-containers are /init.scope (Ubuntu 20.04 cgroup 0 and 1). Not reliable.
+ * on non-containers are /init.appview (Ubuntu 20.04 cgroup 0 and 1). Not reliable.
  * Checking for container=lxc | docker in /proc/1/environ works for lxc but not docker, and it
  * requires root privs.
  * Checking /proc/self/cgroup for content after cpuset doesn't work in all cases

@@ -1,9 +1,0 @@
-#!/bin/bash
-scope extract /opt/test/
-exec /opt/test-runner/bin/python \
-    /opt/test-runner/app.py \
-    -t syscalls \
-    -l /opt/test-runner/logs/ \
-    -s /opt/test/libscope.so \
-    --syscalls_tests_config /opt/test-runner/syscall_tests_conf.json \
-    -m tcp

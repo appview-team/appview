@@ -12,7 +12,7 @@ class TestGetUrl(ApplicationTest):
         self.requests = requests
         self.url = url
 
-    def do_run(self, scoped):
+    def do_run(self, viewed):
         time.sleep(5)
         benchmark_results = run_apache_benchmark(url=self.url, requests=self.requests)
         time.sleep(5)
@@ -37,7 +37,7 @@ class TestPostToUrl(ApplicationTest):
         self.url = url
         self.post_file = post_file
 
-    def do_run(self, scoped):
+    def do_run(self, viewed):
         time.sleep(5)
         benchmark_results = run_apache_benchmark(url=self.url, requests=self.requests, post_file=self.post_file)
         time.sleep(5)

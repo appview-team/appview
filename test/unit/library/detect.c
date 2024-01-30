@@ -1,6 +1,6 @@
 /*
  * This test does not require a Slack token to be defined.
- * If you want to see notifications in Slack set the env var "SCOPE_SLACKBOT_TOKEN"
+ * If you want to see notifications in Slack set the env var "APPVIEW_SLACKBOT_TOKEN"
  * to the token for your Slack and change the value of NOTIFY_IQ_SEND to TRUE in
  * the init function below.
  */
@@ -13,8 +13,8 @@
 #include <arpa/inet.h>
 
 #include "test.h"
-#include "scopestdlib.h"
-#include "scopetypes.h"
+#include "appviewstdlib.h"
+#include "appviewtypes.h"
 #include "fn.h"
 #include "state.h"
 #include "notify.h"

@@ -2,14 +2,14 @@
 
 
 if [ $# -ne 1 ]; then
-    echo "Please provide an IP:port argument for the Edge AppScope source."
+    echo "Please provide an IP:port argument for the Edge AppView source."
     exit
 fi
 
 echo -e "\n--- Starting a k8s cluster connecting to Edge at $1  ---\n"
 
-echo -e "\n--- Build AppScope and image ---\n"
-cd ~/appscope && make all && make image
+echo -e "\n--- Build AppView and image ---\n"
+cd ~/appview && make all && make image
 
 cd "${0%/*}"
 
@@ -20,7 +20,7 @@ echo -e "\n--- Create a new cluster ---\n"
 kind create cluster
 
 echo -e "\n--- Load docker images locally ---\n"
-kind load docker-image cribl/scope:dev
+kind load docker-image cribl/appview:dev
 sleep 2
 
 echo -e "\n--- Start Edge in the cluster ---\n"
@@ -34,11 +34,11 @@ helm install --repo "https://criblio.github.io/helm-charts/" --version "^4.1.2" 
 #
 
 
-echo -e "\n--- Run scope k8s to start webhook and prometheus exporter in cluster ---\n"
+echo -e "\n--- Run appview k8s to start webhook and prometheus exporter in cluster ---\n"
 # arg 1 example: 10.244.0.6:10092
-docker run -it --rm cribl/scope:dev scope k8s --metricformat statsd --metricprefix appscope -m tcp://scope-stats-exporter:9109 -e tcp://$1 | kubectl apply -f -
+docker run -it --rm cribl/appview:dev appview k8s --metricformat statsd --metricprefix appview -m tcp://appview-stats-exporter:9109 -e tcp://$1 | kubectl apply -f -
 sleep 10
-kubectl label namespace default scope=enabled
+kubectl label namespace default appview=enabled
 sleep 10
 
 echo -e "\n--- Start an app as source of events & metrics ---\n"

@@ -3,8 +3,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
@@ -14,12 +14,12 @@ import (
 // psCmd represents the ps command
 var psCmd = &cobra.Command{
 	Use:   "ps",
-	Short: "List processes currently being scoped",
-	Long:  `List processes currently being scoped.`,
-	Example: `  scope ps
-  scope ps --json
-  scope ps --rootdir /path/to/host/root
-  scope ps --rootdir /path/to/host/root/proc/<hostpid>/root`,
+	Short: "List processes currently being viewed",
+	Long:  `List processes currently being viewed.`,
+	Example: `  appview ps
+  appview ps --json
+  appview ps --rootdir /path/to/host/root
+  appview ps --rootdir /path/to/host/root/proc/<hostpid>/root`,
 	Args: cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
@@ -31,12 +31,12 @@ var psCmd = &cobra.Command{
 			util.ErrAndExit("Unable to get current user: %v", err)
 		}
 		if errors.Is(err, util.ErrMissingAdmPriv) {
-			util.Warn("INFO: Run as root (or via sudo) to see all scoped processes")
+			util.Warn("INFO: Run as root (or via sudo) to see all viewed processes")
 		}
 
-		procs, err := util.ProcessesScoped(rootdir)
+		procs, err := util.ProcessesViewed(rootdir)
 		if err != nil {
-			util.ErrAndExit("Unable to retrieve scoped processes: %v", err)
+			util.ErrAndExit("Unable to retrieve viewed processes: %v", err)
 		}
 		util.PrintObj([]util.ObjField{
 			{Name: "ID", Field: "id"},

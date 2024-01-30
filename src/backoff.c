@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include "backoff.h"
 #include "dbg.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 
 // Implementation based on this recommendation:
@@ -21,7 +21,7 @@ struct _backoff_t {
 backoff_t *
 backoffCreate(void)
 {
-    backoff_t *backoff = scope_calloc(1, sizeof(backoff_t));
+    backoff_t *backoff = appview_calloc(1, sizeof(backoff_t));
     if (!backoff) {
         DBG(NULL);
         return NULL;
@@ -48,7 +48,7 @@ backoffDestroy(backoff_t **backoff)
     if (!backoff || !*backoff) return;
     backoff_t *backoff_p = *backoff;
 
-    scope_free(backoff_p);
+    appview_free(backoff_p);
     *backoff = NULL;
 }
 
@@ -62,7 +62,7 @@ backoffAlgoAllowsConnect(backoff_t *backoff)
     if (++backoff->ms_count >= backoff->backoff_limit) {
 
         // A connetion attempt is allowed.  Init for the next retry period.
-        int jitter_ms = scope_rand() % 1000;
+        int jitter_ms = appview_rand() % 1000;
         backoff->backoff_limit = (backoff->backoff_base) + jitter_ms;
 
         if (backoff->backoff_base < BACKOFF_BASE_MAX) {

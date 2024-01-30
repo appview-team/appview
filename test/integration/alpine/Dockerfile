@@ -87,32 +87,32 @@ COPY ./tls/gdbinit /root/.gdbinit
 COPY ./alpine/test_go.sh /go
 COPY ./go/test_go_struct.sh /go
 COPY ./alpine/test_tls.sh /opt/test/bin/test_tls.sh
-COPY ./alpine/test_scope.sh /opt/test/bin/test_scope.sh
+COPY ./alpine/test_appview.sh /opt/test/bin/test_appview.sh
 COPY ./alpine/test_all.sh /opt/test/bin/test_all.sh
 
-ENV SCOPE_CRIBL_ENABLE=false
-ENV SCOPE_LOG_LEVEL=error
-ENV SCOPE_METRIC_VERBOSITY=4
-ENV SCOPE_EVENT_LOGFILE=true
-ENV SCOPE_EVENT_CONSOLE=true
-ENV SCOPE_EVENT_METRIC=true
-ENV SCOPE_EVENT_HTTP=true
+ENV APPVIEW_CRIBL_ENABLE=false
+ENV APPVIEW_LOG_LEVEL=error
+ENV APPVIEW_METRIC_VERBOSITY=4
+ENV APPVIEW_EVENT_LOGFILE=true
+ENV APPVIEW_EVENT_CONSOLE=true
+ENV APPVIEW_EVENT_METRIC=true
+ENV APPVIEW_EVENT_HTTP=true
 
 # We set these in test_all.sh now
-#ENV SCOPE_LOG_DEST=file:///opt/test-runner/logs/scope.log
-#ENV SCOPE_EVENT_DEST=file:///go/events.log
+#ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
+#ENV APPVIEW_EVENT_DEST=file:///go/events.log
 
-ENV PATH="/usr/local/scope:/usr/local/scope/bin:${PATH}"
-COPY scope-profile.sh /etc/profile.d/scope.sh
+ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 
-RUN  mkdir /usr/local/scope && \
-     mkdir /usr/local/scope/bin && \
-     mkdir /usr/local/scope/lib && \
-     ln -s /opt/appscope/bin/linux/$(uname -m)/scope /usr/local/scope/bin/scope && \
-     ln -s /opt/appscope/lib/linux/$(uname -m)/libscope.so /usr/local/scope/lib/libscope.so
+RUN  mkdir /usr/local/appview && \
+     mkdir /usr/local/appview/bin && \
+     mkdir /usr/local/appview/lib && \
+     ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY alpine/scope-test /usr/local/scope/scope-test
+COPY alpine/appview-test /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

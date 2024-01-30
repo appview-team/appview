@@ -3,21 +3,21 @@ package cmd
 import (
 	"time"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/util"
 	"github.com/spf13/cobra"
 )
 
 // watchCmd represents the watch command
 var watchCmd = &cobra.Command{
 	Use:   "watch [flags]",
-	Short: "Executes a scoped command on an interval",
-	Long:  `Executes a scoped command on an interval. Must be called with the -- flag, e.g., 'scope watch -- <command>', to prevent AppScope from attempting to parse flags passed to the executed command.`,
-	Example: `  scope watch -i 5s -- /bin/echo "foo"
-  scope watch --interval=1m-- perl -e 'print "foo\n"'
-  scope watch --interval=5s --payloads -- nc -lp 10001
-  scope watch -i 1h -- curl https://wttr.in/94105
-  scope watch --interval=10s -- curl https://wttr.in/94105`,
+	Short: "Executes a viewed command on an interval",
+	Long:  `Executes a viewed command on an interval. Must be called with the -- flag, e.g., 'appview watch -- <command>', to prevent AppView from attempting to parse flags passed to the executed command.`,
+	Example: `  appview watch -i 5s -- /bin/echo "foo"
+  appview watch --interval=1m-- perl -e 'print "foo\n"'
+  appview watch --interval=5s --payloads -- nc -lp 10001
+  appview watch -i 1h -- curl https://wttr.in/94105
+  appview watch --interval=10s -- curl https://wttr.in/94105`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		interval, _ := cmd.Flags().GetString("interval")

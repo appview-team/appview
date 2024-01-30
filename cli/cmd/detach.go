@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/criblio/scope/internal"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/internal"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
 var (
-	errNoScopedProcs     = errors.New("no scoped processes found")
+	errNoViewedProcs     = errors.New("no viewed processes found")
 	errDetachingMultiple = errors.New("at least one error found when detaching from more than 1 process. See logs")
 )
 
@@ -24,14 +24,14 @@ var (
 // detachCmd represents the detach command
 var detachCmd = &cobra.Command{
 	Use:   "detach [flags] PID | <process_name>",
-	Short: "Unscope a currently-running process",
-	Long:  `Unscopes a currently-running process identified by PID or <process_name>.`,
-	Example: `  scope detach 1000
-  scope detach firefox
-  scope detach --all
-  scope detach 1000 --rootdir /path/to/host/root
-  scope detach --rootdir /path/to/host/root
-  scope detach --all --rootdir /path/to/host/root/proc/<hostpid>/root`,
+	Short: "Unview a currently-running process",
+	Long:  `Unviews a currently-running process identified by PID or <process_name>.`,
+	Example: `  appview detach 1000
+  appview detach firefox
+  appview detach --all
+  appview detach 1000 --rootdir /path/to/host/root
+  appview detach --rootdir /path/to/host/root
+  appview detach --all --rootdir /path/to/host/root/proc/<hostpid>/root`,
 	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		internal.InitConfig()
@@ -54,7 +54,7 @@ var detachCmd = &cobra.Command{
 		}
 
 		if len(procs) == 0 {
-			util.ErrAndExit("Detach failure: %v", errNoScopedProcs)
+			util.ErrAndExit("Detach failure: %v", errNoViewedProcs)
 		}
 		if len(procs) == 1 {
 			if err = rc.Detach(procs[0].Pid); err != nil {

@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "atomic.h"
 #include "linklist.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -117,11 +117,11 @@ search_again:
 list_t*
 lstCreate(delete_fn_t delete_fn)
 {
-    list_t *list = scope_calloc(1, sizeof(list_t));
-    list_element_t* head = scope_calloc(1, sizeof(list_element_t));
+    list_t *list = appview_calloc(1, sizeof(list_t));
+    list_element_t* head = appview_calloc(1, sizeof(list_element_t));
     if (!list || !head) {
-        if (list) scope_free(list);
-        if (head) scope_free(head);
+        if (list) appview_free(list);
+        if (head) appview_free(head);
         return NULL;
     }
     list->head = head;
@@ -134,7 +134,7 @@ lstInsert (list_t *list, list_key_t key, void* data)
 {
     if (!list) return FALSE;
 
-    list_element_t *new_node = scope_calloc(1, sizeof(list_element_t));
+    list_element_t *new_node = appview_calloc(1, sizeof(list_element_t));
     if (!new_node) return FALSE;
     new_node->key = key;
     new_node->data = data;
@@ -144,7 +144,7 @@ lstInsert (list_t *list, list_key_t key, void* data)
     do {
         right_node = search (list, key, &left_node);
         if ((right_node) && (right_node->key == key)) { /*T1*/
-            scope_free(new_node);
+            appview_free(new_node);
             return FALSE;
         }
         new_node->next = right_node;
@@ -185,7 +185,7 @@ lstDelete (list_t *list, list_key_t search_key)
         list->delete_fn(right_node->data);
     }
 
-    if (right_node) scope_free(right_node);
+    if (right_node) appview_free(right_node);
 
     return TRUE;
 }
@@ -223,9 +223,9 @@ lstDestroy(list_t** list)
 
     // Delete the head of the list
     (*list)->head = NULL;
-    scope_free(head);
+    appview_free(head);
 
     // Delete the list itself
-    scope_free(*list);
+    appview_free(*list);
     *list = NULL;
 }

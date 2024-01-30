@@ -8,28 +8,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/criblio/scope/libscope"
-	"github.com/criblio/scope/loader"
-	"github.com/criblio/scope/run"
-	"github.com/criblio/scope/util"
+	"github.com/appview-team/appview/libappview"
+	"github.com/appview-team/appview/loader"
+	"github.com/appview-team/appview/run"
+	"github.com/appview-team/appview/util"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	errNoScopedProcs     = errors.New("no scoped processes found")
+	errNoViewedProcs     = errors.New("no viewed processes found")
 	errDetachingMultiple = errors.New("at least one error found when detaching from more than 1 process. See logs")
 	errAttachingMultiple = errors.New("at least one error found when attaching to more than 1 process. See logs")
 )
 
 // Retrieve the rules file from the global location
-func Retrieve(rootdir string) ([]byte, libscope.Rules, error) {
-	var rulesFile libscope.Rules
+func Retrieve(rootdir string) ([]byte, libappview.Rules, error) {
+	var rulesFile libappview.Rules
 
-	filePath := "/usr/lib/appscope/scope_rules"
+	filePath := "/usr/lib/appview/appview_rules"
 	//	// If $CRIBL_HOME is set, only look for a rules file there instead
 	//	if criblHome, present := os.LookupEnv("CRIBL_HOME"); present {
-	//		filePath = criblHome + "/appscope/scope_rules"
+	//		filePath = criblHome + "/appview/appview_rules"
 	//	}
 
 	if rootdir != "" {
@@ -61,8 +61,8 @@ func Retrieve(rootdir string) ([]byte, libscope.Rules, error) {
 	return data, rulesFile, nil
 }
 
-// Add a process to the scope rules
-func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, rc *run.Config, unixPath string) error {
+// Add a process to the appview rules
+func Add(rulesFile libappview.Rules, addProc, procArg, sourceid, rootdir string, rc *run.Config, unixPath string) error {
 
 	// Create a history directory for logs
 	rc.CreateWorkDirBasic("rules")
@@ -71,7 +71,7 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 	ld := loader.New()
 
 	////////////////////////////////////////////
-	// Install libscope if not already installed
+	// Install libappview if not already installed
 	////////////////////////////////////////////
 
 	stdoutStderr, err := ld.Install(rootdir)
@@ -94,11 +94,11 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 	rc.LoadConfig(true)
 
 	// Add the entry to the rules
-	newEntry := libscope.Entry{
+	newEntry := libappview.Entry{
 		ProcName:      addProc,
 		ProcArg:       procArg,
 		SourceId:      sourceid,
-		Configuration: rc.GetScopeConfig(),
+		Configuration: rc.GetAppViewConfig(),
 	}
 	rulesFile.Allow = append(rulesFile.Allow, newEntry)
 	if unixPath != "" {
@@ -106,7 +106,7 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 	}
 
 	// Write the rules contents to a temporary path
-	rulesFilePath := "/tmp/scope_rules"
+	rulesFilePath := "/tmp/appview_rules"
 	file, err := os.OpenFile(rulesFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Error creating/opening %s", rulesFilePath)
@@ -148,13 +148,13 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 	}
 
 	////////////////////////////////////////////
-	// Attach to all matching processes that are not already scoped
+	// Attach to all matching processes that are not already viewed
 	// (will re-attach to update existing procs)
 	////////////////////////////////////////////
 
 	// Create config file in the rules workdir for all processes to be attached
-	scYamlPath := filepath.Join(rc.WorkDir, "scope.yml")
-	if err := rc.WriteScopeConfig(scYamlPath, 0644); err != nil {
+	scYamlPath := filepath.Join(rc.WorkDir, "appview.yml")
+	if err := rc.WriteAppViewConfig(scYamlPath, 0644); err != nil {
 		return err
 	}
 
@@ -184,7 +184,7 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 		}
 	}
 
-	// TBC ? perform a scope detach to all processes that do not match anything in the rules file
+	// TBC ? perform a appview detach to all processes that do not match anything in the rules file
 
 	////////////////////////////////////////////
 	// Apply rules to existing containers
@@ -205,8 +205,8 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 			containerRootdir := fmt.Sprintf("%s/proc/%d/root", rootdir, cPid)
 
 			// Note: Install must be first so we don't trample on the host's files
-			// The install is required even though we are mounting /usr/lib/appscope
-			// because we need the /usr/lib/libscope.so link to be created AND we need
+			// The install is required even though we are mounting /usr/lib/appview
+			// because we need the /usr/lib/libappview.so link to be created AND we need
 			// it to point to the correct version (glibc/musl)
 
 			// Install the library
@@ -228,14 +228,14 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 				return err
 			}
 
-			// Mount `scope_rules` from the host into the container
+			// Mount `appview_rules` from the host into the container
 			// ? support CRIBL_HOME
-			stdoutStderr, err := ld.Mount("/usr/lib/appscope", cPid, rootdir)
+			stdoutStderr, err := ld.Mount("/usr/lib/appview", cPid, rootdir)
 			if err != nil {
 				log.Warn().
 					Err(err).
 					Str("loaderDetails", stdoutStderr).
-					Msgf("Mount /usr/lib/appscope in %d namespace failed.", cPid)
+					Msgf("Mount /usr/lib/appview in %d namespace failed.", cPid)
 				return err
 			}
 
@@ -249,7 +249,7 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 					log.Warn().
 						Err(err).
 						Str("loaderDetails", stdoutStderr).
-						Msgf("Mount /usr/lib/appscope in %d namespace failed.", cPid)
+						Msgf("Mount /usr/lib/appview in %d namespace failed.", cPid)
 					return err
 				}
 			}
@@ -261,9 +261,9 @@ func Add(rulesFile libscope.Rules, addProc, procArg, sourceid, rootdir string, r
 	return nil
 }
 
-// Remove a process from the scope rules
+// Remove a process from the appview rules
 // Note: No matching of the 'arg' field intended for removal.
-func Remove(rulesFile libscope.Rules, remProc, procArg, sourceid, rootdir string, rc *run.Config) error {
+func Remove(rulesFile libappview.Rules, remProc, procArg, sourceid, rootdir string, rc *run.Config) error {
 
 	// Create a history directory for logs
 	rc.CreateWorkDirBasic("rules")
@@ -288,7 +288,7 @@ func Remove(rulesFile libscope.Rules, remProc, procArg, sourceid, rootdir string
 		rulesFile.Allow = append(rulesFile.Allow[:remove], rulesFile.Allow[remove+1:]...)
 
 		// Write the rules contents to a temporary path
-		rulesFilePath := "/tmp/scope_rules"
+		rulesFilePath := "/tmp/appview_rules"
 		file, err := os.OpenFile(rulesFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 		if err != nil {
 			log.Warn().Err(err).Msgf("Error creating/opening %s", rulesFilePath)
@@ -334,7 +334,7 @@ func Remove(rulesFile libscope.Rules, remProc, procArg, sourceid, rootdir string
 	}
 
 	////////////////////////////////////////////
-	// Detach from all matching, scoped processes
+	// Detach from all matching, viewed processes
 	////////////////////////////////////////////
 
 	procs, err := util.HandleInputArg(remProc, "", rc.Rootdir, false, false, false, true)

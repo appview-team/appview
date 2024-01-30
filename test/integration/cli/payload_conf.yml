@@ -9,7 +9,7 @@ cribl:
     tls:
       enable: true
       validateserver: true
-      cacertpath: '/tmp/appscope.crt'
+      cacertpath: '/tmp/appview.crt'
 protocol:
   - name: Redis
     regex: .*

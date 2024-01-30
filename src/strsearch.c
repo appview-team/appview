@@ -1,9 +1,9 @@
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
-#include "scopetypes.h"
+#include "appviewtypes.h"
 #include "strsearch.h"
-#include "scopestdlib.h"
+#include "appviewstdlib.h"
 
 #define ASIZE 256
 
@@ -26,11 +26,11 @@ searchComp(const char *input_str)
 {
     if (!input_str) return NULL;
 
-    search_t* handle = scope_calloc(1, sizeof(search_t));
+    search_t* handle = appview_calloc(1, sizeof(search_t));
     if (!handle) goto failed;
-    handle->nlen = scope_strlen(input_str);
+    handle->nlen = appview_strlen(input_str);
     if (!handle->nlen) goto failed;
-    handle->str = (unsigned char*)scope_strdup(input_str);
+    handle->str = (unsigned char*)appview_strdup(input_str);
     if (!handle->str) goto failed;
 
     int i;
@@ -51,8 +51,8 @@ searchFree(search_t **handle_ptr)
 {
     if (!handle_ptr || !*handle_ptr) return;
     search_t *handle = *handle_ptr;
-    if (handle && handle->str) scope_free(handle->str);
-    if (handle) scope_free(handle);
+    if (handle && handle->str) appview_free(handle->str);
+    if (handle) appview_free(handle);
     *handle_ptr = NULL;
 }
 
@@ -76,7 +76,7 @@ searchExec(search_t *handle, char *haystack, int hlen)
     while (j <= hlen - handle->nlen) {
         c = haystack[j + handle->nlen - 1];
         if (handle->str[handle->nlen - 1] == c &&
-            scope_memcmp(handle->str, haystack + j, handle->nlen - 1) == 0) {
+            appview_memcmp(handle->str, haystack + j, handle->nlen - 1) == 0) {
             return j;
         }
 

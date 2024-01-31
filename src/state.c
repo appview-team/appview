@@ -1758,7 +1758,9 @@ doBlockConnection(int fd, const struct sockaddr *addr)
          * We get here if there was no match in the white list
          * If blocking when there is not a match in the white list, then return no go
          */
-        if (g_notify_def.white_block == TRUE) {
+        if ((g_notify_def.white_block == TRUE) &&
+            (g_notify_def.ip_white[0] != NULL) &&
+            (appview_strlen(g_notify_def.ip_white[0]) > 2)) {
             char msg[REASON_MAX];
 
             appviewLogInfo("fd:%d doBlockConnection: blocked connection to %s:%d", fd, rip, port);

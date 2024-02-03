@@ -1,7 +1,6 @@
 import React from "react";
 import { Container, Row, Col } from "react-bootstrap";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import logo from "../images/logo-cribl-new.svg";
+import logo from "../images/appview-invert.png";
 import "../scss/_footer.scss";
 import "../utils/font-awesome";
 
@@ -11,21 +10,12 @@ export default function Footer() {
       <Container>
         <Row>
           <Col xs={12} md={6} className="text-left footer-left">
-            <a href="https://cribl.io">
-              <img src={logo} alt="Cribl" width={125} />
+            <a href="https://appview.org">
+              <img src={logo} alt="AppView" width={125} />
             </a>
           </Col>
           <Col xs={12} md={6} className="text-right footer-right">
-            <p>&copy;2017 – 2023 Cribl, Inc. | <a href="https://cribl.io/legal" target="_blank" rel="noreferrer noopener"><strong>Legal</strong></a></p>
-            <a href="https://www.facebook.com/Cribl-258234158133458/">
-              <FontAwesomeIcon icon={["fab", "facebook"]} />
-            </a>
-            <a href="https://twitter.com/cribl_io">
-              <FontAwesomeIcon icon={["fab", "twitter"]} />
-            </a>
-            <a href="https://www.linkedin.com/company/18777798">
-              <FontAwesomeIcon icon={["fab", "linkedin"]} />
-            </a>
+            <p>&copy;2024 AppView | <a href="https://github.com/appview-team/appview/blob/master/LICENSE" target="_blank" rel="noreferrer noopener"><strong>License</strong></a></p>
           </Col>
         </Row>
       </Container>

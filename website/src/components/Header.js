@@ -3,8 +3,7 @@ import { Container, Col, Nav } from "react-bootstrap";
 import { useStaticQuery, graphql } from "gatsby";
 import StarCount from "./widgets/StarCount";
 import Download from "./widgets/Download";
-import CriblSiteNav from "./criblSiteNav";
-import logo from "../images/logo-appview.svg";
+import logo from "../images/appview.png";
 import "../scss/_appViewNav.scss";
 
 export default function Header() {
@@ -23,7 +22,6 @@ export default function Header() {
 
   return (
     <nav>
-      <CriblSiteNav />
       <Container
         fluid
         className="nav-container"

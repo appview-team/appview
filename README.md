@@ -40,6 +40,7 @@ graph LR
 - Generate network flow information.
 - Create a report on unique file and network activity.
 - Install AppView in a Kubernetes cluster.
+- Secure file and network access in an application.
 
 ## ✨ Example
 
@@ -58,7 +59,7 @@ appview events
 [Gj1] Jan 15 15:53:19 nginx worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
 ```
 
-See [here](./examples) for more examples.
+See [the docs](http://appview.org) for more examples.
 
 ## 🛟 Support
 
@@ -75,7 +76,7 @@ However, AppView *cannot*:
 
 ## 🚀 Try It Out
 
-Before you begin, ensure that your environment meets the AppView [requirements](https://appview.dev/docs/requirements).
+Before you begin, ensure that your environment meets the AppView [requirements](https://appview.org/docs/requirements).
 
 **With the Download**
 ```
@@ -102,14 +103,14 @@ appview detach --all --rootdir /hostfs
 
 ## ℹ️  Resources
 
-On the [AppView Website](https://appview.dev/) you can:
+On the [AppView Website](https://appview.org/) you can:
 
-- Learn about all of the CLI commands [in more depth](https://appview.dev/docs/cli-using).
-- Get an [overview](https://appview.dev/docs/how-works/) of AppView beyond the CLI.
-- Discover what people are [doing](https://appview.dev/docs/what-do-with-appview) with AppView.
-- Review advanced [examples](https://appview.dev/docs/examples-use-cases).
-- View the [Changelog](https://appview.dev/docs/changelog) and [Known Issues](https://appview.dev/docs/known-issues).
-- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.dev/docs/cribl-integration).
+- Learn about all of the CLI commands [in more depth](https://appview.org/docs/cli-using).
+- Get an [overview](https://appview.org/docs/how-works/) of AppView beyond the CLI.
+- Discover what people are [doing](https://appview.org/docs/what-do-with-appview) with AppView.
+- Review advanced [examples](https://appview.org/docs/examples-use-cases).
+- View the [Known Issues](https://appview.org/docs/known-issues).
+- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.org/docs/cribl-integration).
 
 _The content on that site is built from the [website/](website/) directory in this project._
 

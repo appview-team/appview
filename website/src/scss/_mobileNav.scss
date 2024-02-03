@@ -5,7 +5,6 @@
 
     #uncontrolled-tab-example-tab-AppView {
       img {
-        filter: brightness(0) invert(1);
       }
     }
     #uncontrolled-tab-example-tab-AppView,
@@ -15,13 +14,13 @@
       border-radius: 0;
       height: 60px;
       display: flex;
-      justify-content: center;
+      justify-content: left;
       align-items: center;
-      width: 42%;
+      width: 84%;
     }
     #uncontrolled-tab-example-tab-AppView.active,
     #uncontrolled-tab-example-tab-Cribl.active {
-      background-color: $black;
+      background-color: #fff;
 
       img {
         color: #fff;
@@ -34,16 +33,16 @@
     background: $black;
     transition: top 0.5s, z-index 0s ease-out;
     .tab-content .navbar-nav {
-      background: $black;
+      background: #fff;
     }
     .navbar-light .navbar-nav .nav-link {
       color: #fff;
       font-size: 0.8rem;
     }
     .dropdown {
-      background-color: $black;
+      background-color: #fff;
       .dropdown-menu {
-        background-color: $black;
+        background-color: #fff;
         border: none;
         .dropdown-item {
           color: #fff;

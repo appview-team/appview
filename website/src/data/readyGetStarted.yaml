@@ -2,8 +2,8 @@
   description: We’re proud to make AppView available as open source under the Apache Software License v2.0. You can join the AppView development effort by contributing code and documentation on Github, and by joining our Slack community.
   items:
     - icon: github
-      url: https://github.com/criblio/appview
+      url: https://github.com/appview-team/appview
       buttonText: Fork On Github
     - icon:
-      url: https://cribl.io/community/#form?utm_source=appview&utm_medium=footer&utm_campaign=appview
+      url: tbc-slack
       buttonText: Join Our Community

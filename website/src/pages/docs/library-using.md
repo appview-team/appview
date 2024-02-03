@@ -42,7 +42,7 @@ How the library is loaded depends on the type of executable. A dynamic loader ca
 
 ### The Config File
 
-For the default settings in the sample `appview.yml` configuration file, see [Config File](/docs/config-file), or inspect the most-recent file on [GitHub](https://github.com/criblio/appview/blob/master/conf/appview.yml).
+For the default settings in the sample `appview.yml` configuration file, see [Config File](/docs/config-file), or inspect the most-recent file on [GitHub](https://github.com/appview-team/appview/blob/master/conf/appview.yml).
 
 To see the config file with comments omitted, run the following command:
 

@@ -15,19 +15,10 @@
     - name: Cool, but What Can I Do with It?
       path: /docs/what-do-with-appview
 
-- name: Solving Problems with AppView
+- name: AppView Examples
   child: 
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis
-
-- name: Using AppView With Cribl Edge
-  child: 
-    - name: Cribl Edge on a Host
-      path: /docs/edgeappview-host
-    - name: Cribl Edge in Docker 
-      path: /docs/edgeappview-docker
-    - name: Cribl Edge in Kubernetes
-      path: /docs/edgeappview-k8s
 
 - name: Getting AppView
   child: 
@@ -60,11 +51,19 @@
     - name: Data Routing
       path: /docs/data-routing
 
-    - name: Integrating with Cribl
-      path: /docs/cribl-integration
-
     - name: Troubleshooting
       path: /docs/troubleshooting
+
+- name: Using AppView With Cribl
+  child: 
+    - name: Integrating with Cribl
+      path: /docs/cribl-integration
+    - name: Cribl Edge on a Host
+      path: /docs/edgeappview-host
+    - name: Cribl Edge in Docker 
+      path: /docs/edgeappview-docker
+    - name: Cribl Edge in Kubernetes
+      path: /docs/edgeappview-k8s
 
 - name: Reference
   child: 
@@ -76,15 +75,6 @@
 
     - name: Schema Reference
       path: /docs/schema-reference
-
-    - name: Other Resources
-      path: /docs/other-resources
-
-    - name: Changelog
-      path: /docs/changelog
-
-    - name: Known Issues
-      path: /docs/known-issues
 
 - name: Join
   child: 

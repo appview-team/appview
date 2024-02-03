@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { Tabs, Tab, Navbar, Nav, NavDropdown } from "react-bootstrap";
+import { Tabs, Tab, Navbar, Nav } from "react-bootstrap";
 import { useStaticQuery, graphql } from "gatsby";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import logo from "../images/logo-appview.svg";
-import criblLogo from "../images/logo-cribl-new.svg";
+import logo from "../images/appview.png";
 
 import "../scss/_mobileNav.scss";
 import "../utils/font-awesome";
@@ -53,7 +52,7 @@ export default function MobileHeader() {
       <Tabs defaultActiveKey="AppView" id="uncontrolled-tab-example">
         <Tab
           eventKey="AppView"
-          title={<img src={logo} alt="Appappview" style={{ width: 100 }} />}
+          title={<img src={logo} alt="AppView" style={{ width: 100 }} />}
           className={burgerMenu ? "menuActive" : "menuInactive"}
         >
           <Navbar expand="lg">
@@ -65,45 +64,6 @@ export default function MobileHeader() {
                   </Nav.Link>
                 );
               })}
-            </Nav>
-          </Navbar>
-        </Tab>
-        <Tab
-          eventKey="Cribl"
-          title={
-            <img
-              src={criblLogo}
-              alt="Appappview"
-              style={{ width: 80, color: "#000" }}
-            />
-          }
-          className={burgerMenu ? "menuActive" : "menuInactive"}
-        >
-          <Navbar expand="lg">
-            <Nav className="mr-auto">
-              {data.allCorpSiteNavYaml.edges[0].node.navigationLeft.map(
-                (item, i) => {
-                  return item.child === null ? (
-                    <Nav.Link href={item.url} key={i}>
-                      {item.parent}
-                    </Nav.Link>
-                  ) : (
-                    <NavDropdown
-                      title={item.parent}
-                      id="basic-nav-dropdown"
-                      key={i}
-                    >
-                      {item.child.map((childItem, j) => {
-                        return (
-                          <NavDropdown.Item href={childItem.url} key={j}>
-                            {childItem.link}
-                          </NavDropdown.Item>
-                        );
-                      })}
-                    </NavDropdown>
-                  );
-                }
-              )}
             </Nav>
           </Navbar>
         </Tab>

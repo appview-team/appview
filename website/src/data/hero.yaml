@@ -1,5 +1,6 @@
 - hero:
-    header: Instrument, Collect, Observe
+    header: Instrument, Observe, Secure
     subText: AppView provides application-centric instrumentation and data collection. With one instrumentation approach for all runtimes, AppView offers ubiquitous, unified instrumentation of any unmodified Linux executable for single-user troubleshooting or distributed deployments. 
-    ctaText: Get Started
+    ctaText: Read the Docs
+    ctaText2: See Examples
 

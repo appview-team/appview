@@ -6,7 +6,7 @@
     - item: Send AppView data to any existing monitoring tool, timeseries database, or log tool
       icon: appAppView_icon_tools.svg
       title: No New Tools
-    - item: Extends APM reach into every application, affordably
+    - item: Extends APM reach into every application, for free
       icon: appAppView_icon_cost.svg
       title: Cost
     #ctaText: Working With AppView

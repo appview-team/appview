@@ -65,7 +65,7 @@ APPVIEW_NOTIFY_FILE_READ="/tmp/test" appview run -- cat "/tmp/test_space.txt  "
 appview events | grep sec
 ...
 
-### Notify on setuid or setgid File permissions
+### Notify on setuid or setgid file permissions
 ...
 echo "Test UID" > /tmp/test_suid.txt
 chown +s /tmp/test_suid.txt
@@ -99,7 +99,24 @@ appview events | grep sec
 
 ## Notifications and Security Events from Modifications to Operating System Security Policy
 ### Notify on attempts to modify security policy
-ddd
+Initially the detection mechanisms operate on the system functions setrlimit() and prctl(PR_SET_SECCOMP).
+More detection mechanisms will be added.
+
+Create a bash shell script with the following:
+...
+#! /bin/bash
+
+ulimit -f 2048
+..
+We create a shell script for this because the command ulimit is a bash shell builtin command.
+
+Execute the shell script created above:
+...
+LD_PRELOAD=Path_to_libview/libappview.so ./myScript.sh
+...
+
+Where Path_to_libview is the path representing the location where libappview.so has been installed.
+Where myScript.sh represents the script created from above.
 
 ## Notifications and Security Events for GOT Hooking
 ### Notify on GOT errors
@@ -109,11 +126,34 @@ ddd
 ### Notify on DNS inconsistency
 ddd
 
-### Notify on network connections to an IP address white list entry
-ddd
-
 ### Notify on network connections to an IP address black list entry
-ddd
+Find the IP address to use in the black list.
+For example, get the IP address for wttr.in:
+..
+dig wttr.in
+...
 
-### Notify on files exfiltrated through network connections
+Note that the IP address, as of this writing, is 5.9.243.187.
+
+Set the IP black list to the IP address of wttr.in and connect:
+...
+APPVIEW_NOTIFY_IP_BLACK="5.9.243.187" appview run -- curl wttr.in
+appview events | grep sec
+...
+
+You will see the error:
+curl: (7) Couldn't connect to server
+
+### Notify on network connections to an IP address white list entry
+Note that the IP white list will allow a connection to be made even if it would be blocked by a black list entry.
+Extending the behavior of the black list above:
+
+...
+APPVIEW_NOTIFY_IP_BLACK="5.9.243.187" APPVIEW_NOTIFY_IP_WHITE="5.9.243.187" appview run -- curl wttr.in
+...
+
+You will see normal output from wttr.in
+No notifications or security events should be emitted.
+
+### Notify on files ex-filtrated through network connections
 ddd

@@ -34,13 +34,17 @@ graph LR
 ## 💎 Features
 
 - Generate metrics on process and application performance.
-- Generate events, reporting on network, file, and http/s activity.
+- Generate events, reporting on network, file, logs, console messages and http/s activity.
 - Capture (decrypted) payload data without the need for keys.
 - Generate a stack trace, and a core dump when an application crashes.
 - Generate network flow information.
 - Create a report on unique file and network activity.
 - Install AppView in a Kubernetes cluster.
 - Secure file and network access in an application.
+- Instrument both static and dynamic executables.
+- Attach to processes *while they are running* or start when the process does.
+- Normalize and forward metrics and events, in real time, to remote systems.
+- Summarize metrics and detect protocols.
 
 ## ✨ Example
 
@@ -101,19 +105,6 @@ appview events -f
 appview detach --all --rootdir /hostfs
 ```
 
-## ℹ️  Resources
-
-On the [AppView Website](https://appview.org/) you can:
-
-- Learn about all of the CLI commands [in more depth](https://appview.org/docs/cli-using).
-- Get an [overview](https://appview.org/docs/how-works/) of AppView beyond the CLI.
-- Discover what people are [doing](https://appview.org/docs/what-do-with-appview) with AppView.
-- Review advanced [examples](https://appview.org/docs/examples-use-cases).
-- View the [Known Issues](https://appview.org/docs/known-issues).
-- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.org/docs/cribl-integration).
-
-_The content on that site is built from the [website/](website/) directory in this project._
-
 ## 🔧 Build From Source
 
 AppView is not built or distributed like most traditional Linux software.
@@ -140,6 +131,17 @@ make build CMD="make all"
 Either way, the resulting binaries will be in `lib/linux/$(uname -m)/libappview.so` and `bin/linux/$(uname -m)/appview`.
 
 We support building `x86_64` (amd64) or `aarch64` (arm64/v8) binaries by adding `ARCH=x86_64` or `ARCH=aarch64` to the `make build` command. See the [BUILD](docs/BUILD.md) doc for details.
+
+## ℹ️  Resources
+
+On the [AppView Website](https://appview.org/) you can:
+
+- Get an [overview](https://appview.org/docs/how-works/) of AppView beyond the CLI.
+- See [examples](https://appview.org/docs/instrumenting-an-application) of AppView usage.
+- Learn about all of the CLI commands [in more depth](https://appview.org/docs/cli-reference).
+- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.org/docs/cribl-integration).
+
+_The content on that site is built from the [website/](website/) directory in this project._
 
 ## ✏️  Contributing
 

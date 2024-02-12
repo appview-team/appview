@@ -252,6 +252,20 @@ whiteList(void **state)
     // should notify
     rv = doBlockConnection(7, (const struct sockaddr *)&sa);
     assert_int_equal(1, rv);
+
+    rv = setenv(NOTIFY_IQ_IP_WHITE, "0", 1);
+    assert_int_not_equal(-1, rv);
+
+    rv = setenv(NOTIFY_WHITE_BLOCK, "TRUE", 1);
+    assert_int_not_equal(-1, rv);
+
+    // Update config
+    g_inited = FALSE;
+    notify(NOTIFY_INIT, "");
+
+    // should not notify with an empty white list even when block is enabled
+    rv = doBlockConnection(7, (const struct sockaddr *)&sa);
+    assert_int_equal(0, rv);
 }
 
 static void

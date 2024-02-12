@@ -14,6 +14,9 @@
     - name: Instrumenting an Application
       path: /docs/instrumenting-an-application
 
+    - name: Observability Dashboard
+      path: /docs/observability-dashboard
+
     - name: Capturing Encrypted Payloads
       path: /docs/capturing-encrypted-payloads
 
@@ -25,9 +28,6 @@
 
     - name: Application Privacy Report
       path: /docs/privacy-report
-
-    - name: Observability Dashboard
-      path: /docs/observability-dashboard
 
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis

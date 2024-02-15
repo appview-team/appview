@@ -2026,6 +2026,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
         Elf64_Sym *symbol;
         int dladdr_successful = dladdr1((const void *)got_value, &dl_info, (void **)&symbol, RTLD_DL_SYMENT) != 0;
         if (!dladdr_successful) goto next;
+        if (!dl_info.dli_sname) continue;
 
         /*
          * If the function name and address from the link map matches
@@ -2058,9 +2059,10 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 
 #ifdef DEBUG
         printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
-               __FUNCTION__, __LINE__, dl_info.dli_sname, fname, got_value, dl_info.dli_saddr);
+               __FUNCTION__, __LINE__, fname, dl_info.dli_sname, got_value, dl_info.dli_saddr);
 
-        if (appview_strncmp(fname, dl_info.dli_sname, appview_strlen(dl_info.dli_sname))) {
+        if (fname && dl_info.dli_sname &&
+            appview_strncmp(fname, dl_info.dli_sname, appview_strlen(dl_info.dli_sname))) {
             printf("%s:%d len link map %ld dladdr1 %ld\n", __FUNCTION__, __LINE__,
                    appview_strlen(fname), appview_strlen(dl_info.dli_sname));
         }

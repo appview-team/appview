@@ -49,21 +49,37 @@ graph LR
 ## ✨ Example
 
 ```
-appview attach nginx
-curl localhost
-appview events
+appview curl wttr.in  # Run a curl command, with AppView loaded 
+appview events        # View events from the most recent session
+appview metrics       # View metrics from the most recent session
+appview flows         # View network flows from the most recent session
 ```
+Events output:
 ```
 [Bu] Jan 15 15:53:19 nginx worker process net net.open net_peer_ip:127.0.0.1 net_peer_port:60240 net_host_ip:0.0.0.0 net_host_port:80 net_protocol:http net_transport:IP.TCP
 [BB] Jan 15 15:53:19 nginx worker process net net.app fd:3 host:precision pid:1504 proc:"ker process" protocol:HTTP
 [CH] Jan 15 15:53:19 nginx worker process http http.req http_host:localhost http_method:GET http_scheme:http http_target:/
 [uQ] Jan 15 15:53:19 nginx worker process fs fs.open file:/var/www/html/index.nginx-debian.html
 [1Z] Jan 15 15:53:19 nginx worker process http http.resp http_host:localhost http_method:GET http_scheme:http http_target:/ http_response_content_length:612
-[C91] Jan 15 15:53:19 nginx worker process fs fs.close file:/var/www/html/index.nginx-debian.html file_read_bytes:0 file_read_ops:0 file_write_bytes:612 file_write_ops:1
-[Gj1] Jan 15 15:53:19 nginx worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
+...
+```
+Metrics output:
+```
+NAME             VALUE           TYPE     UNIT           PID        TAGS
+proc.start       1               Count    process        3793875    args: curl wttr.in,gid: 1000,groupname: sean,host: precision,proc: curl,uid:…
+proc.cpu         1.356123e+06    Count    microsecond    3793875    host: precision,proc: curl
+proc.cpu_perc    13.56123        Gauge    percent        3793875    host: precision,proc: curl
+proc.mem         125732          Gauge    kibibyte       3793875    host: precision,proc: curl
+proc.thread      2               Gauge    thread         3793875    host: precision,proc: curl
+...
+```
+Flows output:
+```
+ID   	HOST IP      	HOST PORT	PEER IP    	PEER PORT	LAST SENT	DURATION
+6NFr9	192.168.1.44	59318    	5.9.243.187	80       	3s       	614ms
 ```
 
-See [the docs](http://appview.org) for more examples.
+See [the docs](http://appview.org) for many more examples.
 
 ## 🛟 Support
 

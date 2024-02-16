@@ -222,7 +222,9 @@ extern int             appviewlibc_mq_send(mqd_t, const char *, size_t, unsigned
 extern ssize_t         appviewlibc_mq_receive(mqd_t, char *, size_t, unsigned int *);
 extern int             appviewlibc_mq_unlink(const char *);
 extern int             appviewlibc_mq_getattr(mqd_t, struct mq_attr *);
-
+extern void            appviewlibc_endpwent(void);
+extern struct passwd * appviewlibc_getpwent(void);
+extern void            appviewlibc_setpwent(void);
 static int g_go_static;
 
 // TODO consider moving GOAppState API somewhere else
@@ -1314,4 +1316,19 @@ appview_mq_getattr(mqd_t mqd, struct mq_attr *attr) {
 char *
 appview_secure_getenv(const char *name) {
     return getenv(name);
+}
+
+void
+appview_endpwent(void) {
+    appviewlibc_endpwent();
+}
+
+struct passwd *
+appview_getpwent(void) {
+    return appviewlibc_getpwent();
+}
+
+void
+appview_setpwent(void) {
+    appviewlibc_setpwent();
 }

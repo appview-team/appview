@@ -315,6 +315,8 @@ int           appview_mq_send(mqd_t, const char *, size_t, unsigned int);
 ssize_t       appview_mq_receive(mqd_t, char *, size_t, unsigned int *);
 int           appview_mq_unlink(const char *);
 int           appview_mq_getattr(mqd_t, struct mq_attr *);
-
+void          appview_endpwent(void);
+struct passwd *appview_getpwent(void);
+void          appview_setpwent(void);
 
 #endif // __APPVIEW_STDLIB_H__

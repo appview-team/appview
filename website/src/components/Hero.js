@@ -46,7 +46,7 @@ export default function Hero() {
             &nbsp;
             <Button
               onClick={() => {
-                navigate("/docs/crash-analysis");
+                navigate("/docs/instrumenting-an-application");
               }}
             >
               {data.heroYaml.hero.ctaText2}

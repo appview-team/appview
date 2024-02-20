@@ -10,11 +10,9 @@ Child processes are created with the AppView library present, if the library was
 
 ![AppView system-level design](./images/AppView-system-level-design_w1800.png)
 
-If you're curious about the thought process that led to the creation of AppView, see this [blog](https://cribl.io/blog/the-appview-origin-story/) by the AppView team.
-
 ### Performance Overhead
 
-AppView collects data with, at most, around 2% CPU overhead, and **minimal** latency penalty. In most cases, the overhead is markedly less than 2%, which is significantly more efficient than legacy and current monitoring systems.
+AppView collects data with, at most, around 2% CPU overhead, and **minimal** latency penalty. In most cases, the overhead is markedly less than 2%, which is significantly more efficient than legacy and current monitoring systems. AppView starts one thread in a process, to perform reporting operations without slowing down the data path in existing process threads.
 
 ## System-level Design
 

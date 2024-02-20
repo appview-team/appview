@@ -23,9 +23,6 @@
     - name: Threat Detection
       path: /docs/threat-detection
 
-    - name: Securing an Application
-      path: /docs/securing-an-application
-
     - name: Application Privacy Report
       path: /docs/privacy-report
 

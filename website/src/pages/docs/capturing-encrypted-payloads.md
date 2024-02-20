@@ -17,3 +17,14 @@ appview flows <id>                               # Look at that flow in more det
 appview flows <id> --in                          # Look at the decrypted inbound payload (the web server's response)
 ```
 
+Flows output:
+
+![AppView flows output](./images/payloads-1.png)
+
+A flow in detail:
+
+![AppView flow output](./images/payloads-2.png)
+
+Decrypted payload output:
+
+![Decrypted payload output](./images/payloads-3.png)

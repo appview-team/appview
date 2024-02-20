@@ -19,10 +19,12 @@ This might be useful for:
 You can load AppView into a new process like:
 
 ```
-appview chromium  # Start the chromium web browser with AppView loaded
-<Ctrl + C>        # Exit chromium after your session
-appview report    # Generate a report of network and file system activity
+appview git fetch  # Run `git fetch` with AppView loaded
+appview report     # Generate a report of network and file system activity
 ```
 
 __Pro Tip__: Create reports on previous AppView sessions using the `--id` flag to identify a session.
 
+Report output:
+
+![Report output](./images/report-1.png)

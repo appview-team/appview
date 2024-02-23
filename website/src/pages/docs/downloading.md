@@ -12,9 +12,7 @@ You can download AppView as a binary in your Linux OS, or as a container.
 
 Review the AppView [Requirements](/docs/requirements) to ensure that you’re completing these steps on a supported system. 
 
-Then, from [Cribl's download page](https://cribl.io/download/#tab-1), download the binary and follow the instructions there.
-
-Or, you can use these CLI commands to directly download the binary and make it executable:
+Then, you can use these CLI commands to directly download the binary and make it executable:
 
 ```
 LATEST=$(curl -Ls https://cdn.cribl.io/dl/appview/latest)
@@ -31,9 +29,7 @@ Before you start, though, you may want to consider [where](#where-from) to run A
 
 ### Download as Container
 
-From [Cribl's download page](https://cribl.io/download/#tab-1), you can also download AppView's most recently tagged Ubuntu container.
-
-This will link you to the [AppView repo on Docker Hub](https://hub.docker.com/r/cribl/appview), which provides instructions and access to earlier builds.
+Check out the [AppView repo on Docker Hub](https://hub.docker.com/r/appview-team/appview), which provides instructions and access to earlier builds.
 
 Each container provides the AppView binary on Ubuntu 20.04.
 
@@ -65,7 +61,7 @@ Where AppView lives on your system is up to you. To decide wisely, first conside
 
 For ad hoc exploration and investigation, one choice that follows [standard practice](https://en.wikipedia.org/wiki/Filesystem_Hierarchy_Standard) for an "add-on software package" is to locate AppView in `/opt`. Since in the AppView context, `appview` is a command, it helps to call the directory where AppView lives something other than `appview`. For example, you can name the directory `/opt/appview`, to make it clear that `/opt/appview/appview` is the `appview` executable.
 
-Cribl does **not** recommend running AppView from any user's home directory, because that leads to file ownership and permissions problems if additional users try to run AppView.
+We do **not** recommend running AppView from any user's home directory, because that leads to file ownership and permissions problems if additional users try to run AppView.
 
 By default, the AppView CLI will output data to the local filesystem where it's running. While this can work fine for "ad hoc" investigations, it can cause problems for longer-duration scenarios like application monitoring, where the local filesystem may not have room for the data being written. 
 

@@ -7,7 +7,7 @@ export default function StarCount() {
   const [starsCount, setStarsCount] = useState(0);
 
   useEffect(() => {
-    fetch(`https://api.github.com/repos/criblio/appview`)
+    fetch(`https://api.github.com/repos/appview-team/appview`)
       .then((response) => response.json())
       .then((resultData) => {
         setStarsCount(resultData.stargazers_count);
@@ -17,7 +17,7 @@ export default function StarCount() {
   return (
     <a
       className="starCount-container"
-      href="https://github.com/criblio/appview"
+      href="https://github.com/appview-team/appview"
     >
       <div className="gitLogo">
         <FontAwesomeIcon icon={["fab", "github-square"]} />

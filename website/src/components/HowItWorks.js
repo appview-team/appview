@@ -41,14 +41,6 @@ export default function HowItWorks() {
           {data.allHowItWorksYaml.edges[0].node.items.map((bullet, i) => {
             return <p key={i}>{bullet.item}</p>;
           })}
-          <Button
-            style={{ width: 230 }}
-            onClick={() => {
-              navigate(data.allHowItWorksYaml.edges[0].node.ctaLink);
-            }}
-          >
-            {data.allHowItWorksYaml.edges[0].node.ctaText}
-          </Button>
         </Col>
 
         <Col xs={12} md={6}>

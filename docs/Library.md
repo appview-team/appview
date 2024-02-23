@@ -284,12 +284,158 @@ Environment Variables:
         Path on the local filesystem which contains CA certificates in
         PEM format. Default is an empty string. For a description of what
         this means, see Certificate Authority Resolution below.
+    CRIBL_HOME
+        Defines the prefix to the path where the library
+        will be installed to, or retrieved from.
     APPVIEW_CONFIG_EVENT
         Sends a single process-identifying event, when a transport
         connection is established.  true,false  Default is true.
-    CRIBL_HOME
-        Defines the prefix to the path where the library 
-        will installed to, or retrieved from.
+    APPVIEW_SLACKBOT_TOKEN
+        Part of security detection features.
+        This is the API token defined by a specific Slack instance.
+        Notifications resulting from security detection features will be
+        sent to the Slack instance defined by this token.
+        This doc defines how to get an API token:
+        https://api.slack.com/tutorials/tracks/getting-a-token.
+        This value should always be defined as an environment variable
+        and not a config file entry for security purposes.
+        There is no default value.
+    APPVIEW_NOTIFY
+        Part of security detection features.
+        Enables and disables all notifications.
+        TRUE enables notifications.
+        FALSE disables notifications.
+        Default is TRUE.
+    APPVIEW_NOTIFY_SEND
+        Part of security detection features.
+        Enables and disables sending notifications to an external source.
+        Example of an external source is a Slack channel.
+        TRUE enables sending notifications.
+        FALSE disables sending notifications.
+        Default is TRUE.
+    APPVIEW_EXIT_ON_NOTIFY
+        Part of security detection features.
+        When enabled causes the current process to exit when a
+        notification is created.
+        TRUE enables an exit on a notification.
+        FALSE disables an exit on a notification.
+        Default is TRUE.
+    APPVIEW_NOTIFY_LIBS
+        Part of security detection features.
+        Enables and disables notifications resulting from checks in the GOT
+        for functions that have been modified.
+        TRUE enables notifications from GOT checks of shared libraries.
+        FALSE disables notifications from GOT checks of shared libraries.
+        Default is TRUE.
+
+        GOT is the Global Offset Table. It maps symbols in code to their
+        corresponding absolute memory addresses to facilitate
+        Position Independent Code (PIC) and Position Independent Executables (PIE).
+    APPVIEW_NOTIFY_FILES
+        Part of security detection features.
+        Enables and disables notifications resulting from checks of
+        files being accessed.
+        Note that this does not apply to executables. Rather to files
+        being explicitly opened.
+        Refer to Discussion 19 for details describing specific detection checks:
+        https://github.com/appview-team/appview/discussions/19
+        TRUE enables notifications from file checks.
+        FALSE disables notifications from file checks.
+        Default is TRUE.
+    APPVIEW_NOTIFY_FUNCS
+        Part of security detection features.
+        Enables and disables notifications resulting from checks when
+        specific system functions are called.
+        Examples of system functions that apply checks which could result in a
+        notification are setrlimit and prctl.
+        TRUE enables notifications from system function checks.
+        FALSE disables notifications from system function checks.
+        Default is TRUE.
+    APPVIEW_NOTIFY_NET
+        Part of security detection features.
+        Enables and disables notifications resulting from checks of network operations.
+        Network checks are applied to connected sockets.
+        TRUE enables notifications from network checks.
+        FALSE disables notifications from network checks.
+        Default is TRUE.
+    APPVIEW_NOTIFY_EXFIL
+        Part of security detection features.
+        Enables and disables notifications resulting from files that are
+        exfiltrated over network connections.
+        Exfiltrated files are detected from the system function sendfile.
+        Additional mechanisms for the detection of exfiltrated files will be added.
+        TRUE enables notifications from exfiltrated files.
+        FALSE disables notifications from exfiltrated files.
+        Default is TRUE.
+    APPVIEW_NOTIFY_DNS
+        Part of security detection features.
+        Enables and disables notifications resulting from checks of DNS
+        requests and responses.
+        DNS checks are based on the protocol definition in RFC 1035.
+        TRUE enables notifications from DNS checks.
+        FALSE disables notifications from DNS checks.
+        Default is TRUE.
+    APPVIEW_NOTIFY_FILE_READ
+        Part of security detection features.
+        Defines a list of path names that are used to create a notification
+        on a file read from a matching entry.
+        If a file read operation is performed on a path name such that a sub
+        string match is made with the path and an entry in this list,
+        a notification is created.
+        Default is the string ".ssh,/etc/passwd".
+        Any reads from a path name that includes .ssh or /etc/passwd will result
+        in an associated notification.
+    APPVIEW_NOTIFY_FILE_WRITE
+        Part of security detection features.
+        Defines a list of path names that are used to create a notification on a
+        file write from a matching entry.
+        If a file write operation is performed on a path name such that a sub
+        string match is made with the path and an entry in this list, a
+        notification is created.
+        Default is the string "/usr/bin,/usr/lib,/var/lib,/lib/run,/sbin,/etc/ssh/sshd".
+        For example, any writes from a path name that includes /usr/bin will
+        result in an associated notification.
+    APPVIEW_NOTIFY_SYS_DIRS
+        Part of security detection features.
+        Defines a list of path names that are used to create a notification based
+        om file permission settings.
+        These are intended to represent system files.
+        Checks for write permissions for group or all, for example, will result
+        in an associated notification.
+        Additional checks on files in system dirs will be created.
+        Default is the string "/usr/lib/,/var/lib/,/lib/run/,/sbin/,/usr/bin/,/bin/".
+    APPVIEW_NOTIFY_IP_WHITE
+        Part of security detection features.
+        This defines a list of IP addresses that should be allowed to make connections.
+        There are Two types of responses to a white list entry:
+        1) on a match the connection is always allowed.
+        2) if blocking is enabled and there is not a match then don't allow the connection.
+        White list blocking is enabled with the environment variable
+        "APPVIEW_WHITE_LIST_BLOCK". See below.
+        The list is defined as a comma separated list of IP addresses.
+        Example: "192.168.1.100,10.12.11.1,2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        Default is NULL
+    APPVIEW_NOTIFY_IP_BLACK
+        Part of security detection features.
+        This defines a list of IP addresses that should NOT be allowed to make connections.
+        If an IP address is being used to make a connection and it is defined
+        in the IP black list, the connection is denied.
+        The list is defined as a comma separated list of IP addresses.
+        Example: "192.168.1.100,10.12.11.1,2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+        Default is NULL
+    APPVIEW_WHITE_LIST_BLOCK
+        Part of security detection features.
+        If an IP white list is defined and no match between the IP address being
+        connected and an entry in the white list, then if this block entry is enabled,
+        the network connection is denied.
+        TRUE enables blocking of network connections from no comparison in a white list.
+        FALSE disables blocking of network connections from no comparison in a white list.
+        Default is FALSE.
+    APPVIEW_SLACKBOT_CHANNEL
+        Part of security detection features.
+        This defines the Slack channel to which notifications are sent, if a Slack
+        endpoint is enabled.
+        Default is "#notifications"
 
 Dynamic Configuration:
     Dynamic Configuration allows configuration settings to be

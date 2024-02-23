@@ -5,13 +5,13 @@
   items: 
     - title: Instrument
       icon: tachometer-alt
-      shortDescription: Use the simple command line to easily instrument and inspect any application or Linux command, regardless of runtime, including Go binaries. There’s no need for a man in the middle proxy. It’s like strace meets tcpdump, but with readily consumable output. 
+      shortDescription: Use the simple command line to easily instrument and inspect any application or Linux command, regardless of runtime, including Go binaries. There’s no need for any code modification, or a man in the middle proxy. It’s like strace meets tcpdump, but with readily consumable output. You can even attach to already-running applications.
       order: 1
-    - title: Collect
-      icon: digital-tachograph
-      shortDescription: AppView collects StatsD-style metrics about applications and structured, wide events events for file access, DNS, and network activity. AppView even looks inside encrypted payloads for service mesh-like visibility into applications without proxying traffic. 
-      order: 2
     - title: Observe
       icon: microappview
-      shortDescription: Send application information, wire and log data, and performance metrics to existing log analytics and metrics tooling. For quick results, visualize with our terminal dashboard.
+      shortDescription: Send application information, wire and log data, and performance metrics to existing log analytics and metrics tooling. For quick results, visualize with our terminal dashboard. AppView collects StatsD-style metrics about applications and structured, wide events events for file access, DNS, and network activity. AppView even looks inside encrypted payloads for service mesh-like visibility into applications without proxying traffic. 
+      order: 2
+    - title: Secure
+      icon: digital-tachograph
+      shortDescription: Secure your applications by providing allow and deny lists for network and file resources. Generate slack notifications when certain resources are accessed or MITRE attack techniques are detected. Create a report on your application's activity to learn about it's behavior, or generate a footprint for later comparison.
       order: 1

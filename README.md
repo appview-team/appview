@@ -34,31 +34,52 @@ graph LR
 ## 💎 Features
 
 - Generate metrics on process and application performance.
-- Generate events, reporting on network, file, and http/s activity.
+- Generate events, reporting on network, file, logs, console messages and http/s activity.
 - Capture (decrypted) payload data without the need for keys.
 - Generate a stack trace, and a core dump when an application crashes.
 - Generate network flow information.
 - Create a report on unique file and network activity.
 - Install AppView in a Kubernetes cluster.
+- Secure file and network access in an application.
+- Instrument both static and dynamic executables.
+- Attach to processes *while they are running* or start when the process does.
+- Normalize and forward metrics and events, in real time, to remote systems.
+- Summarize metrics and detect protocols.
 
 ## ✨ Example
 
 ```
-appview attach nginx
-curl localhost
-appview events
+appview curl wttr.in  # Run a curl command, with AppView loaded 
+appview events        # View events from the most recent session
+appview metrics       # View metrics from the most recent session
+appview flows         # View network flows from the most recent session
 ```
+Events output:
 ```
 [Bu] Jan 15 15:53:19 nginx worker process net net.open net_peer_ip:127.0.0.1 net_peer_port:60240 net_host_ip:0.0.0.0 net_host_port:80 net_protocol:http net_transport:IP.TCP
 [BB] Jan 15 15:53:19 nginx worker process net net.app fd:3 host:precision pid:1504 proc:"ker process" protocol:HTTP
 [CH] Jan 15 15:53:19 nginx worker process http http.req http_host:localhost http_method:GET http_scheme:http http_target:/
 [uQ] Jan 15 15:53:19 nginx worker process fs fs.open file:/var/www/html/index.nginx-debian.html
 [1Z] Jan 15 15:53:19 nginx worker process http http.resp http_host:localhost http_method:GET http_scheme:http http_target:/ http_response_content_length:612
-[C91] Jan 15 15:53:19 nginx worker process fs fs.close file:/var/www/html/index.nginx-debian.html file_read_bytes:0 file_read_ops:0 file_write_bytes:612 file_write_ops:1
-[Gj1] Jan 15 15:53:19 nginx worker process net net.close net_peer_ip:127.0.0.1 net_peer_port:60240 net_bytes_recv:73 net_bytes_sent:859 net_close_reason:remote net_protocol:http
+...
+```
+Metrics output:
+```
+NAME             VALUE           TYPE     UNIT           PID        TAGS
+proc.start       1               Count    process        3793875    args: curl wttr.in,gid: 1000,groupname: sean,host: precision,proc: curl,uid:…
+proc.cpu         1.356123e+06    Count    microsecond    3793875    host: precision,proc: curl
+proc.cpu_perc    13.56123        Gauge    percent        3793875    host: precision,proc: curl
+proc.mem         125732          Gauge    kibibyte       3793875    host: precision,proc: curl
+proc.thread      2               Gauge    thread         3793875    host: precision,proc: curl
+...
+```
+Flows output:
+```
+ID   	HOST IP      	HOST PORT	PEER IP    	PEER PORT	LAST SENT	DURATION
+6NFr9	192.168.1.44	59318    	5.9.243.187	80       	3s       	614ms
 ```
 
-See [here](./examples) for more examples.
+See [the docs](http://appview.org) for many more examples.
 
 ## 🛟 Support
 
@@ -75,7 +96,7 @@ However, AppView *cannot*:
 
 ## 🚀 Try It Out
 
-Before you begin, ensure that your environment meets the AppView [requirements](https://appview.dev/docs/requirements).
+Before you begin, ensure that your environment meets the AppView [requirements](https://appview.org/docs/requirements).
 
 **With the Download**
 ```
@@ -99,19 +120,6 @@ appview attach --rootdir /hostfs <process running on host> # AppView an app in t
 appview events -f
 appview detach --all --rootdir /hostfs
 ```
-
-## ℹ️  Resources
-
-On the [AppView Website](https://appview.dev/) you can:
-
-- Learn about all of the CLI commands [in more depth](https://appview.dev/docs/cli-using).
-- Get an [overview](https://appview.dev/docs/how-works/) of AppView beyond the CLI.
-- Discover what people are [doing](https://appview.dev/docs/what-do-with-appview) with AppView.
-- Review advanced [examples](https://appview.dev/docs/examples-use-cases).
-- View the [Changelog](https://appview.dev/docs/changelog) and [Known Issues](https://appview.dev/docs/known-issues).
-- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.dev/docs/cribl-integration).
-
-_The content on that site is built from the [website/](website/) directory in this project._
 
 ## 🔧 Build From Source
 
@@ -139,6 +147,17 @@ make build CMD="make all"
 Either way, the resulting binaries will be in `lib/linux/$(uname -m)/libappview.so` and `bin/linux/$(uname -m)/appview`.
 
 We support building `x86_64` (amd64) or `aarch64` (arm64/v8) binaries by adding `ARCH=x86_64` or `ARCH=aarch64` to the `make build` command. See the [BUILD](docs/BUILD.md) doc for details.
+
+## ℹ️  Resources
+
+On the [AppView Website](https://appview.org/) you can:
+
+- Get an [overview](https://appview.org/docs/how-works/) of AppView beyond the CLI.
+- See [examples](https://appview.org/docs/instrumenting-an-application) of AppView usage.
+- Learn about all of the CLI commands [in more depth](https://appview.org/docs/cli-reference).
+- See what happens when you [connect AppView to Cribl Stream or Cribl Edge](https://appview.org/docs/cribl-integration).
+
+_The content on that site is built from the [website/](website/) directory in this project._
 
 ## ✏️  Contributing
 

@@ -9,8 +9,6 @@
   #   - name: Level 2
   #     path: /resources/level2
 
-- name: Community
-  path: /docs/community
+- name: Examples
+  path: /docs/crash-analysis
 
-- name: Cribl University
-  path: https://cribl.io/university

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Container, Col, Nav, NavDropdown } from "react-bootstrap";
 import { useStaticQuery, graphql } from "gatsby";
-import logo from "../../images/logo-cribl-new.svg";
+import logo from "../../images/appview.png";
 import "../../scss/_criblNav.scss";
 
 export default function CriblSiteNav() {

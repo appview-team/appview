@@ -1,7 +1,7 @@
 import React from "react";
 import { useStaticQuery, graphql } from "gatsby";
 import { Container, Row, Col } from "react-bootstrap";
-import "../scss/_whyAppappview.scss";
+import "../scss/_whyAppview.scss";
 import "../utils/font-awesome";
 
 export default function WhyAppView() {

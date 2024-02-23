@@ -6,28 +6,28 @@
     - name: How AppView Works
       path: /docs/how-works
 
-    - name: Working With AppView
-      path: /docs/working-with
-
-    - name: Events and Metrics in AppView
+    - name: Events and Metrics
       path: /docs/events-and-metrics
 
-    - name: Cool, but What Can I Do with It?
-      path: /docs/what-do-with-appview
-
-- name: Solving Problems with AppView
+- name: AppView Examples
   child: 
+    - name: Instrumenting an Application
+      path: /docs/instrumenting-an-application
+
+    - name: Observability Dashboard
+      path: /docs/observability-dashboard
+
+    - name: Capturing Encrypted Payloads
+      path: /docs/capturing-encrypted-payloads
+
+    - name: Threat Detection
+      path: /docs/threat-detection
+
+    - name: Application Privacy Report
+      path: /docs/privacy-report
+
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis
-
-- name: Using AppView With Cribl Edge
-  child: 
-    - name: Cribl Edge on a Host
-      path: /docs/edgeappview-host
-    - name: Cribl Edge in Docker 
-      path: /docs/edgeappview-docker
-    - name: Cribl Edge in Kubernetes
-      path: /docs/edgeappview-k8s
 
 - name: Getting AppView
   child: 
@@ -43,10 +43,13 @@
     - name: Removing
       path: /docs/removing
 
-- name: Using AppView
+- name: User Manual
   child: 
     - name: Using the CLI
       path: /docs/cli-using
+
+    - name: All CLI Commands
+      path: /docs/cli-reference
 
     - name: Using the Library
       path: /docs/library-using
@@ -54,39 +57,38 @@
     - name: Using TLS for Secure Connections 
       path: /docs/tls
 
-    - name: Further Examples
-      path: /docs/examples-use-cases
-
     - name: Data Routing
       path: /docs/data-routing
-
-    - name: Integrating with Cribl
-      path: /docs/cribl-integration
 
     - name: Troubleshooting
       path: /docs/troubleshooting
 
-- name: Reference
+- name: Using AppView With Cribl
+  child: 
+    - name: Integrating with Cribl
+      path: /docs/cribl-integration
+
+    - name: Cribl Edge on a Host
+      path: /docs/edgeappview-host
+
+    - name: Cribl Edge in Docker 
+      path: /docs/edgeappview-docker
+
+    - name: Cribl Edge in Kubernetes
+      path: /docs/edgeappview-k8s
+
+- name: Schemas
   child: 
     - name: Config File
       path: /docs/config-file
 
-    - name: CLI Reference
-      path: /docs/cli-reference
-
-    - name: Schema Reference
+    - name: Events and Metrics
       path: /docs/schema-reference
-
-    - name: Other Resources
-      path: /docs/other-resources
-
-    - name: Changelog
-      path: /docs/changelog
-
-    - name: Known Issues
-      path: /docs/known-issues
 
 - name: Join
   child: 
     - name: Community
       path: /docs/community      
+
+    - name: Developers
+      path: https://github.com/appview-team/appview      

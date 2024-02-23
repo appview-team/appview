@@ -41,7 +41,6 @@ Available Commands:
   detach      Unview a currently-running process
   events      Outputs events for a session
   extract     Output instrumentary library files to <dir>
-  rules       View or modify system-wide AppView rules
   flows       Observed flows from the session, potentially including payloads
   help        Help about any command
   history     List appview session history
@@ -49,9 +48,10 @@ Available Commands:
   k8s         Install appview in kubernetes
   logs        Display appview logs
   metrics     Outputs metrics for a session
-  prom        Run the Prometheus Target
   prune       Prune deletes session history
   ps          List processes currently being viewed
+  report      Create a report from the appview session
+  rules       View or modify system-wide AppView rules
   run         Executes a viewed command
   service     Configure a systemd/OpenRC service to be viewed
   snapshot    Create a snapshot for a process
@@ -275,53 +275,6 @@ appview extract --metricdest tcp://some.host:8125 --eventdest tcp://other.host:1
       --metricprefix string   Set prefix for StatsD metrics, ignored if metric format isn't statsd
   -n, --nobreaker             Set Cribl to not break streams into events
   -p, --parents               Create any missing intermediate pathname components in provided directory parameter
-```
-
-### rules
----
-
-View or modify system-wide AppView rules to automatically view a set of processes. You can add or remove a single process at a time.
-
-#### Usage
-
-`appview rules [flags]`
-
-#### Examples
-
-```
-appview rules
-appview rules --rootdir /path/to/host/root --json
-appview rules --add nginx
-appview rules --add nginx < appview.yml
-appview rules --add java --arg myServer 
-appview rules --add firefox --rootdir /path/to/host/root
-appview rules --remove chromium
-```
-
-#### Flags
-
-```
-      --add string            Add an entry to the global rules
-      --arg string            Argument to the command to be added to the rules
-  -a, --authtoken string      Set AuthToken for Cribl
-  -b, --backtrace             Enable backtrace file generation when an application crashes.
-  -d, --coredump              Enable core dump file generation when an application crashes.
-  -c, --cribldest string      Set Cribl destination for metrics & events (host:port defaults to tls://)
-  -e, --eventdest string      Set destination for events (host:port defaults to tls://)
-  -h, --help                  help for rules
-  -j, --json                  Output as newline delimited JSON
-  -l, --librarypath string    Set path for dynamic libraries
-      --loglevel string       Set appview library log level (debug, warning, info, error, none)
-  -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
-      --metricformat string   Set format of metrics output (statsd|ndjson|prometheus) (default "ndjson")
-  -n, --nobreaker             Set Cribl to not break streams into events.
-  -p, --payloads              Capture payloads of network transactions
-      --remove string         Remove an entry from the global rules
-  -R, --rootdir string        Path to root filesystem of target namespace
-      --source string         Source identifier for a rules entry
-      --unixpath string       Path to the unix socket
-  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
-  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```
 
 ### flows
@@ -572,7 +525,7 @@ Lists all viewed processes. This means processes whose functions AppView is inte
 
 #### Usage
 
-`appview ps`
+`appview ps [flags]`
 
 #### Examples
 
@@ -580,7 +533,7 @@ Lists all viewed processes. This means processes whose functions AppView is inte
 appview ps
 appview ps --json
 appview ps --rootdir /path/to/host/mount
-appview ps --rootdir /path/to/host/mount/proc/<hostpid>/root`,
+appview ps --rootdir /path/to/host/mount/proc/<hostpid>/root
 ```
 
 #### Flags
@@ -588,6 +541,78 @@ appview ps --rootdir /path/to/host/mount/proc/<hostpid>/root`,
 ```
   -j, --json            Output as newline delimited JSON without pretty printing
   -R, --rootdir         Path to root filesystem of target namespace
+```
+
+### report
+---
+
+Using event and metric data from the specified session, this command will create a report on Network and File events.
+
+#### Usage
+
+`appview report [flags]`
+
+#### Examples
+
+```
+appview report                       Create and display a report for the last session 
+appview report --id 2                Report on a specific session ID
+appview report --json | jq           Generate the report in JSON format and render with jq
+```
+
+#### Flags
+
+```
+  -h, --help     help for report
+  -i, --id int   Report on a specific session ID (default -1)
+  -j, --json     Output as newline delimited JSON
+```
+
+### rules
+---
+
+View or modify system-wide AppView rules to automatically view a set of processes. You can add or remove a single process at a time.
+
+#### Usage
+
+`appview rules [flags]`
+
+#### Examples
+
+```
+appview rules
+appview rules --rootdir /path/to/host/root --json
+appview rules --add nginx
+appview rules --add nginx < appview.yml
+appview rules --add java --arg myServer 
+appview rules --add firefox --rootdir /path/to/host/root
+appview rules --remove chromium
+```
+
+#### Flags
+
+```
+      --add string            Add an entry to the global rules
+      --arg string            Argument to the command to be added to the rules
+  -a, --authtoken string      Set AuthToken for Cribl
+  -b, --backtrace             Enable backtrace file generation when an application crashes.
+  -d, --coredump              Enable core dump file generation when an application crashes.
+  -c, --cribldest string      Set Cribl destination for metrics & events (host:port defaults to tls://)
+  -e, --eventdest string      Set destination for events (host:port defaults to tls://)
+  -h, --help                  help for rules
+  -j, --json                  Output as newline delimited JSON
+  -l, --librarypath string    Set path for dynamic libraries
+      --loglevel string       Set appview library log level (debug, warning, info, error, none)
+  -m, --metricdest string     Set destination for metrics (host:port defaults to tls://)
+      --metricformat string   Set format of metrics output (statsd|ndjson|prometheus) (default "ndjson")
+  -n, --nobreaker             Set Cribl to not break streams into events.
+  -p, --payloads              Capture payloads of network transactions
+      --remove string         Remove an entry from the global rules
+  -R, --rootdir string        Path to root filesystem of target namespace
+      --source string         Source identifier for a rules entry
+      --unixpath string       Path to the unix socket
+  -u, --userconfig string     AppView an application with a user specified config file; overrides all other settings.
+  -v, --verbosity int         Set appview metric verbosity (default 4)
 ```
 
 ### run

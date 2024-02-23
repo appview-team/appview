@@ -1353,7 +1353,8 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for modifications, writes at run time, to executable files
-    if (access(path, X_OK) == 0) {
+    if ((access(path, X_OK) == 0) &&
+        (S_ISDIR(sbuf->st_mode) == 0)) {
         // The next write operation to this file will result in a notification
         // TODO: notify now? else, probably want to update the message?
         fs->enforceWR = TRUE;

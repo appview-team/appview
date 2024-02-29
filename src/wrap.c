@@ -1958,6 +1958,8 @@ getSettings(bool attachedFlag)
  * Is the function func a system function?
  * We test this by determining if the function exists in a system library.
  * We start with checking libc. May need to add additional libs?
+ * If at this point we are still concerned with the function, and IF it is
+ * a system function (seen in libc), then we will notify about it.
  */
 static bool
 isSystemFunc(char *func)

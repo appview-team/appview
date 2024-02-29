@@ -218,6 +218,32 @@ ls /tmp
 
 Now the results from /tmp do not include the file mycreds. It has been obfuscated and does not appear to exist.
 
+
+Enable AppView to detect GOT overlays
+```
+export LD_PRELOAD="`pwd`/libobf.so:/tmp/appview/dev/libappview.so"
+```
+Note that you want the parasitic library first in the preload list
+
+
+Execute ls with appview
+```
+appview ls /tmp
+appview events
+```
+You will receive a security event notifying of a GOT issue:
+
+**sec sec.file file:/XXX/libobf.so host:XXX pid:203752 proc:ls reason:"a modification to the GOT to use lib /XXX/libobf.so for function readdir" unit:process write_bytes:0**
+
+Assuming you have notifications enabled to be sent to Slack
+```
+ls /tmp
+```
+You will receive a notification in the configured Slack channel:
+
+**Process ls (pid 203752) on host XXX encountered a modification to the GOT to use lib /XXX/libobf.so for function readdir**
+
+
 ```
 #define _GNU_SOURCE
 #include <stdio.h>

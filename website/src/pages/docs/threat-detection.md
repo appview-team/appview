@@ -195,12 +195,50 @@ The constructor obtains the original address of readdir. The original readdir is
 #### Run the demo
 Edit a file called got-example.c and paste the code below into that file.
 
+
+```
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <string.h>
+#include <dirent.h>
+#include <dlfcn.h>
+
+#define BLOCKED_FILE "mycreds"
+
+typedef struct dirent *(*ThisReaddir)(DIR *);
+ThisReaddir g_readdir;
+
+__attribute__((constructor)) void
+init_obf(void)
+{
+    g_readdir = (ThisReaddir)dlsym(RTLD_NEXT, "readdir");
+}
+
+__attribute__((visibility("default"))) struct dirent *
+readdir(DIR *dirp)
+{
+    if (!g_readdir) return NULL;
+
+    struct dirent *dent = g_readdir(dirp);
+
+    // if the current dir entry is blocked, ignore and get the next one
+    if (dent && (strncmp(dent->d_name, BLOCKED_FILE, strlen(dent->d_name)) == 0)) {
+        //printf("%s:%d %s\n", __FUNCTION__, __LINE__, dent->d_name);
+        dent = g_readdir(dirp);...
+
+
+    }
+
+    return dent;
+}
+```
+
 Compile the code.
 ```
 gcc -fPIC -g -shared got-example.c -o libobf.so
 ```
 
-Create a test file. The Example code obfuscates the existence of a called mycreds.
+Create a test file. The Example code obfuscates the existence of a file called mycreds.
 ```
 touch /tmp/mycreds
 ```
@@ -242,41 +280,3 @@ ls /tmp
 You will receive a notification in the configured Slack channel:
 
 **Process ls (pid 203752) on host XXX encountered a modification to the GOT to use lib /XXX/libobf.so for function readdir**
-
-
-```
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <string.h>
-#include <dirent.h>
-#include <dlfcn.h>
-
-#define BLOCKED_FILE "mycreds"
-
-typedef struct dirent *(*ThisReaddir)(DIR *);
-ThisReaddir g_readdir;
-
-__attribute__((constructor)) void
-init_obf(void)
-{
-    g_readdir = (ThisReaddir)dlsym(RTLD_NEXT, "readdir");
-}
-
-__attribute__((visibility("default"))) struct dirent *
-readdir(DIR *dirp)
-{
-    if (!g_readdir) return NULL;
-
-    struct dirent *dent = g_readdir(dirp);
-
-    // if the current dir entry is blocked, ignore and get the next one
-    if (dent && (strncmp(dent->d_name, BLOCKED_FILE, strlen(dent->d_name)) == 0)) {
-        //printf("%s:%d %s\n", __FUNCTION__, __LINE__, dent->d_name);
-        dent = g_readdir(dirp);...
-
-
-    }
-
-    return dent;
-}
-```

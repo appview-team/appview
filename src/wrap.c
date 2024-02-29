@@ -1954,39 +1954,62 @@ getSettings(bool attachedFlag)
     return settings;
 }
 
-static char *
-fileNameFromAddr(uint64_t addr)
+/*
+ * Is the function func a system function?
+ * We test this by determining if the function exists in a system library.
+ * We start with checking libc. May need to add additional libs?
+ * If at this point we are still concerned with the function, and IF it is
+ * a system function (seen in libc), then we will notify about it.
+ */
+static bool
+isSystemFunc(char *func)
 {
-    FILE *fd = NULL;
-    char line[850];
-    uint64_t addr_begin, addr_end;
-    char str[256];
-    char *returnval = NULL;
+    if (!func) return FALSE;
 
-    if ((fd = appview_fopen("/proc/self/maps", "r")) == NULL) {
-        appviewLogDebug("fopen(/proc/self/maps) failed");
-        return NULL;
+    elf_buf_t *ebuf;
+    char *sys_file;
+
+    // We don't care where the symbol exists, just that it can be found.
+    if ((sys_file = osPathFromName("libc.so")) &&
+        (ebuf = getElf(sys_file)) &&
+        getDynSymbol(ebuf->buf, func)) {
+        return TRUE;
     }
 
-    while(appview_fgets(line, sizeof(line), fd) != NULL) {
-// 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libappview.so
-        appview_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
-        if ((addr >= addr_begin) && (addr < addr_end)) {
-            break;
-        }
-        addr_begin = 0;
-        addr_end = 0;
-    }
-
-    // Found it!
-    if (addr_begin && addr_end) {
-        returnval = appview_strdup(str);
-    }
-
-    appview_fclose(fd);
-    return returnval;
+    return FALSE;
 }
 
+/*
+ * This is the GOT check function.
+ * It's a callback function used with dl_iterate_phdr().
+ * For a description of why a GOT check is needed, refer to the docs.
+ *
+ * For each function in every object, shared lib and executable, we get the
+ * associated GOT value and then get the file name of the object that supplies
+ * that function, the GOT file. We also get the file name of the object that
+ * supplies the current function being processed, the link map file.
+ *
+ * With this detail for each function, we perform 2 checks:
+ * 1) If the GOT file is located in a system dir, we ignore. If the GOT file is not
+ * in a system dir, then we proceed to check if the function is what we consider
+ * a system function; comes from a system library. If it is a system function and
+ * the file source is not in a system dir, then we notify of a potential concern.
+ * For example, an application that uses the linker preload capability to overlay
+ * a system function will be detected in this check.
+ *
+ * 2) We get the dl_info detail for the GOT value. Using that detail we compare the
+ * symbol name of the current function being processed and the symbol name associated
+ * with the GOT value along with the function address of the current function and the
+ * address associated with the GOT value. If they are the same, then no change has been
+ * made to the initial GOT value and we ignore. If one of these are different, it
+ * represents a change made to the initial GOT. There are legitimate reasons for
+ * changes to the GOT. For example, a number of functions are loaded initially with
+ * generic functions and later replaced with architecture specific functions. The
+ * intent is to provide, for example, 64 bit specific capabilities for certain
+ * functions. A few examples include fmod, tan, and pow. Just to name a few.
+ * When we detect a difference in GOT value we next check to see if the GOT file
+ * is in a system directory. If so, we ignore. Else, we notify of a potential concern.
+ */
 static int
 inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 {
@@ -2010,16 +2033,37 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
         uint64_t got_value = *((uint64_t *)got_addr);
         if (!fname || !got_value) continue;
 
+        char *file_from_got_value = osFileNameFromAddr(got_value);
+        if (!file_from_got_value) goto next;
+
+        // FYI: file_from_link_map is sometimes NULL and that's legit.
+        char *file_from_link_map = appview_realpath(info->dlpi_name, NULL);
+
         /*
          * Ignore got values that are resolved within it's own library.
          * These seem to be one of these two cases that aren't interesting:
          *   undefined symbols that haven't been called yet (resolve to plt section)
          *   locally defined external symbols (resolve to text section)
          */
-        char *file_from_maps_file = fileNameFromAddr(got_value);
-        char *file_from_link_map = appview_realpath(info->dlpi_name, NULL);
-        int found_locally = file_from_link_map && !appview_strcmp(file_from_maps_file, file_from_link_map);
+        int found_locally = file_from_link_map && !appview_strcmp(file_from_got_value, file_from_link_map);
         if (found_locally) goto next;
+
+        if ((file_from_link_map && !appview_strstr(file_from_link_map, "libappview")) &&
+            !appview_strstr(file_from_got_value, "libappview") &&
+            !appview_strstr(file_from_got_value, "/usr/lib") &&
+            !appview_strstr(file_from_got_value, "/usr/bin") &&
+            (appview_strcmp(file_from_got_value, "[vdso]") != 0) &&
+            (isSystemFunc(fname) == TRUE)) {
+
+            const char *exe_or_lib_name = info->dlpi_name[0] ? info->dlpi_name : g_proc.procname;
+            char msg[256];
+            appview_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_got_value, fname);
+            gotSecurity(fname, msg, exe_or_lib_name, file_from_got_value);
+            notify(NOTIFY_LIBS, msg);
+            //printf("%s:%d function %s is being modified by a function in %s\n",
+            //       __FUNCTION__, __LINE__, fname, file_from_got_value);
+            goto next;
+        }
 
         // get info that comes from libdl
         Dl_info dl_info = {0};
@@ -2031,6 +2075,10 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
         /*
          * If the function name and address from the link map matches
          * the function name and address from dladdr1 info, continue on.
+         *
+         * This is the comparison that detects a potential issue.
+         * symbol name & addr from the current lib compared to symbol name & addr in the corresponding GOT
+         *
          */
         if (dl_info.dli_sname && !appview_strcmp(fname, dl_info.dli_sname) &&
             ((void*)got_value == dl_info.dli_saddr)) goto next;
@@ -2052,10 +2100,10 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          * From libappview.
          *   It's us and we modifiy the GOT.
          */
-        if (appview_strstr(file_from_maps_file, "libappview") ||
-            appview_strstr(file_from_maps_file, "/usr/lib") ||
-            appview_strstr(file_from_maps_file, "/usr/bin") ||
-            !appview_strcmp(file_from_maps_file, "[vdso]")) goto next;
+        if (appview_strstr(file_from_got_value, "libappview") ||
+            appview_strstr(file_from_got_value, "/usr/lib") ||
+            appview_strstr(file_from_got_value, "/usr/bin") ||
+            !appview_strcmp(file_from_got_value, "[vdso]")) goto next;
 
 #ifdef DEBUG
         printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
@@ -2074,12 +2122,12 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 
         const char *exe_or_lib_name = info->dlpi_name[0] ? info->dlpi_name : g_proc.procname;
         char msg[256];
-        appview_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_maps_file, fname);
-        gotSecurity(fname, msg, exe_or_lib_name, file_from_maps_file);
+        appview_snprintf(msg, sizeof(msg), "a modification to the GOT to use lib %s for function %s", file_from_got_value, fname);
+        gotSecurity(fname, msg, exe_or_lib_name, file_from_got_value);
         notify(NOTIFY_LIBS, msg);
 
 next:
-        appview_free(file_from_maps_file);
+        appview_free(file_from_got_value);
         appview_free(file_from_link_map);
     }
 
@@ -2208,6 +2256,13 @@ init(void)
     // of whether TLS is actually configured on any transport.
     transportRegisterForExitNotification(handleExit);
 
+    /*
+     * Detect GOT mods.
+     * Called from the constructor, this applies more to attach behavior than preload.
+     * Probably.
+     */
+    inspectGotTables();
+
     initHook(attachedFlag, settings.isActive, ebuf, full_path);
 
     /*
@@ -2242,13 +2297,6 @@ init(void)
 
     // Confure the detect and notify features
     notify(NOTIFY_INIT, "");
-
-    /*
-     * Detect GOT mods.
-     * Called from the constructor, this applies more to attach behavior than preload.
-     * Probably.
-     */
-    inspectGotTables();
 
     if (ebuf) freeElf(ebuf->buf, ebuf->len);
     if (full_path) appview_free(full_path);

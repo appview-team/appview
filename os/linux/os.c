@@ -1140,3 +1140,59 @@ osGetBaseAddr(uint64_t *addr) {
     }
     return FALSE;
 }
+
+char *
+osFileNameFromAddr(uint64_t addr)
+{
+    FILE *fd = NULL;
+    char line[850];
+    uint64_t addr_begin, addr_end;
+    char str[256];
+    char *returnval = NULL;
+
+    if ((fd = appview_fopen("/proc/self/maps", "r")) == NULL) {
+        appviewLogDebug("fopen(/proc/self/maps) failed");
+        return NULL;
+    }
+
+    while (appview_fgets(line, sizeof(line), fd) != NULL) {
+        // 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libappview.so
+        appview_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
+        if ((addr >= addr_begin) && (addr < addr_end)) {
+            returnval = appview_strdup(str);
+            break;
+        }
+        addr_begin = 0;
+        addr_end = 0;
+    }
+
+    appview_fclose(fd);
+    return returnval;
+}
+
+char *
+osPathFromName(const char *pname)
+{
+    FILE *fd = NULL;
+    char *returnval = NULL;
+    uint64_t addr_begin, addr_end;
+    char line[850];
+    char str[256];
+
+    if ((fd = appview_fopen("/proc/self/maps", "r")) == NULL) {
+        appviewLogDebug("fopen(/proc/self/maps) failed");
+        return NULL;
+    }
+
+    while (appview_fgets(line, sizeof(line), fd) != NULL) {
+        // 7f409827c000-7f40989ae000 r-xp 00000000 ca:01 13663715 /lib/linux/libappview.so
+        appview_sscanf(line, "%lx-%lx %*s %*s %*s %*s %255s", &addr_begin, &addr_end, str);
+        if (appview_strcasestr(str, pname)) {
+            returnval = appview_strdup(str);
+            break;
+        }
+    }
+
+    appview_fclose(fd);
+    return returnval;
+}

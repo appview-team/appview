@@ -77,5 +77,6 @@ extern bool osMemPermAllow(void *, size_t, int, int);
 extern bool osMemPermRestore(void *, size_t, int);
 extern bool osGetBaseAddr(uint64_t *);
 extern int osGetArgv(pid_t, char *, size_t);
-
+extern char *osFileNameFromAddr(uint64_t);
+extern char *osPathFromName(const char *);
 #endif  //__OS_H__

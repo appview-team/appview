@@ -1282,25 +1282,31 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 {
     if ((g_notify_def.enable == FALSE) ||
         (g_notify_def.files == FALSE) ||
-        !fs || !path ||
-        appview_strstr(path, "stdin") ||
-        appview_strstr(path, "stdout") ||
-        appview_strstr(path, "stderr") ||
-        appview_strstr(path, "/proc")) return;
+        !fs || !path) return;
+
+    size_t plen = appview_strlen(path);
+
+    if ((appview_strncmp(path, "stdin", plen) == 0) ||
+        (appview_strncmp(path, "stdout", plen) == 0) ||
+        (appview_strncmp(path, "stderr", plen) == 0) ||
+        (appview_strncmp(path, "/proc", sizeof("/proc") - 1) == 0) ||
+        (appview_strncmp(path, "/dev", sizeof("/dev") - 1) == 0)) return;
 
     int i;
     char *this;
 
     // Should this path be enforced for write access?
     for (i = 0; g_notify_def.file_write[i] != NULL; i++) {
- 
         // ignore a leading space
         this = g_notify_def.file_write[i];
-        if (*this == ' ') this++;
 
-        if (appview_strstr(path, this)) {
-            fs->enforceWR = TRUE;
-            break;
+        if (this) {
+            if (*this == ' ') this++;
+            //printf("%s:%d %s(%ld) %s(%ld)\n", __FUNCTION__, __LINE__, path, plen, this, sizeof("/proc"));
+            if (appview_strcasestr(path, this)) {
+                fs->enforceWR = TRUE;
+                break;
+            }
         }
     }
 
@@ -1309,11 +1315,13 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     for (i = 0; g_notify_def.file_read[i] != NULL; i++) {
         // ignore a leading space
         this = g_notify_def.file_read[i];
-        if (*this == ' ') this++;
 
-        if (appview_strstr(path, this)) {
-            fs->enforceRD = TRUE;
-            break;
+        if (this) {
+            if (*this == ' ') this++;
+            if (appview_strcasestr(path, this)) {
+                fs->enforceRD = TRUE;
+                break;
+            }
         }
     }
 
@@ -1345,7 +1353,8 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for modifications, writes at run time, to executable files
-    if (access(path, X_OK) == 0) {
+    if ((access(path, X_OK) == 0) &&
+        (S_ISDIR(sbuf->st_mode) == 0)) {
         // The next write operation to this file will result in a notification
         // TODO: notify now? else, probably want to update the message?
         fs->enforceWR = TRUE;
@@ -1370,14 +1379,14 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    struct passwd *pw;
+    struct passwd *pw = NULL;
     bool known_uid = FALSE, known_gid = FALSE;
 
     // Open the password database
-    setpwent();
+    appview_setpwent();
 
     // Iterate through known users
-    while ((pw = getpwent()) != NULL) {
+    while ((pw = appview_getpwent()) != NULL) {
         if (fs->fuid == pw->pw_uid) {
             known_uid = TRUE;
         }
@@ -1387,7 +1396,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // Close the password database
-    endpwent();
+    appview_endpwent();
 
     if (known_uid == FALSE) {
         char msg[REASON_MAX];
@@ -2402,7 +2411,6 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
                 fileSecurity(fs->path, msg, FALSE, 0);
                 notify(NOTIFY_FILES, msg);
             }
-
             // Don't count data from stdin
             if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);

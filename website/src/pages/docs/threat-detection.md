@@ -332,8 +332,67 @@ Assuming you have notifications enabled to be sent to Slack, you will receive a 
 
 **Process dnsd (pid 232907) on host XXX encountered DNS request with an illegal label character**
 
-### Notify on files ex-filtrated through network connections
-ddd
+### Notify on files exfiltrated through network connections
+It's often relevant to be able to answer the question; what is being exfiltrated to external connections from any given application. It seems managers and legal personnel are often interested in this detail. There isn't a direct way to answer with accuracy and confidence. We have made a first pass at detecting files that are exfiltrated over a network connection. In the initial form this detection is incomplete. It is triggered from a sendfile(). Additional detection should be added to recognize files sent over network connections from any source; send, writev, etc. The use of sendfile() is a start in that many applications use this system function due to performance and memory improvements. Further detection will be added as we proceed.
+
+There is an issue with the initial form of this detection. It's relatively common for services to alter environment variables when creating child processes. In these cases, an event is created for exfiltration, however, no Slack notification is created. We will update this as we proceed.
+
+In this example, we use nginx. It's a pretty simple way to expose exfiltration behavior. By default, in latest nginx releases, the use of sendfile() is enabled. Given a default install and configuration you can validate that nginx is using sendfile with this command:
+```
+grep sendfile /etc/nginx/nginx.conf
+```
+
+You should see the following output:
+```
+sendfile on;
+```
+
+It's possible that your install and configuration require that a different path be used for this check.
+
+In this example, we used a container to install nginx. Of course, that isn't required. We use this approach so that default nginx configuration can be used.
+
+
+Start a container and install packages as needed
+```
+docker run -it --cap-add=SYS_PTRACE -v /path_to_your_appview/:/opt/appview ubuntu:latest
+
+apt update && apt install nginx curl vim
+```
+
+Create a test file
+This isn't strictly necessary. You can access files as needed. Refer to nginx docs for reference. We found [this](https://docs.nginx.com/nginx/admin-guide/web-server/serving-static-content/) doc to be helpful. The specific path defined below could be different, depending on your nginx configuration.
+```
+vi /var/www/html/test.txt
+```
+
+Add any text you like, save and exit vi.
+
+
+Start nginx with appview
+```
+/opt/appview/appview nginx
+```
+
+It's possible that your nginx is started as a service, depending on your configuration.
+
+
+Exfiltrate a file
+```
+curl localhost/test.txt
+```
+
+This will cause nginx to use sendfile() to respond to the request for the test file.
+
+
+View the exfiltrate event
+```
+/opt/appview/appview events -a | grep sec
+```
+
+This will display a security event such as:
+
+**[2nt] Mar  8 22:07:28 nginx: master process nginx sec sec.file file:/var/www/html/test.txt host:8123c5ccbf78 pid:4418 proc:"nginx: master process nginx" reason:"The file /var/www/html/test.txt has been exfiltrated to 127.0.0.1" unit:process write_bytes:0**
+
 
 <span id="notifications-events-got"></span>
 

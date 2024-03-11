@@ -135,9 +135,6 @@ Where myScript.sh represents the script created from above.
 
 ## Notifications and Security Events for Network Security
 
-### Notify on DNS inconsistency
-ddd
-
 ### Notify on network connections to an IP address black list entry
 Find the IP address to use in the black list.
 For example, get the IP address for wttr.in:
@@ -167,8 +164,235 @@ APPVIEW_NOTIFY_IP_BLACK="5.9.243.187" APPVIEW_NOTIFY_IP_WHITE="5.9.243.187" appv
 You will see normal output from wttr.in
 No notifications or security events should be emitted.
 
-### Notify on files ex-filtrated through network connections
-ddd
+### Notify on DNS inconsistency
+This example manually creates a DNS query so that it can be manipulated in order to create something that looks like what malware might utilize in order to exfiltrate data with DNS. It is overly simplified in order to illustrate the point. In no way is this meant to mimic any specific malware. The query is sent to the Google DNS server at 8.8.8.8. A standard DNS header is defined. The question specifies an IPv4 address. The query is for wttr.in. It takes the form of "\004wttr\002in" as defined in RFC1035. Binary data is added to the end of the query. This is meant to mimic a few malware definitions which have utilized DNS to exfiltrate data, much of the time to a custom endpoint. Examples can be found in Mitre Attack. The outgoing packet must conform to the DNS spec while adding detail to be exfiltrated.
+
+#### Run the demo
+Edit a file called dns-example.c and paste the code below into that file.
+
+```
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
+
+#define MAX_BUFFER_SIZE 1024
+#define DNS_SERVICE "8.8.8.8"
+#define DNS_PORT 53
+#define QNAME "\004wttr\002in"
+
+// DNS full header definition per RFC 1035
+/*
+      0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                      ID                       |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    QDCOUNT                    |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    ANCOUNT                    |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    NSCOUNT                    |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    ARCOUNT                    |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+
+Question Field
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    QNAME                      |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    QTYPE                      |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+    |                    QCLASS                     |
+    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+
+ */
+
+struct dns_header
+{
+    unsigned short id; // identification number
+    unsigned char qr :1;     // query/response flag
+    unsigned char opcode :4; // purpose of message
+    unsigned char aa :1;     // authoritative answer
+    unsigned char tc :1;     // truncated message
+    unsigned char rd :1;     // recursion desired
+
+    unsigned char ra :1;     // recursion available
+    unsigned char z :1;      // its z! reserved
+    unsigned char rcode :4;  // response code
+    unsigned char cd :1;     // checking disabled
+    unsigned char ad :1;     // authenticated data
+ 
+    unsigned short qdcount;  // number of question entries
+    unsigned short ancount;  // number of answer entries
+    unsigned short nscount;  // number of authority entries
+    unsigned short arcount;  // number of resource entries
+};
+
+typedef struct dns_query_t {
+    struct dns_header qhead;
+    unsigned char name[];
+} dns_query;
+
+typedef struct question_t
+{
+    unsigned short qtype;
+    unsigned short qclass;
+} question;
+
+int
+main (int argc, char *argv[])
+{
+    int sockfd;
+    int qlen;
+    char *qname;
+    unsigned char bad_exfil[8] = {0x12,0x34,0x56,0x78,0x9a,0x9b,0x9c,0x0};
+    struct sockaddr_in serverAddr;
+    struct dns_header *dnsq = NULL;
+    char buffer[MAX_BUFFER_SIZE];
+
+    // Point to the buffer
+    dnsq = (struct dns_header *)buffer;
+
+    dnsq->id = (unsigned short) htons(getpid());
+    dnsq->qr = 0;     // A query
+    dnsq->opcode = 0; // A standard query
+    dnsq->aa = 0;     // Not Authoritative
+    dnsq->tc = 0;     // Message is not truncated
+    dnsq->rd = 1;     // Recursion Requested
+    dnsq->ra = 0;     // Defined by the server
+    dnsq->z = 0;
+    dnsq->ad = 0;
+    dnsq->cd = 0;
+    dnsq->rcode = 0;
+    dnsq->qdcount = htons(1); // 1 question
+    dnsq->ancount = 0;
+    dnsq->nscount = 0;
+    dnsq->arcount = 0;
+
+    // End of the DNS header where the question section starts
+    qname =(char *)&buffer[sizeof(struct dns_header)];
+    snprintf(qname, sizeof(QNAME), QNAME);
+    strcat(qname, bad_exfil);
+
+    question *qinfo = (question *)(qname + strlen(qname) + 1);
+    qinfo->qtype = htons(1);   // type A
+    qinfo->qclass = htons(1);  // class IN
+
+    qlen = (int)(qname - buffer) + sizeof(question);
+
+    // Create UDP socket
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
+
+    // Initialize server address
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(DNS_PORT);
+    serverAddr.sin_addr.s_addr = inet_addr(DNS_SERVICE);
+
+    // Send the data
+    if (sendto(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
+        perror("sendto");
+        close(sockfd);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("DNS query to %s for %s\n", DNS_SERVICE, qname);
+
+    // Close the socket
+    close(sockfd);
+
+    exit(0);
+}
+```
+
+
+Compile the code.
+```
+gcc -g dns-example.c -o dnsd
+```
+
+Execute the DNS request with appview
+```
+appview ./dnsd
+appview events
+```
+
+You will receive a security event notifying of a DNS issue:
+
+
+**dnsd sec sec.dns dns_name:��� host:XXX pid:232907 proc:dnsd reason:"DNS request with an illegal label character" unit:process**
+
+Assuming you have notifications enabled to be sent to Slack, you will receive a notification in the configured Slack channel:
+
+**Process dnsd (pid 232907) on host XXX encountered DNS request with an illegal label character**
+
+### Notify on files exfiltrated through network connections
+It's often relevant to be able to answer the question; what is being exfiltrated to external connections from any given application. It seems managers and legal personnel are often interested in this detail. There isn't a direct way to answer with accuracy and confidence. We have made a first pass at detecting files that are exfiltrated over a network connection. In the initial form this detection is incomplete. It is triggered from a sendfile(). Additional detection should be added to recognize files sent over network connections from any source; send, writev, etc. The use of sendfile() is a start in that many applications use this system function due to performance and memory improvements. Further detection will be added as we proceed.
+
+There is an issue with the initial form of this detection. It's relatively common for services to alter environment variables when creating child processes. In these cases, an event is created for exfiltration, however, no Slack notification is created. We will update this as we proceed.
+
+In this example, we use nginx. It's a pretty simple way to expose exfiltration behavior. By default, in latest nginx releases, the use of sendfile() is enabled. Given a default install and configuration you can validate that nginx is using sendfile with this command:
+```
+grep sendfile /etc/nginx/nginx.conf
+```
+
+You should see the following output:
+```
+sendfile on;
+```
+
+It's possible that your install and configuration require that a different path be used for this check.
+
+In this example, we used a container to install nginx. Of course, that isn't required. We use this approach so that default nginx configuration can be used.
+
+
+Start a container and install packages as needed
+```
+docker run -it --cap-add=SYS_PTRACE -v /path_to_your_appview/:/opt/appview ubuntu:latest
+
+apt update && apt install nginx curl vim
+```
+
+Create a test file
+This isn't strictly necessary. You can access files as needed. Refer to nginx docs for reference. We found [this](https://docs.nginx.com/nginx/admin-guide/web-server/serving-static-content/) doc to be helpful. The specific path defined below could be different, depending on your nginx configuration.
+```
+vi /var/www/html/test.txt
+```
+
+Add any text you like, save and exit vi.
+
+
+Start nginx with appview
+```
+/opt/appview/appview nginx
+```
+
+It's possible that your nginx is started as a service, depending on your configuration.
+
+
+Exfiltrate a file
+```
+curl localhost/test.txt
+```
+
+This will cause nginx to use sendfile() to respond to the request for the test file.
+
+
+View the exfiltrate event
+```
+/opt/appview/appview events -a | grep sec
+```
+
+This will display a security event such as:
+
+**[2nt] Mar  8 22:07:28 nginx: master process nginx sec sec.file file:/var/www/html/test.txt host:8123c5ccbf78 pid:4418 proc:"nginx: master process nginx" reason:"The file /var/www/html/test.txt has been exfiltrated to 127.0.0.1" unit:process write_bytes:0**
+
 
 <span id="notifications-events-got"></span>
 

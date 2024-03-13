@@ -18,11 +18,12 @@ In order to achieve this result we will use:
 
 ...all of which do not require a paid license.
 
+<span id="overview"></span>
+
 ## Overview
 
 In this example we will monitor a node that runs the popular NGINX web server, by loading AppView into the NGINX application.
 AppView will send metrics and events to a local instance of Cribl Edge. That Edge node will connect to a fleet in the Cloud, allowing us to use Cribl Search to display a dashboard and perform queries on the data.
-
 
 #### Why AppView?
 
@@ -32,9 +33,9 @@ AppView is the only application that can instrument applications without any cod
 
 Cribl Edge is a lightweight agent that can be centrally managed by a leader in groups of thousands of nodes. Using Edge allows us to remotely configure the connection to AppView and make the data available in Cribl Search. Note, that we are not sending the data to any destination, instead it is spooled to disk on the node and the amazing Cribl Search is able to pull in the data to resolve queries and light up a dashboard.
 
+<span id="deployment"></span>
 
 ## Deployment
-
 
 #### AppView
 
@@ -122,6 +123,8 @@ The benefit of using Edge and Search together is that the Datasets and Dataset p
 3. Click `Dashboards`, click `Add Dashboard`, give it a name and click `Save`. Click `... -> Edit as JSON` then import the dashboard.
 
 At this point, your dashboard in Cribl Search should start lighting up (you might have to manually refresh the page) and you can start feeling the power of deep IT and Security observability.
+
+<span id="where-to-go"></span>
 
 ## Where to go from here
 

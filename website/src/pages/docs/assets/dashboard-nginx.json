@@ -1,0 +1,911 @@
+{
+  "elements": [
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"fs.open\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "vuvmwvr4o",
+      "type": "counter.single",
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "Files Opened"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"fs.close\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "pe9y0fc8t",
+      "type": "counter.single",
+      "layout": {
+        "x": 2,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "Files Closed"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"net.open\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "ukim0zf4m",
+      "type": "counter.single",
+      "layout": {
+        "x": 4,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "Net Opens"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"net.open\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "qexyh90xu",
+      "type": "counter.single",
+      "layout": {
+        "x": 6,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "Net Closes"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"http.req\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "d7zluo745",
+      "type": "counter.single",
+      "layout": {
+        "x": 8,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "HTTP Requests"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"http.resp\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "ypwg1se0q",
+      "type": "counter.single",
+      "layout": {
+        "x": 10,
+        "y": 0,
+        "w": 2,
+        "h": 2
+      },
+      "title": "HTTP Responses"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"dns.req\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "20flo3iqn",
+      "type": "counter.single",
+      "layout": {
+        "x": 0,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "DNS Requests"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"dns.resp\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "e0skkhr5b",
+      "type": "counter.single",
+      "layout": {
+        "x": 2,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "DNS Responses"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": true,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#33d17a",
+              "threshold": 0
+            },
+            {
+              "color": "#e01b24",
+              "threshold": 1
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"sec.file\" and data.file !contains '.htm' | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "8wmm6ft6y",
+      "type": "counter.single",
+      "layout": {
+        "x": 4,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "File Security Issues"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": true,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#33d17a",
+              "threshold": 0
+            },
+            {
+              "color": "#e01b24",
+              "threshold": 1
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"sec.dns\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "7wqrvpcbl",
+      "type": "counter.single",
+      "layout": {
+        "x": 6,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "DNS Security Issues"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": true,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#33d17a",
+              "threshold": 0
+            },
+            {
+              "color": "#e01b24",
+              "threshold": 1
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"sec.conn\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "1kydzss32",
+      "type": "counter.single",
+      "layout": {
+        "x": 8,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "Connection Security Issues"
+    },
+    {
+      "config": {
+        "style": false,
+        "applyThreshold": true,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#33d17a",
+              "threshold": 0
+            },
+            {
+              "color": "#e01b24",
+              "threshold": 1
+            }
+          ]
+        },
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true
+        },
+        "legend": {
+          "position": "Right",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"sec.got\" | summarize fscnt=count() ",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "u0jx12dyo",
+      "type": "counter.single",
+      "layout": {
+        "x": 10,
+        "y": 2,
+        "w": 2,
+        "h": 2
+      },
+      "title": "GOT Poisoning Issues"
+    },
+    {
+      "config": {
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom",
+          "name": "Time"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true,
+          "name": "Memory"
+        },
+        "legend": {
+          "position": "None",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_metrics\"  | where _metric == \"proc.mem\" | project _value, _time",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "u0jx12dyo-copy-copy",
+      "type": "chart.line",
+      "layout": {
+        "x": 0,
+        "y": 4,
+        "w": 6,
+        "h": 3
+      },
+      "title": "Process Memory Usage (bytes)"
+    },
+    {
+      "config": {
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom",
+          "name": "Time"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true,
+          "name": "CPU"
+        },
+        "legend": {
+          "position": "None",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_metrics\"  | where _metric == \"proc.cpu_perc\" | project _value",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "u0jx12dyo-copy",
+      "type": "chart.line",
+      "layout": {
+        "x": 6,
+        "y": 4,
+        "w": 6,
+        "h": 3
+      },
+      "title": "Process CPU Usage (%)"
+    },
+    {
+      "config": {
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "seriesCount": 1
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom",
+          "name": "Time"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true,
+          "name": "Seconds"
+        },
+        "legend": {
+          "position": "None",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_metrics\"  | where _metric == \"http.duration.server\" | project _value, _time",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "u0jx12dyo-copy-copy-copy",
+      "type": "chart.bar",
+      "layout": {
+        "x": 0,
+        "y": 7,
+        "w": 6,
+        "h": 3
+      },
+      "title": "HTTP Server Duration (s)"
+    },
+    {
+      "config": {
+        "type": "chart.bar",
+        "colorPalette": 0,
+        "colorPaletteReversed": false,
+        "customData": {
+          "trellis": false,
+          "connectNulls": "Leave gaps",
+          "stack": false,
+          "summarizeOthers": false,
+          "seriesCount": 1,
+          "splitBy": "data_http_status_code"
+        },
+        "xAxis": {
+          "labelOrientation": 0,
+          "position": "Bottom"
+        },
+        "yAxis": {
+          "position": "Left",
+          "scale": "Linear",
+          "splitLine": true,
+          "name": "Code"
+        },
+        "legend": {
+          "position": "None",
+          "truncate": true
+        },
+        "onClickAction": {
+          "type": "None"
+        },
+        "style": false,
+        "applyThreshold": false,
+        "colorThresholds": {
+          "thresholds": [
+            {
+              "color": "#45850B",
+              "threshold": 30
+            },
+            {
+              "color": "#EFDB23",
+              "threshold": 70
+            },
+            {
+              "color": "#B20000",
+              "threshold": 100
+            }
+          ]
+        },
+        "timestats": false,
+        "color": "#33d17a"
+      },
+      "search": {
+        "type": "inline",
+        "query": "dataset=\"cribl_edge_appscope_events\"  | where data_source == \"http.resp\" | summarize cnt=count() by data.http_status_code",
+        "earliest": "-1h",
+        "latest": "now"
+      },
+      "id": "u0jx12dyo-copy-copy-copy-copy",
+      "type": "chart.pie",
+      "layout": {
+        "x": 6,
+        "y": 7,
+        "w": 6,
+        "h": 3
+      },
+      "title": "HTTP Response Codes"
+    }
+  ]
+}

@@ -2083,7 +2083,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
             ((void*)got_value == dl_info.dli_saddr)) goto next;
 
         /*
-         * Ignore stuff from libc.  Reasons include:, (void **)&symbol, RTLD_DL_SYMENT
+         * Ignore stuff from libc.  Reasons include:
          *   name missmatches that aren't meaningful free->cfree, calloc->__libc_calloc, etc.
          *   libdl doesn't know about libc's vectorized functions (sse2, sse42, avx, avx2)
          *   examples include: memcmp memmove strlen strncasecmp strncmp

@@ -1,6 +1,6 @@
-FROM alpine:3.15
+FROM alpine:latest
 
-RUN apk add go openssl make file bash curl autoconf automake libtool openssl-dev rust nodejs ruby python3 php php-openssl apache2 apache2-ssl python3-dev py3-pip libffi-dev cargo && \
+RUN apk add go openssl make file bash curl autoconf automake libtool openssl-dev rust nodejs ruby python3 php php-openssl apache2 apache2-ssl python3-dev py3-pip libffi-dev cargo py3-openssl && \
     go clean -cache
 
 RUN mkdir -p /go /go/thread /go/net /go/cgo
@@ -68,7 +68,7 @@ COPY ./tls/ruby/server.rb /opt/test/bin/.
 COPY ./tls/ruby/client.rb /opt/test/bin/.
 # Python
 COPY ./tls/testssl.py /opt/test/bin/testssl.py
-RUN pip install pyopenssl
+#RUN pip install pyopenssl
 # PHP
 COPY ./tls/php/sslclient.php /opt/test/bin
 # Rust

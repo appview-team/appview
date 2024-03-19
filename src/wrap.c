@@ -2067,8 +2067,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 
         // get info that comes from libdl
         Dl_info dl_info = {0};
-        Elf64_Sym *symbol;
-        int dladdr_successful = dladdr1((const void *)got_value, &dl_info, (void **)&symbol, RTLD_DL_SYMENT) != 0;
+        int dladdr_successful = dladdr((const void *)got_value, &dl_info) != 0;
         if (!dladdr_successful) goto next;
         if (!dl_info.dli_sname) continue;
 
@@ -2084,7 +2083,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
             ((void*)got_value == dl_info.dli_saddr)) goto next;
 
         /*
-         * Ignore stuff from libc.  Reasons include:
+         * Ignore stuff from libc.  Reasons include:, (void **)&symbol, RTLD_DL_SYMENT
          *   name missmatches that aren't meaningful free->cfree, calloc->__libc_calloc, etc.
          *   libdl doesn't know about libc's vectorized functions (sse2, sse42, avx, avx2)
          *   examples include: memcmp memmove strlen strncasecmp strncmp

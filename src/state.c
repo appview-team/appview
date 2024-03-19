@@ -1353,7 +1353,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for modifications, writes at run time, to executable files
-    if ((access(path, X_OK) == 0) &&
+    if ((appview_access(path, X_OK) == 0) &&
         (S_ISDIR(sbuf->st_mode) == 0)) {
         // The next write operation to this file will result in a notification
         // TODO: notify now? else, probably want to update the message?
@@ -1379,24 +1379,49 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    struct passwd *pw = NULL;
+    int res;
     bool known_uid = FALSE, known_gid = FALSE;
+    size_t bsize;
+    struct passwd pw;
+    struct passwd *pwp;
+    struct group grp;
+    struct group *grpp;
+    char *pbuf;
 
-    // Open the password database
-    appview_setpwent();
-
-    // Iterate through known users
-    while ((pw = appview_getpwent()) != NULL) {
-        if (fs->fuid == pw->pw_uid) {
-            known_uid = TRUE;
-        }
-        if (fs->fgid == pw->pw_gid) {
-            known_gid = TRUE;
-        }
+    // Doing this size check and malloc seems like over kill. However, it's supposed to be required?
+    bsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bsize == -1) {
+        bsize = 16384;        // Should be more than enough
     }
 
-    // Close the password database
-    appview_endpwent();
+    pbuf = appview_malloc(bsize);
+    if (pbuf == NULL) {
+        return;
+    }
+
+    res = appview_getpwuid_r(fs->fuid, &pw, pbuf, bsize, &pwp);
+    if ((res == 0) && (pwp)) {
+        known_uid = TRUE;
+    }
+
+    appview_free(pbuf);
+
+    bsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bsize == -1) {
+        bsize = 16384;        // Should be more than enough
+    }
+
+    pbuf = appview_malloc(bsize);
+    if (pbuf == NULL) {
+        return;
+    }
+
+    res = appview_getgrgid_r(fs->fgid, &grp, pbuf, bsize, &grpp);
+    if ((res == 0) && grpp) {
+        known_gid = TRUE;
+    }
+
+    appview_free(pbuf);
 
     if (known_uid == FALSE) {
         char msg[REASON_MAX];

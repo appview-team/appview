@@ -11,46 +11,46 @@ services:
   # These tests run on all platforms; x86_64 and aarch64
 
   alpine:
-    image: ghcr.io/criblio/appview-test-alpine:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-alpine:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-alpine:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-alpine:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./alpine/Dockerfile
     <<: *appview-common
 
   bash:
-    image: ghcr.io/criblio/appview-test-bash:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-bash:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-bash:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-bash:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./bash/Dockerfile
     <<: *appview-common
 
   syscalls:
-    image: ghcr.io/criblio/appview-test-syscalls:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-syscalls:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-syscalls:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-syscalls:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./syscalls/Dockerfile
     <<: *appview-common
 
   syscalls-alpine:
-    image: ghcr.io/criblio/appview-test-syscalls-alpine:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-syscalls-alpine:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-syscalls-alpine:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-syscalls-alpine:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./syscalls/Dockerfile.alpine
     <<: *appview-common
 
   logstream:
-    image: ghcr.io/criblio/appview-test-logstream:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-logstream:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-logstream:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-logstream:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./logstream/Dockerfile
     ports:
@@ -58,37 +58,37 @@ services:
     <<: *appview-common
 
   nginx:
-    image: ghcr.io/criblio/appview-test-nginx:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-nginx:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-nginx:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-nginx:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./nginx/Dockerfile
     <<: *appview-common
 
   elastic:
-    image: ghcr.io/criblio/appview-test-elastic:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-elastic:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-elastic:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-elastic:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./elastic/Dockerfile
     <<: *appview-common
 
   tls:
-    image: ghcr.io/criblio/appview-test-tls:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-tls:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-tls:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-tls:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./tls/Dockerfile
     <<: *appview-common
 
   detect_proto:
-    image: ghcr.io/criblio/appview-test-detect_proto:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-detect_proto:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-detect_proto:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-detect_proto:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./detect_proto/Dockerfile
     ports:
@@ -97,37 +97,37 @@ services:
     <<: *appview-common
 
   node-glibc:
-    image: ghcr.io/criblio/appview-test-node-glibc:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-node-glibc:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-node-glibc:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-node-glibc:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./node/Dockerfile.glibc
     <<: *appview-common
 
   node-musl:
-    image: ghcr.io/criblio/appview-test-node-musl:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-node-musl:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-node-musl:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-node-musl:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./node/Dockerfile.musl
     <<: *appview-common
 
   metricvariants:
-    image: ghcr.io/criblio/appview-test-metricvariants:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-metricvariants:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-metricvariants:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-metricvariants:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./metricvariants/Dockerfile
     <<: *appview-common
 
   java8:
-    image: ghcr.io/criblio/appview-test-java8:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-java8:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-java8:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-java8:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./java/Dockerfile
       args:
@@ -135,12 +135,12 @@ services:
         DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
     <<: *appview-common
   java9:
-    image: ghcr.io/criblio/appview-test-java9:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-java9:${TAG:?Missing TAG environment variable}
     environment:
         SKIP_APPVIEW_TEST: 'true'
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-java9:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-java9:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./java/Dockerfile
       args:
@@ -148,10 +148,10 @@ services:
         DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
     <<: *appview-common
   java10:
-    image: ghcr.io/criblio/appview-test-java10:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-java10:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-java10:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-java10:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./java/Dockerfile
       args:
@@ -159,10 +159,10 @@ services:
         DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
     <<: *appview-common
   java11:
-    image: ghcr.io/criblio/appview-test-java11:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-java11:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-java11:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-java11:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./java/Dockerfile
       args:
@@ -171,10 +171,10 @@ services:
     <<: *appview-common
 
   transport:
-    image: ghcr.io/criblio/appview-test-transport:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-transport:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-transport:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-transport:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./transport/Dockerfile
     ports:
@@ -182,10 +182,10 @@ services:
     <<: *appview-common
 
   http:
-    image: ghcr.io/criblio/appview-test-http:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-http:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-http:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-http:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./http/Dockerfile
     ports:
@@ -193,91 +193,91 @@ services:
     <<: *appview-common
 
   service-initd:
-    image: ghcr.io/criblio/appview-test-service-initd:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-service-initd:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-service-initd:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-service-initd:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./service/Dockerfile.initd
     <<: *appview-common
 
   service-systemd:
-    image: ghcr.io/criblio/appview-test-service-systemd:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-service-systemd:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-service-systemd:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-service-systemd:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./service/Dockerfile.systemd
     <<: *appview-common
 
   service-openrc:
-    image: ghcr.io/criblio/appview-test-service-openrc:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-service-openrc:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-service-openrc:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-service-openrc:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./service/Dockerfile.openrc
     <<: *appview-common
 
   console:
-    image: ghcr.io/criblio/appview-test-console:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-console:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-console:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-console:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./console/Dockerfile
     <<: *appview-common
     
   musl:
-    image: ghcr.io/criblio/appview-test-musl:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-musl:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-musl:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-musl:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./musl/Dockerfile
     <<: *appview-common
 
   opentelemetry:
-    image: ghcr.io/criblio/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./opentelemetry/Dockerfile
     <<: *appview-common
 
   glibc:
-    image: ghcr.io/criblio/appview-test-glibc:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-glibc:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-glibc:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-glibc:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./glibc/Dockerfile
     <<: *appview-common
 
   attach-glibc:
-    image: ghcr.io/criblio/appview-test-attach-glibc:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-attach-glibc:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-attach-glibc:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-attach-glibc:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./attach/Dockerfile.glibc
     <<: *appview-common
 
   attach-musl:
-    image: ghcr.io/criblio/appview-test-attach-musl:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-attach-musl:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-attach-musl:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-attach-musl:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./attach/Dockerfile.musl
     <<: *appview-common
 
   cli:
-    image: ghcr.io/criblio/appview-test-cli:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-cli:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-cli:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-cli:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./cli/Dockerfile
     privileged: true
@@ -287,82 +287,82 @@ services:
     <<: *appview-common
 
   cli_rules:
-    image: ghcr.io/criblio/appview-test-cli_rules:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-cli_rules:${TAG:?Missing TAG environment variable}
     build:
       cache_from: 
-        - ghcr.io/criblio/appview-test-cli_rules:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-cli_rules:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./cli_rules/Dockerfile
     <<: *appview-common
 
   fedora:
-    image: ghcr.io/criblio/appview-test-fedora:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-fedora:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-fedora:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-fedora:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./fedora/Dockerfile
     <<: *appview-common
 
   sshd:
-    image: ghcr.io/criblio/appview-test-sshd:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-sshd:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-sshd:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-sshd:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./sshd/Dockerfile
     <<: *appview-common
 
   payload-glibc:
-    image: ghcr.io/criblio/appview-test-payload-glibc:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-payload-glibc:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-payload-glibc:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-payload-glibc:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./payload/Dockerfile.glibc
     <<: *appview-common
 
   payload-musl:
-    image: ghcr.io/criblio/appview-test-payload-musl:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-payload-musl:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-payload-musl:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-payload-musl:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./payload/Dockerfile.musl
     <<: *appview-common
 
   postgres:
-    image: ghcr.io/criblio/appview-test-postgres:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-postgres:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-postgres:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-postgres:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./postgres/Dockerfile
     <<: *appview-common
 
   jetty:
-    image: ghcr.io/criblio/appview-test-jetty:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-jetty:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-jetty:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-jetty:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./jetty/Dockerfile
     <<: *appview-common
 
   jetty:
-    image: ghcr.io/criblio/appview-test-jetty:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-jetty:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-jetty:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-jetty:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./jetty/Dockerfile
     <<: *appview-common
 
   go_19:
-    image: ghcr.io/criblio/appview-test-go_19:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-go_19:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-go_19:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-go_19:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./go/Dockerfile
       args:
@@ -370,10 +370,10 @@ services:
     <<: *appview-common
 
   go_20:
-    image: ghcr.io/criblio/appview-test-go_20:${TAG:?Missing TAG environment variable}
+    image: ghcr.io/appview-team/appview-test-go_20:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
-        - ghcr.io/criblio/appview-test-go_20:${TAG:?Missing TAG environment variable}
+        - ghcr.io/appview-team/appview-test-go_20:${TAG:?Missing TAG environment variable}
       context: .
       dockerfile: ./go/Dockerfile
       args:

@@ -1406,7 +1406,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     appview_free(pbuf);
 
-    bsize = sysconf(_SC_GETGR_R_SIZE_MAX);
+    bsize = appview_sysconf(_SC_GETGR_R_SIZE_MAX);
     if (bsize == -1) {
         bsize = 16384;        // Should be more than enough
     }

@@ -3,6 +3,8 @@
 
 #include "test_utils.h"
 
+#define TEST_CHAR_RESULT 'A'
+
 int do_test() {
     setlocale(LC_ALL, "en_US.utf8");
     int test_result = EXIT_SUCCESS;
@@ -36,7 +38,7 @@ int do_test() {
     if(pFile != NULL) {
         for(i = 0; i < TEST_COUNT; i++) {
             c = fgetwc(pFile);
-            if(c == WEOF || c != TEST_CHARW) {
+            if(c == WEOF || c != TEST_CHAR_RESULT) {
                 TEST_ERROR();
                 break;
             }

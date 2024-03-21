@@ -1416,7 +1416,8 @@ static int
 findLibappviewPath(struct dl_phdr_info *info, size_t size, void *data)
 {
     int len = appview_strlen(info->dlpi_name);
-    int libappview_so_len = 11;
+    // Yikes! this constant needs to match the lib name
+    int libappview_so_len = 13;
 
     if (len > libappview_so_len &&
         !appview_strcmp(info->dlpi_name + len - libappview_so_len, "libappview.so")) {

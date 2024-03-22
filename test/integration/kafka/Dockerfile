@@ -5,12 +5,12 @@ RUN yum -y update && \
     yum -y install python pip && \
     yum -y install epel-release && \
     yum -y install java-1.8.0-openjdk && \
-    yum -y install mc net-tools lsof vim emacs gdb
+    yum -y install mc net-tools lsof vim emacs gdb procps
 
 RUN mkdir -p /opt/test-runner/logs/
 
 # Originally used 2.1.1 and 2.11, but they're too old now.
-ENV KAFKA_VERSION=2.7.0 KAFKA_SCALA_VERSION=2.13
+ENV KAFKA_VERSION=3.7.0 KAFKA_SCALA_VERSION=2.13
 ENV KAFKA_RELEASE_ARCHIVE kafka_${KAFKA_SCALA_VERSION}-${KAFKA_VERSION}.tgz
 
 RUN mkdir /kafka /data /logs

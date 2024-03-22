@@ -26,10 +26,10 @@ class KafkaAppController(AppController):
         if viewed:
             env["LD_PRELOAD"] = self.appview_path
 
-        #logging.info("Sockets before start()")
-        #os.system('netstat -an | grep -w 9092')
-        #logging.info("ps before start()")
-        #os.system('ps -ef')
+        logging.info("Sockets before start()")
+        os.system('netstat -an | grep -w 9092')
+        logging.info("ps before start()")
+        os.system('ps -ef')
 
         logging.info(f"Starting app {self.name} in {'viewed' if viewed else 'unviewd'} mode.")
 
@@ -58,18 +58,22 @@ class KafkaAppController(AppController):
                 logging.info("Giving up waiting for start")
                 break
 
-        #logging.info("Sockets after start()")
-        #os.system('netstat -an | grep -w 9092')
-        #logging.info("ps after start()")
-        #os.system('ps -ef')
+        logging.info("Sockets after start()")
+        os.system('netstat -an | grep -w 9092')
+        logging.info("ps after start()")
+        os.system('ps -ef')
 
+    # there is a /kafka/bin/kafka-server-stop.sh should we consider using that?
     def stop(self):
         logging.info(f"Stopping app {self.name}.")
         arch = subprocess.check_output(["uname","-m"])
-        if arch.startswith(b'x86'):
+        # was x86; forcing the more accurate stop
+        if arch.startswith(b'xxx'):
             # kafka behaves with SIGTERM on x86
             self.server.terminate();   self.server.wait()
             self.zookeper.terminate(); self.zookeper.wait()
+            # if we use this stop it needs a delay to close sockets
+            time.sleep(60)
         else:
             # this is crazy but stopping Kafka isn't easy on ARM
             subprocess.Popen("/kafka/bin/kafka-server-stop.sh", start_new_session=True)

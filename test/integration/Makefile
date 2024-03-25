@@ -91,7 +91,7 @@ build: $(addsuffix -build, $(TESTS))
 # every time. That's what ID is for. Should have no effect in CI as the local
 # images list should be empty.
 # --
-%-build: IMAGE=ghcr.io/criblio/appview-test-$(@:%-build=%):$(ARCH)
+%-build: IMAGE=ghcr.io/appview-team/appview-test-$(@:%-build=%):$(ARCH)
 %-build: ID=$(shell $(DOCKER) images -q --filter=reference=$(IMAGE))
 %-build:
 	@[ -n "$(filter $(@:%-build=%),$(TESTS))" ] || \
@@ -107,7 +107,7 @@ build: $(addsuffix -build, $(TESTS))
 
 push: $(addsuffix -push, $(TESTS))
 
-%-push: IMAGE=ghcr.io/criblio/appview-test-$(@:%-push=%):$(ARCH)
+%-push: IMAGE=ghcr.io/appview-team/appview-test-$(@:%-push=%):$(ARCH)
 %-push:
 	@[ -n "$(filter $(@:%-push=%),$(TESTS))" ] || \
 		{ echo >&2 "error: $(@:%-push=%) isn't a test."; exit 1; }

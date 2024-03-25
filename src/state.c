@@ -85,7 +85,6 @@ list_t *g_extra_net_info_list = NULL;
 #define DURATION_FIELD(val)     NUMFIELD("duration",       (val),        8)
 #define NUMOPS_FIELD(val)       NUMFIELD("numops",         (val),        8)
 
-
 bool
 payloadToDiskForced(void)
 {
@@ -1338,7 +1337,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
             notify(NOTIFY_FILES, msg);
         }
         i--;
-    } while (isalnum(path[i]) == 0);
+    }  while (i > 0);
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set

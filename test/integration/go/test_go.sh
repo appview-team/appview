@@ -476,6 +476,7 @@ endtest
 #
 starttest plainClientStatic
 cd /go/net
+sleep 5
 appview -z ./plainClientStatic
 ERR+=$?
 
@@ -517,6 +518,7 @@ endtest
 #
 starttest plainClientStaticStripped
 cd /go/net
+sleep 5
 appview -z ./plainClientStaticStripped
 ERR+=$?
 
@@ -605,6 +607,7 @@ endtest
 #
 starttest tlsClientStatic
 cd /go/net
+sleep 10
 APPVIEW_GO_STRUCT_PATH=$STRUCT_PATH appview -z ./tlsClientStatic
 ERR+=$?
 
@@ -767,6 +770,7 @@ endtest
 #
 starttest fileThread
 cd /go/thread
+rm -r /dev/shm/outdir/
 appview -z ./fileThread
 ERR+=$?
 evaltest

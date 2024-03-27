@@ -105,18 +105,6 @@ services:
       dockerfile: ./gogen/Dockerfile
     <<: *appview-common
 
-  # no arm64 images
-  java7:
-    image: ghcr.io/appview-team/appview-test-java7:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-java7:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./java/Dockerfile
-      args:
-        JDK_IMAGE: openjdk:7
-        DNLD_HEXDUMP: apt-get -o Acquire::Check-Valid-Until=false update && apt-get install -y bsdmainutils
-    <<: *appview-common
   java12:
     image: ghcr.io/appview-team/appview-test-java12:${TAG:?Missing TAG environment variable}
     build:

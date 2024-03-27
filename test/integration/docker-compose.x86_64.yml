@@ -49,153 +49,27 @@ services:
     <<: *appview-common
 
   # There are no arm64 golang images at Docker Hub for these versions of Go
-  go_2:
-    image: ghcr.io/appview-team/appview-test-go_2:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_2:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.2
-    <<: *appview-common
-  go_3:
-    image: ghcr.io/appview-team/appview-test-go_3:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_3:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.3
-    <<: *appview-common
-  go_4:
-    image: ghcr.io/appview-team/appview-test-go_4:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_4:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.4
-    <<: *appview-common
-  go_5:
-    image: ghcr.io/appview-team/appview-test-go_5:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_5:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.5
-    <<: *appview-common
-  go_6:
-    image: ghcr.io/appview-team/appview-test-go_6:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_6:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.6
-    <<: *appview-common
-  go_7:
-    image: ghcr.io/appview-team/appview-test-go_7:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_7:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.7
-    <<: *appview-common
-  go_8:
-    image: ghcr.io/appview-team/appview-test-go_8:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_8:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.8
-    <<: *appview-common
-  go_9:
-    image: ghcr.io/appview-team/appview-test-go_9:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_9:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.9
-    <<: *appview-common
-  go_10:
-    image: ghcr.io/appview-team/appview-test-go_10:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_10:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/unsupported/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.10
-    <<: *appview-common
-  go_11:
-    image: ghcr.io/appview-team/appview-test-go_11:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_11:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.11
-    <<: *appview-common
-  go_12:
-    image: ghcr.io/appview-team/appview-test-go_12:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_12:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.12
-    <<: *appview-common
-  go_13:
-    image: ghcr.io/appview-team/appview-test-go_13:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_13:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.13
-    <<: *appview-common
-  go_14:
-    image: ghcr.io/appview-team/appview-test-go_14:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_14:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.14
-    <<: *appview-common
-  go_15:
-    image: ghcr.io/appview-team/appview-test-go_15:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-go_15:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./go/Dockerfile
-      args:
-        GO_IMAGE_VER: golang:1.15
-    <<: *appview-common
+  # go_2: no longer available
+  # go_3: no longer available
+  # go_4:
+  # go_5:
+  # go_6:
+  # go_7:
+  # go_8:
+  # go_9:
+  # go_10:
+  # go_11:
+  # go_12:
+  # go_13:
+  # go_14:
+  # go_15:
   go_16:
     image: ghcr.io/appview-team/appview-test-go_16:${TAG:?Missing TAG environment variable}
     build:
       cache_from:
         - ghcr.io/appview-team/appview-test-go_16:${TAG:?Missing TAG environment variable}
       context: .
-      dockerfile: ./go/Dockerfile
+      dockerfile: ./go/unsupported/Dockerfile
       args:
         GO_IMAGE_VER: golang:1.16
     <<: *appview-common
@@ -206,7 +80,7 @@ services:
       cache_from:
         - ghcr.io/appview-team/appview-test-go_17:${TAG:?Missing TAG environment variable}
       context: .
-      dockerfile: ./go/Dockerfile
+      dockerfile: ./go/unsupported/Dockerfile
       args:
         GO_IMAGE_VER: golang:1.17
     <<: *appview-common
@@ -216,7 +90,7 @@ services:
       cache_from:
         - ghcr.io/appview-team/appview-test-go_18:${TAG:?Missing TAG environment variable}
       context: .
-      dockerfile: ./go/Dockerfile
+      dockerfile: ./go/unsupported/Dockerfile
       args:
         GO_IMAGE_VER: golang:1.18
     <<: *appview-common

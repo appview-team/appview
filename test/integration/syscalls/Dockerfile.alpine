@@ -51,7 +51,7 @@ RUN  mkdir /usr/local/appview && \
      ln -s /opt/appview/bin/linux/$(uname -m)/appview /usr/local/appview/bin/appview && \
      ln -s /opt/appview/lib/linux/$(uname -m)/libappview.so /usr/local/appview/lib/libappview.so
 
-COPY ./syscalls/appview-test /usr/local/appview/
+COPY ./syscalls/appview-test.alpine /usr/local/appview/appview-test
 
 COPY docker-entrypoint.sh /
 ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -1,5 +1,5 @@
 #!/bin/bash
-/opt/test-runner/bin/python \
+python \
     /opt/test-runner/app.py \
     -t kafka \
     -l /opt/test-runner/logs/ \

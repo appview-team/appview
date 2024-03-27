@@ -43,7 +43,7 @@
 
 #define APPVIEW_NAME_SIZE (16)
 #define LIBAPPVIEW "github.com/appview-team/appview/run._buildLibappviewSo"
-#define APPVIEWDYN "github.com/appview-team/appview/run._buildViewedyn"
+#define APPVIEWDYN "github.com/appview-team/appview/run._buildAppviewdyn"
 
 // private global state
 static struct
@@ -151,7 +151,8 @@ getAsset(libdirfile_t objFileType, unsigned char **start)
         if ((libsym = getSymbol(ebuf->buf, APPVIEWDYN))) {
             libptr = (unsigned char *)*libsym;
         } else {
-            fprintf(stderr, "%s:%d no addr for _buildViewedyn\n", __FUNCTION__, __LINE__);
+            fprintf(stderr, "%s:%d no addr for _buildViewedyn\appviewdyn: %s\n",
+                    __FUNCTION__, __LINE__, APPVIEWDYN);
             goto out;
         }
 

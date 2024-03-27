@@ -39,7 +39,7 @@ enum go_arch_t {
 };
 
 #if defined (__x86_64__)
-   #define MIN_SUPPORTED_GO_VER (11)
+   #define MIN_SUPPORTED_GO_VER (19)
    #define END_INST "int3"
    #define CALL_INST "call"
    #define SYSCALL_INST "syscall"

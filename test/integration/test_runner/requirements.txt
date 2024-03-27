@@ -3,3 +3,5 @@ splunk-sdk
 retrying
 elasticsearch
 kafka
+deprecated
+deprecation

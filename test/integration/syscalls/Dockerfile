@@ -1,9 +1,8 @@
-FROM centos:7
+FROM quay.io/centos/centos:stream9
 
 RUN yum -y update && \
-    yum -y install centos-release-scl && \
     yum -y groupinstall "Development Tools" && \
-    yum -y install libtool flex-devel devtoolset-7 wget automake rh-python38 python-virtualenv && \
+    yum -y install libtool wget python pip && \
     yum -y install vim emacs gdb tcpdump lsof && \
     yum clean all
 
@@ -22,9 +21,6 @@ RUN cd /opt/test && \
       ./configure && \
       make -j"$(nproc)"
 
-RUN source scl_source enable rh-python38 && \
-    virtualenv -p $(which python) /opt/test-runner/
-
 ENV APPVIEW_CRIBL_ENABLE=false
 ENV APPVIEW_LOG_LEVEL=info
 ENV APPVIEW_METRIC_DEST=tcp://localhost:8125
@@ -38,13 +34,13 @@ COPY ./syscalls/altp /opt/test/altp
 RUN cd /opt/test/altp && make -j"$(nproc)"
 
 COPY ./test_runner/requirements.txt /opt/test-runner/requirements.txt
-RUN /opt/test-runner/bin/pip install -r /opt/test-runner/requirements.txt
+RUN pip install -r /opt/test-runner/requirements.txt
 
 COPY ./test_runner /opt/test-runner/
 COPY ./syscalls/syscall_tests_conf.json /opt/test-runner/syscall_tests_conf.json
 
 # Switching to Python 3.8 required this hack. Not sure where the kafka packages are coming from.
-RUN sed -i 's/\basync\b/is_async/g' /opt/test-runner/lib/python3.8/site-packages/kafka/producer/*.py
+RUN sed -i 's/\basync\b/is_async/g' /usr/local/lib/python3.9/site-packages/kafka/producer/*.py
 
 ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
 COPY appview-profile.sh /etc/profile.d/appview.sh

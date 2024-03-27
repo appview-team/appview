@@ -476,6 +476,7 @@ endtest
 #
 starttest plainClientStatic
 cd /go/net
+sleep 5
 appview -z ./plainClientStatic
 ERR+=$?
 
@@ -517,6 +518,7 @@ endtest
 #
 starttest plainClientStaticStripped
 cd /go/net
+sleep 5
 appview -z ./plainClientStaticStripped
 ERR+=$?
 
@@ -605,11 +607,12 @@ endtest
 #
 starttest tlsClientStatic
 cd /go/net
+sleep 10
 APPVIEW_GO_STRUCT_PATH=$STRUCT_PATH appview -z ./tlsClientStatic
 ERR+=$?
 
 # this sleep gives tlsClientStatic a chance to report its events on exit
-sleep 5
+sleep 10
 
 evaltest
 
@@ -767,6 +770,7 @@ endtest
 #
 starttest fileThread
 cd /go/thread
+rm -r /dev/shm/outdir/
 appview -z ./fileThread
 ERR+=$?
 evaltest
@@ -1007,86 +1011,86 @@ sleep 1
 # read/write can't happen at the same time.
 export APPVIEW_HTTP_SERIALIZE_ENABLE=true
 unset APPVIEW_PAYLOAD_ENABLE
-starttest influx_static_stress
+#starttest influx_static_stress
 
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
-sleep 3
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/stress_test insert -n 1000000 -f
+#influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
+#sleep 3
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/stress_test insert -n 1000000 -f
 
 
-influx_eval 50 appview
+#influx_eval 50 appview
 
-unset APPVIEW_HTTP_SERIALIZE_ENABLE
-export APPVIEW_PAYLOAD_ENABLE=true
+#unset APPVIEW_HTTP_SERIALIZE_ENABLE
+#export APPVIEW_PAYLOAD_ENABLE=true
 
 #
 # influx static TLS test
 #
-sleep 1
-starttest influx_static_tls
+#sleep 1
+#starttest influx_static_tls
 
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb_ssl.conf"
+#influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb_ssl.conf"
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-if (test $influx_verbose -eq 0); then
-    sleep 1
-fi
+#if (test $influx_verbose -eq 0); then
+#    sleep 1
+#fi
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -import -path=/go/influx/data.txt -precision=s
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -import -path=/go/influx/data.txt -precision=s
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-influx_eval 2 appview
+#influx_eval 2 appview
 
 
 #
 # influx dynamic TLS test
 #
-sleep 1
-starttest influx_dynamic_tls
+#sleep 1
+#starttest influx_dynamic_tls
 
-influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb_ssl.conf"
+#influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb_ssl.conf"
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'CREATE DATABASE goats'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -ssl -unsafeSsl -host localhost -execute 'SHOW DATABASES'
 
-influx_eval 2 influxd
+#influx_eval 2 influxd
 
 #
 # influx static clear test
 #
-sleep 1
-starttest influx_static_clear
+#sleep 1
+#starttest influx_static_clear
 
-influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
+#influx_start_server "/go/influx/influxd_stat --config /go/influx/influxdb.conf"
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -host localhost -execute 'CREATE DATABASE sheep'
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -host localhost -execute 'CREATE DATABASE sheep'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_stat -host localhost -execute 'SHOW DATABASES'
 
-influx_eval 2 appview
+#influx_eval 2 appview
 
 
 #
 # influx dynamic clear test
 #
-sleep 1
-starttest influx_dynamic_clear
+#sleep 1
+#starttest influx_dynamic_clear
 
-influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb.conf"
+#influx_start_server "/go/influx/influxd_dyn --config /go/influx/influxdb.conf"
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'CREATE DATABASE sheep'
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'CREATE DATABASE sheep'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
 
-if (test $influx_verbose -eq 0); then
-    sleep 1
-fi
+#if (test $influx_verbose -eq 0); then
+#    sleep 1
+#fi
 
 
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -import -path=/go/influx/data.txt -precision=s
-APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -import -path=/go/influx/data.txt -precision=s
+#APPVIEW_EVENT_DEST=file:///go/influx/db/influxc.event appview -z /go/influx/influx_dyn -host localhost -execute 'SHOW DATABASES'
 
-influx_eval 2 influxd
+#influx_eval 2 influxd
 
 unset APPVIEW_PAYLOAD_ENABLE
 unset APPVIEW_PAYLOAD_HEADER

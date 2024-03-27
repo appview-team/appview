@@ -66,8 +66,8 @@ COPY gdbinit /root/.gdbinit
 RUN  mkdir /usr/local/appview && \
      mkdir /usr/local/appview/bin && \
      mkdir /usr/local/appview/lib && \
-     ln -s /opt/appview/bin/linux/appview /usr/local/appview/bin/appview && \
-     ln -s /opt/appview/lib/linux/libappview.so /usr/local/appview/lib/libappview.so
+     ln -s /opt/appview/bin/linux/x86_64/appview /usr/local/appview/bin/appview && \
+     ln -s /opt/appview/lib/linux/x86_64/libappview.so /usr/local/appview/lib/libappview.so
 
 COPY go/unsupported/appview-test /usr/local/appview/appview-test
 

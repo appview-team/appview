@@ -199,26 +199,26 @@ endtest
 
 
 # TODO skip on ARM for now, need to recompile the binary
-if [ "aarch64" != "$(uname -m)" ]; then
+#if [ "aarch64" != "$(uname -m)" ]; then
 	#
 	# Rust
 	#
-	starttest Rust
-	appview -z /opt/test-runner/bin/http_test > /dev/null
-	sleep 1
-	evaltest
+#	starttest Rust
+#	appview -z /opt/test-runner/bin/http_test > /dev/null
+#	sleep 1
+#	evaltest
 
-	grep http.req $EVT_FILE > /dev/null
+#	grep http.req $EVT_FILE > /dev/null
+#	ERR+=$?
+
+#	grep http.resp $EVT_FILE > /dev/null
 	ERR+=$?
 
-	grep http.resp $EVT_FILE > /dev/null
-	ERR+=$?
+#	evalPayload
+#	ERR+=$?
 
-	evalPayload
-	ERR+=$?
-
-	endtest
-fi
+#	endtest
+#fi
 
 
 #

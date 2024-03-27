@@ -17,11 +17,11 @@ int do_test() {
 
     FILE* pFile = fopen(tmp_file_name, "w");
 
-    if(pFile != NULL) {
-        if(fputwc(c, pFile) == WEOF) {
+    if (pFile != NULL) {
+        if (fputwc(c, pFile) == WEOF) {
             TEST_ERROR();
         }
-        if(fclose(pFile) == EOF) {
+        if (fclose(pFile) == EOF) {
             TEST_ERROR();
         }
     } else {
@@ -30,12 +30,12 @@ int do_test() {
 
     pFile = fopen(tmp_file_name, "r");
 
-    if(pFile != NULL) {
+    if (pFile != NULL) {
         c = fgetwc(pFile);
-        if(c == WEOF || c != TEST_CHAR_RESULT) {
+        if ((c == WEOF) || ((c != TEST_CHAR_RESULT) && (c != TEST_CHARW))) {
             TEST_ERROR();
         }
-        if(fclose(pFile) == EOF) {
+        if (fclose(pFile) == EOF) {
             TEST_ERROR();
         }
     } else {

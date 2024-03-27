@@ -237,14 +237,14 @@ services:
       dockerfile: ./musl/Dockerfile
     <<: *appview-common
 
-  opentelemetry:
-    image: ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from: 
-        - ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./opentelemetry/Dockerfile
-    <<: *appview-common
+#  opentelemetry:
+#    image: ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
+#    build:
+#      cache_from: 
+#        - ghcr.io/appview-team/appview-test-opentelemetry:${TAG:?Missing TAG environment variable}
+#      context: .
+#      dockerfile: ./opentelemetry/Dockerfile
+#    <<: *appview-common
 
   glibc:
     image: ghcr.io/appview-team/appview-test-glibc:${TAG:?Missing TAG environment variable}

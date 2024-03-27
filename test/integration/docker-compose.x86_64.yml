@@ -37,16 +37,16 @@ services:
     <<: *appview-common
 
   # There are no arm64 splunk/splunk images at Docker Hub
-  splunk:
-    image: ghcr.io/appview-team/appview-test-splunk:${TAG:?Missing TAG environment variable}
-    build:
-      cache_from:
-        - ghcr.io/appview-team/appview-test-splunk:${TAG:?Missing TAG environment variable}
-      context: .
-      dockerfile: ./splunk/Dockerfile
-    ports:
-      - 8000:8000
-    <<: *appview-common
+#  splunk:
+#    image: ghcr.io/appview-team/appview-test-splunk:${TAG:?Missing TAG environment variable}
+#    build:
+#      cache_from:
+#        - ghcr.io/appview-team/appview-test-splunk:${TAG:?Missing TAG environment variable}
+#      context: .
+#      dockerfile: ./splunk/Dockerfile
+#    ports:
+#      - 8000:8000
+#    <<: *appview-common
 
   # There are no arm64 golang images at Docker Hub for these versions of Go
   # go_2: no longer available

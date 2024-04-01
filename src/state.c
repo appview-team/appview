@@ -1446,8 +1446,8 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 static void
 doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
 {
-    if ((g_notify_def.exfil == FALSE) || !fsrd || !fsrd->path[0]) return;
-
+    if ((g_notify_def.enable == FALSE) || (g_notify_def.exfil == FALSE) ||
+        !fsrd || !fsrd->path[0]) return;
     char rip[INET6_ADDRSTRLEN];
     rip[0] = '\0';
 

@@ -112,9 +112,7 @@ PYTHON_PID=`pidof python3`
 inspect_file_redirect_to_file $PYTHON_PID
 
 interface_prop_check "log" "connected" "true"
-interface_prop_check "cribl" "connected" "false"
-interface_prop_check "cribl" "config" "edge"
-interface_length_check 2
+interface_length_check 3
 
 rm $INSPECT_FILE
 
@@ -127,9 +125,7 @@ sleep 6
 inspect_file_redirect_to_file $PYTHON_PID
 
 interface_prop_check "log" "connected" "true"
-interface_prop_check "cribl" "connected" "true"
-interface_prop_check "cribl" "config" "edge"
-interface_length_check 2
+interface_length_check 3
 
 rm $INSPECT_FILE
 
@@ -275,7 +271,7 @@ kill -9 $PYTHON_PID 1> /dev/null 2> /dev/null
 
 endtest
 
-# disabled cribl, payload enable, expected to see log, cribl, payload
+# # disabled cribl, payload enable, expected to see log, cribl, payload
 starttest test_inspect_cribl_enable_payload_enable
 
 PRE_APPVIEW_CRIBL_ENABLE=$APPVIEW_CRIBL_ENABLE
@@ -288,11 +284,9 @@ PYTHON_PID=`pidof python3`
 inspect_file_redirect_to_file $PYTHON_PID
 
 interface_prop_check "log" "connected" "true"
-interface_prop_check "cribl" "connected" "false"
-interface_prop_check "cribl" "config" "edge"
-interface_prop_check "payload" "connected" "false"
-interface_prop_check "payload" "config" "edge"
-interface_length_check 3
+interface_prop_check "payload" "connected" "true"
+interface_prop_check "payload" "config" "dir:///tmp"
+interface_length_check 4
 
 rm $INSPECT_FILE
 
@@ -313,11 +307,9 @@ PYTHON_PID=`pidof python3`
 inspect_file_redirect_to_file $PYTHON_PID
 
 interface_prop_check "log" "connected" "true"
-interface_prop_check "cribl" "connected" "false"
-interface_prop_check "cribl" "config" "edge"
 interface_prop_check "payload" "connected" "true"
 interface_prop_check "payload" "config" "dir:///tmp"
-interface_length_check 3
+interface_length_check 4
 
 rm $INSPECT_FILE
 

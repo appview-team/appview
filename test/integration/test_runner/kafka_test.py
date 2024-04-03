@@ -63,17 +63,16 @@ class KafkaAppController(AppController):
         logging.info("ps after start()")
         os.system('ps -ef')
 
-    # there is a /kafka/bin/kafka-server-stop.sh should we consider using that?
     def stop(self):
         logging.info(f"Stopping app {self.name}.")
         arch = subprocess.check_output(["uname","-m"])
         # was x86; forcing the more accurate stop
-        if arch.startswith(b'xxx'):
+        if arch.startswith(b'x86'):
             # kafka behaves with SIGTERM on x86
             self.server.terminate();   self.server.wait()
             self.zookeper.terminate(); self.zookeper.wait()
             # if we use this stop it needs a delay to close sockets
-            time.sleep(60)
+            time.sleep(30)
         else:
             # this is crazy but stopping Kafka isn't easy on ARM
             subprocess.Popen("/kafka/bin/kafka-server-stop.sh", start_new_session=True)

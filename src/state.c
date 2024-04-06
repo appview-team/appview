@@ -2429,12 +2429,15 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
             if (fs->enforceRD) {
-                char msg[REASON_MAX];
-
-                appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
-                fileSecurity(fs->path, msg, FALSE, 0);
-                notify(NOTIFY_FILES, msg);
+                char *msg = NULL;
+                if ((msg = appview_malloc(REASON_MAX))) {
+                        appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                        fileSecurity(fs->path, msg, FALSE, 0);
+                        notify(NOTIFY_FILES, msg);
+                        appview_free(msg);
+                    }
             }
+
             // Don't count data from stdin
             if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
@@ -2470,13 +2473,15 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
             if (fs->enforceWR) {
-                char msg[REASON_MAX];
-
-                appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
-                fileSecurity(fs->path, msg, FALSE, bytes);
-                notify(NOTIFY_FILES, msg);
-
+                char *msg = NULL;
+                if ((msg = appview_malloc(REASON_MAX))) {
+                    appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                    fileSecurity(fs->path, msg, FALSE, bytes);
+                    notify(NOTIFY_FILES, msg);
+                    appview_free(msg);
+                }
             }
+
             // Don't count data from stdout, stderr
             if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);

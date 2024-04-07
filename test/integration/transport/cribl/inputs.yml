@@ -10,7 +10,7 @@ inputs:
     authToken: ""
     type: tcpjson
     port: 10070
-  in_appview_tcp:
+  in_appscope_tcp:
     disabled: false
     host: 0.0.0.0
     tls:
@@ -20,7 +20,7 @@ inputs:
     enableProxyHeader: false
     staleChannelFlushMs: 10000
     authToken: ""
-    type: appview
+    type: appscope
     port: 10091
   in_metrics:
     disabled: false
@@ -30,7 +30,7 @@ inputs:
     enableProxyHeader: false
     type: metrics
     udpPort: 8125
-  in_appview_tls:
+  in_appscope_tls:
     disabled: false
     host: 0.0.0.0
     tls:
@@ -43,5 +43,5 @@ inputs:
     enableProxyHeader: false
     staleChannelFlushMs: 10000
     authToken: ""
-    type: appview
+    type: appscope
     port: 10090

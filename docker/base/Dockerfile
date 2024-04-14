@@ -11,7 +11,7 @@ COPY bin/linux/${TARGETARCH}/appview       /usr/local/bin/appview
 COPY lib/linux/${TARGETARCH}/libappview.so /usr/local/lib/libappview.so
 
 RUN mkdir /usr/local/appview /usr/local/appview/x86_64 \
- && ln -s x86_64 /usr/local/appview/amd64 \
+ && ln -s x86_64 /usr/local/appview/amd64
    
 COPY bin/linux/x86_64/* /usr/local/appview/x86_64/
 COPY conf/appview.yml     /usr/local/appview/x86_64/appview.yml

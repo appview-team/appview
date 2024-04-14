@@ -85,7 +85,6 @@ list_t *g_extra_net_info_list = NULL;
 #define DURATION_FIELD(val)     NUMFIELD("duration",       (val),        8)
 #define NUMOPS_FIELD(val)       NUMFIELD("numops",         (val),        8)
 
-
 bool
 payloadToDiskForced(void)
 {
@@ -1338,7 +1337,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
             notify(NOTIFY_FILES, msg);
         }
         i--;
-    } while (isalnum(path[i]) == 0);
+    }  while (i > 0);
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set
@@ -1353,7 +1352,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // check for modifications, writes at run time, to executable files
-    if ((access(path, X_OK) == 0) &&
+    if ((appview_access(path, X_OK) == 0) &&
         (S_ISDIR(sbuf->st_mode) == 0)) {
         // The next write operation to this file will result in a notification
         // TODO: notify now? else, probably want to update the message?
@@ -1379,24 +1378,49 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
     }
 
     // files that are owned by unknown users; uid/gid and the list of known users
-    struct passwd *pw = NULL;
+    int res;
     bool known_uid = FALSE, known_gid = FALSE;
+    size_t bsize;
+    struct passwd pw;
+    struct passwd *pwp;
+    struct group grp;
+    struct group *grpp;
+    char *pbuf;
 
-    // Open the password database
-    appview_setpwent();
-
-    // Iterate through known users
-    while ((pw = appview_getpwent()) != NULL) {
-        if (fs->fuid == pw->pw_uid) {
-            known_uid = TRUE;
-        }
-        if (fs->fgid == pw->pw_gid) {
-            known_gid = TRUE;
-        }
+    // Doing this size check and malloc seems like over kill. However, it's supposed to be required?
+    bsize = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (bsize == -1) {
+        bsize = 16384;        // Should be more than enough
     }
 
-    // Close the password database
-    appview_endpwent();
+    pbuf = appview_malloc(bsize);
+    if (pbuf == NULL) {
+        return;
+    }
+
+    res = appview_getpwuid_r(fs->fuid, &pw, pbuf, bsize, &pwp);
+    if ((res == 0) && (pwp)) {
+        known_uid = TRUE;
+    }
+
+    appview_free(pbuf);
+
+    bsize = appview_sysconf(_SC_GETGR_R_SIZE_MAX);
+    if (bsize == -1) {
+        bsize = 16384;        // Should be more than enough
+    }
+
+    pbuf = appview_malloc(bsize);
+    if (pbuf == NULL) {
+        return;
+    }
+
+    res = appview_getgrgid_r(fs->fgid, &grp, pbuf, bsize, &grpp);
+    if ((res == 0) && grpp) {
+        known_gid = TRUE;
+    }
+
+    appview_free(pbuf);
 
     if (known_uid == FALSE) {
         char msg[REASON_MAX];
@@ -1422,8 +1446,8 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 static void
 doExfil(struct net_info_t *nettx, struct fs_info_t *fsrd)
 {
-    if ((g_notify_def.exfil == FALSE) || !fsrd || !fsrd->path[0]) return;
-
+    if ((g_notify_def.enable == FALSE) || (g_notify_def.exfil == FALSE) ||
+        !fsrd || !fsrd->path[0]) return;
     char rip[INET6_ADDRSTRLEN];
     rip[0] = '\0';
 
@@ -2405,12 +2429,15 @@ doRead(int fd, uint64_t initialTime, int success, const void *buf, ssize_t bytes
         } else if (fs) {
             // If we are told that reads are not permitted, then notify and follow that direction
             if (fs->enforceRD) {
-                char msg[REASON_MAX];
-
-                appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
-                fileSecurity(fs->path, msg, FALSE, 0);
-                notify(NOTIFY_FILES, msg);
+                char *msg = NULL;
+                if ((msg = appview_malloc(REASON_MAX))) {
+                        appview_snprintf(msg, sizeof(msg), "accessing a file from the no access list: %s", fs->path);
+                        fileSecurity(fs->path, msg, FALSE, 0);
+                        notify(NOTIFY_FILES, msg);
+                        appview_free(msg);
+                    }
             }
+
             // Don't count data from stdin
             if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);
@@ -2446,13 +2473,15 @@ doWrite(int fd, uint64_t initialTime, int success, const void *buf, ssize_t byte
         } else if (fs) {
             // If we are told that writes are not permitted, then notify and follow that direction
             if (fs->enforceWR) {
-                char msg[REASON_MAX];
-
-                appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
-                fileSecurity(fs->path, msg, FALSE, bytes);
-                notify(NOTIFY_FILES, msg);
-
+                char *msg = NULL;
+                if ((msg = appview_malloc(REASON_MAX))) {
+                    appview_snprintf(msg, sizeof(msg), "a file modification to an executable file, a system file or a file from the no write list: %s", fs->path);
+                    fileSecurity(fs->path, msg, FALSE, bytes);
+                    notify(NOTIFY_FILES, msg);
+                    appview_free(msg);
+                }
             }
+
             // Don't count data from stdout, stderr
             if ((fd > 2) || appview_strncmp(fs->path, "std", 3)) {
                 uint64_t duration = getDuration(initialTime);

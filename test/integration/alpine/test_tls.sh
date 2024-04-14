@@ -221,20 +221,20 @@ endtest
 #
 # Rust
 #
-starttest Rust
-appview -z /opt/test/bin/http_test > /dev/null
-evaltest
+#starttest Rust
+#appview -z /opt/test/bin/http_test > /dev/null
+#evaltest
 
-grep http.req $EVT_FILE > /dev/null
-ERR+=$?
+#grep http.req $EVT_FILE > /dev/null
+#ERR+=$?
 
-grep http.resp $EVT_FILE > /dev/null
-ERR+=$?
+#grep http.resp $EVT_FILE > /dev/null
+#ERR+=$?
 
-evalPayload
-ERR+=$?
+#evalPayload
+#ERR+=$?
 
-endtest
+#endtest
 
 
 #

@@ -123,8 +123,8 @@ getElf(char *path)
        strncmp((char *)&elf->e_ident[EI_MAG1], "ELF", 3) ||
        (elf->e_ident[EI_CLASS] != ELFCLASS64) ||
        (elf->e_ident[EI_DATA] != ELFDATA2LSB)) {
-        fprintf(stderr, "fd:%d %s:%d ERROR: %s is not a viable ELF file\n",
-                fd, __FUNCTION__, __LINE__, path);
+        //fprintf(stderr, "fd:%d %s:%d ERROR: %s is not a viable ELF file\n",
+        //        fd, __FUNCTION__, __LINE__, path);
         goto out;
     }
 

@@ -1087,7 +1087,7 @@ handleExit(void)
     g_exitdone = TRUE;
 
     // detect GOT mods
-    inspectGotTables();
+    //inspectGotTables();
 
     if (!atomicCasU64(&reentrancy_guard, 0ULL, 1ULL)) {
 
@@ -1416,7 +1416,8 @@ static int
 findLibappviewPath(struct dl_phdr_info *info, size_t size, void *data)
 {
     int len = appview_strlen(info->dlpi_name);
-    int libappview_so_len = 11;
+    // Yikes! this constant needs to match the lib name
+    int libappview_so_len = 13;
 
     if (len > libappview_so_len &&
         !appview_strcmp(info->dlpi_name + len - libappview_so_len, "libappview.so")) {
@@ -2051,6 +2052,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
         if ((file_from_link_map && !appview_strstr(file_from_link_map, "libappview")) &&
             !appview_strstr(file_from_got_value, "libappview") &&
             !appview_strstr(file_from_got_value, "/usr/lib") &&
+            !appview_strstr(file_from_got_value, "/lib") &&
             !appview_strstr(file_from_got_value, "/usr/bin") &&
             (appview_strcmp(file_from_got_value, "[vdso]") != 0) &&
             (isSystemFunc(fname) == TRUE)) {
@@ -2067,8 +2069,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 
         // get info that comes from libdl
         Dl_info dl_info = {0};
-        Elf64_Sym *symbol;
-        int dladdr_successful = dladdr1((const void *)got_value, &dl_info, (void **)&symbol, RTLD_DL_SYMENT) != 0;
+        int dladdr_successful = dladdr((const void *)got_value, &dl_info) != 0;
         if (!dladdr_successful) goto next;
         if (!dl_info.dli_sname) continue;
 
@@ -2102,6 +2103,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
          */
         if (appview_strstr(file_from_got_value, "libappview") ||
             appview_strstr(file_from_got_value, "/usr/lib") ||
+            appview_strstr(file_from_got_value, "/lib") ||
             appview_strstr(file_from_got_value, "/usr/bin") ||
             !appview_strcmp(file_from_got_value, "[vdso]")) goto next;
 

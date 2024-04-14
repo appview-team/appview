@@ -1,19 +1,16 @@
-FROM centos:7
+FROM quay.io/centos/centos:stream9
 
 RUN yum -y update && \
-    yum -y install centos-release-scl && \
-    yum -y install rh-python38 python-virtualenv && \
+    yum -y groupinstall "Development Tools" && \
+    yum -y install python pip && \
     yum -y install epel-release && \
     yum -y install java-1.8.0-openjdk && \
-    yum -y install mc net-tools lsof vim emacs gdb
+    yum -y install mc net-tools lsof vim emacs gdb procps
 
 RUN mkdir -p /opt/test-runner/logs/
 
-RUN source scl_source enable rh-python38 &&\
-    virtualenv -p $(which python) /opt/test-runner/
-
 # Originally used 2.1.1 and 2.11, but they're too old now.
-ENV KAFKA_VERSION=2.7.0 KAFKA_SCALA_VERSION=2.13
+ENV KAFKA_VERSION=3.7.0 KAFKA_SCALA_VERSION=2.13
 ENV KAFKA_RELEASE_ARCHIVE kafka_${KAFKA_SCALA_VERSION}-${KAFKA_VERSION}.tgz
 
 RUN mkdir /kafka /data /logs
@@ -45,8 +42,8 @@ RUN groupadd kafka && \
 #ENV APPVIEW_OUT_DEST=udp://localhost:8125
 #ENV APPVIEW_OUT_VERBOSITY=4
 #ENV APPVIEW_EVENT_DEST=tcp://172.16.198.132:9109
+#ENV APPVIEW_METRIC_DEST=udp://localhost:8125
 ENV APPVIEW_CRIBL_ENABLE=false
-ENV APPVIEW_METRIC_DEST=udp://localhost:8125
 ENV APPVIEW_LOG_LEVEL=info
 ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
 ENV APPVIEW_METRIC_VERBOSITY=4
@@ -56,13 +53,13 @@ ENV APPVIEW_EVENT_METRIC=true
 ENV APPVIEW_EVENT_HTTP=true
 
 COPY ./test_runner/requirements.txt /opt/test-runner/requirements.txt
-RUN /opt/test-runner/bin/pip install -r /opt/test-runner/requirements.txt
-RUN /opt/test-runner/bin/pip install kafka-python
+RUN pip install -r /opt/test-runner/requirements.txt
+RUN pip install kafka-python
 
 COPY ./test_runner/ /opt/test-runner/
 
 # Switching to Python 3.8 required this hack. Not sure where the kafka packages are coming from.
-RUN sed -i 's/\basync\b/is_async/g' /opt/test-runner/lib/python3.8/site-packages/kafka/producer/*.py
+RUN sed -i 's/\basync\b/is_async/g' /usr/local/lib//python3.9/site-packages/kafka/producer/*.py
 
 ENV PATH /kafka/bin:$PATH
 WORKDIR /kafka

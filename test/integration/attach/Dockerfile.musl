@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.15
 
 RUN apk add bash curl gcc gdb musl-dev openjdk11 python3 wget
 

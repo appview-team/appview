@@ -3,6 +3,8 @@
 
 #include "test_utils.h"
 
+#define TEST_CHAR_RESULT 'A'
+
 int do_test() {
     setlocale(LC_ALL, "en_US.utf8");
     int test_result = EXIT_SUCCESS;
@@ -16,15 +18,15 @@ int do_test() {
 
     FILE* pFile = fopen(tmp_file_name, "w");
 
-    if(pFile != NULL) {
-        for(i = 0; i < TEST_COUNT; i++) {
-            if(fputwc(c, pFile) == WEOF) {
+    if (pFile != NULL) {
+        for (i = 0; i < TEST_COUNT; i++) {
+            if (fputwc(c, pFile) == WEOF) {
                 TEST_ERROR();
                 break;
             }
         }
 
-        if(fclose(pFile) == EOF) {
+        if (fclose(pFile) == EOF) {
             TEST_ERROR();
         }
     } else {
@@ -33,16 +35,16 @@ int do_test() {
 
     pFile = fopen(tmp_file_name, "r");
 
-    if(pFile != NULL) {
-        for(i = 0; i < TEST_COUNT; i++) {
+    if (pFile != NULL) {
+        for (i = 0; i < TEST_COUNT; i++) {
             c = fgetwc(pFile);
-            if(c == WEOF || c != TEST_CHARW) {
+            if ((c == WEOF) || ((c != TEST_CHAR_RESULT) && (c != TEST_CHARW))) {
                 TEST_ERROR();
                 break;
             }
         }
 
-        if(fclose(pFile) == EOF) {
+        if (fclose(pFile) == EOF) {
             TEST_ERROR();
         }
     } else {

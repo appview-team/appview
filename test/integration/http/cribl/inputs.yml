@@ -1,5 +1,5 @@
 inputs:
-  in_appview:
+  in_appscope:
     disabled: false
     host: 0.0.0.0
     tls:
@@ -9,5 +9,5 @@ inputs:
     enableProxyHeader: false
     staleChannelFlushMs: 10000
     authToken: ""
-    type: appview
+    type: appscope
     port: 10090

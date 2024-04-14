@@ -9,7 +9,7 @@ H1_URL=http://google.com
 H1_URL_HTTPS=https://google.com
 
 # LogStream will be configured to dump NDJSON output files here.
-DEST=/tmp/out/appview:in_appview
+DEST=/tmp/out/appscope:in_appscope
 
 FAILED_TEST_LIST=""
 FAILED_TEST_COUNT=0

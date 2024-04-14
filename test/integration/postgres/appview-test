@@ -34,12 +34,13 @@ endtest(){
 
 starttest postgres
 
-LD_PRELOAD="/usr/local/appview/lib/libappview.so" bash /usr/local/bin/docker-entrypoint.sh -e > /tmp/output.txt 2>&1 &
-
-sleep 4
+initdb -D /tmp/pgsql_data
+appview -z pg_ctl -D /tmp/pgsql_data start > /tmp/output.txt
+sleep 2
 
 # Check if the postgres was able to startup
-grep "PostgreSQL init process complete; ready for start up." /tmp/output.txt
+grep "server started" /tmp/output.txt
+
 ERR+=$?
 
 endtest

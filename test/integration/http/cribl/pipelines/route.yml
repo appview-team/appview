@@ -2,14 +2,14 @@ id: default
 groups: {}
 routes:
   - id: AQMNRB
-    name: appview_to_tmp
+    name: appscope_to_tmp
     final: false
     disabled: false
     pipeline: passthru
     description: ""
     clones:
       - {}
-    filter: __inputId=='appview:in_appview'
+    filter: __inputId=='appscope:in_appscope'
     output: tmp
   - id: default
     name: default

@@ -60,10 +60,10 @@ setVar(const char *var)
 }
 
 static bool
-setList(char *list, char *dest[], size_t max_entries){
+setList(char *list, char *dest[], size_t max_entries) {
     int num_entries = 0;
     char *token = NULL;
-    char *save = NULL;
+    char *walk = NULL;
     char *copy;
 
     if (list == NULL) return FALSE;
@@ -71,15 +71,16 @@ setList(char *list, char *dest[], size_t max_entries){
     if ((copy = appview_calloc(1, strlen(list) + 1)) == NULL) return FALSE;
     appview_strcpy(copy, list);
 
-    token = appview_strtok_r(copy, ",", &save);
-    while ((token != NULL) && (num_entries < max_entries)) {
+    for (token = copy; num_entries < max_entries; num_entries++) {
+        if ((walk = appview_strchr(token, ',')) != NULL) *walk = '\0';
+
         if ((dest[num_entries] = appview_strdup(token)) == NULL) {
-            appviewLog(CFG_LOG_ERROR, "%s: Can't allocate memory for a list from %s", __FUNCTION__, token);
             appview_free(copy);
             return FALSE;
         }
-        num_entries++;
-        token = appview_strtok_r(NULL, ",", &save);
+
+        if (walk == NULL) break;
+        token += appview_strlen(token) + 1;
     }
 
     appview_free(copy);

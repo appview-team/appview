@@ -64,10 +64,10 @@ echo
 echo ===============================================================================
 echo "Testing Cribl/TLS Transport"
 if [ "$(wait_for_port 10090)" ]; then
-    rm -rf /tmp/out/appview:in_appview_tls
+    rm -rf /tmp/out/appscope:in_appscope_tls
     APPVIEW_CRIBL_TLS_CA_CERT_PATH=/tmp/appview.crt \
         appview run -c tls://127.0.0.1:10090 -- curl -Lso /dev/null https://cribl.io
-    if [ "$(wait_for_files "/tmp/out/appview:in_appview_tls/CriblOut-*.json")" ]; then
+    if [ "$(wait_for_files "/tmp/out/appscope:in_appscope_tls/CriblOut-*.json")" ]; then
         echo "  PASSED (curl)"
     else
         echo "  FAILED - missing output files (curl)"
@@ -96,9 +96,9 @@ echo
 echo ===============================================================================
 echo "Testing Cribl/TCP Transport"
 if [ "$(wait_for_port 10091)" ]; then
-    rm -rf /tmp/out/appview:in_appview_tcp
+    rm -rf /tmp/out/appscope:in_appscope_tcp
     appview run -c tcp://127.0.0.1:10091 -- curl -Lso /dev/null https://cribl.io
-    if [ "$(wait_for_files "/tmp/out/appview:in_appview_tcp/CriblOut-*.json")" ]; then
+    if [ "$(wait_for_files "/tmp/out/appscope:in_appscope_tcp/CriblOut-*.json")" ]; then
         echo "  PASSED"
     else
         echo "  FAILED - missing output files"

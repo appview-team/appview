@@ -81,7 +81,7 @@ $(GOVVV):
 	$(GO) install github.com/ahmetb/govvv
 $(GOLANGCI_LINT):
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
-		sh -s -- -b $(GOBIN) v1.42.1
+		sh -s -- -b $(GOBIN) v1.57.2
 $(TRIVY):
 	curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | \
 		sh -s -- -b $(GOBIN) v0.38.3

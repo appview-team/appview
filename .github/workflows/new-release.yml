@@ -458,7 +458,7 @@ jobs:
   update-dockerhub-latest:
     name: Update Latest Tag in Dockerhub
     runs-on: ubuntu-latest
-    needs: [info,validate-tag,update-cdn-latest]
+    needs: [info,build,cdn,image]
     steps:
       - name: Login to Dockerhub
         uses: docker/login-action@v2

@@ -107,7 +107,6 @@ In this example, we'll add AppView to the `httpd` service, described by an `http
 mkdir /opt/appview && cd /opt/appview
 curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64
 curl -Ls https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64.md5 | md5sum -c
-mv appview-x86_64 appview
 chmod +x appview
 ./appview extract .
 ```

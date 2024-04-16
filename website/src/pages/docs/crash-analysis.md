@@ -48,7 +48,6 @@ Download the AppView binary:
 cd ~/Downloads  
 curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64
 curl -Ls https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64.md5 | md5sum -c
-mv appview-x86_64 appview
 chmod +x appview
 ```
 

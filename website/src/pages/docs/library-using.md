@@ -105,9 +105,10 @@ In this example, we'll add AppView to the `httpd` service, described by an `http
 
 ```
 mkdir /opt/appview && cd /opt/appview
-curl -Lo appview https://cdn.cribl.io/dl/appview/\
- $(curl -L https://cdn.cribl.io/dl/appview/latest)/linux/appview && \
- chmod 755 ./appview
+curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64
+curl -Ls https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64.md5 | md5sum -c
+mv appview-x86_64 appview
+chmod +x appview
 ./appview extract .
 ```
 
@@ -132,9 +133,9 @@ Assuming that you have [created](https://aws.amazon.com/lambda/getting-started/)
 
 #### Adding an AppView AWS Lambda Layer
 
-1. Start with one of the AWS Lambda Layers for AppView that Cribl provides. You can obtain the AWS Lambda Layers and their MD5 checksums from the Cribl CDN.
-    - `AWS Lambda Layer for x86`: [https://cdn.cribl.io/dl/appview/1.2.2/linux/x86_64/aws-lambda-layer.zip](https://cdn.cribl.io/dl/appview/1.2.2/linux/x86_64/aws-lambda-layer.zip)
-    - `AWS Lambda Layer for ARM`: [https://cdn.cribl.io/dl/appview/1.2.2/linux/aarch64/aws-lambda-layer.zip](https://cdn.cribl.io/dl/appview/1.2.2/linux/aarch64/aws-lambda-layer.zip)
+1. Start with one of the AWS Lambda Layers for AppView that we provide. You can obtain the AWS Lambda Layers and their MD5 checksums from the GitHub releases page.
+    - [AWS Lambda Layer for x86](https://github.com/appview-team/appview/releases/download/v1.0.0/aws-lambda-layer-x86_64.zip)
+    - [AWS Lambda Layer for ARM](https://github.com/appview-team/appview/releases/download/v1.0.0/aaws-lambda-layer-aarch64.zip)
     - To obtain the MD5 checksum for either file above, add `.md5` to the file path.
 2. Complete the procedure for creating a layer described in the [AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/configuration-layers.html#configuration-layers-create), uploading your AppView AWS Lambda Layer ZIP file in the **upload your layer code** step, and choosing `x86_64` or `ARM64`, as appropriate, for **Compatible architectures**.
 3. After you click **Create**, note the **Version ARN** shown for your newly-created layer.

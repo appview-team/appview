@@ -30,8 +30,9 @@
 
 1. Ensure all changes are in the `master` branch. Perform all below actions from the `master` branch.
 2. Ensure the CI build and test stage passes (is green).
-2. On the GitHub UI, in the Releases page, create a new release with the appropriate tag, and provide a description. This will trigger the `new-release` workflow to create a new release on GitHub and Docker hub.
-3. On the GitHub UI, in the Actions page, click the button under the `update-website` workflow to generate an update to the website. This will trigger the workflow to create a new website build and publish it to GitHub pages
+3. Update URLs to download AppView to reflect the version change in the README and on the docs website.
+4. On the GitHub UI, in the Releases page, create a new release with the appropriate tag, and provide a description. This will trigger the `new-release` workflow to create a new release on GitHub and Docker hub.
+5. On the GitHub UI, in the Actions page, click the button under the `update-website` workflow to generate an update to the website. This will trigger the workflow to create a new website build and publish it to GitHub pages
 
 ## Security Updates
 

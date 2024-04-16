@@ -100,8 +100,9 @@ Before you begin, ensure that your environment meets the AppView [requirements](
 
 **With the Download**
 ```
-curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.4.3/scope-x86_64
-curl -Ls https://github.com/appview-team/appview/releases/download/v1.4.3/scope-x86_64.md5 | md5sum -c
+curl -Lo appview https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64
+curl -Ls https://github.com/appview-team/appview/releases/download/v1.0.0/appview-x86_64.md5 | md5sum -c
+mv appview-x86_64 appview
 chmod +x appview
 appview <some app>
 appview metrics
@@ -121,7 +122,7 @@ appview events -f
 appview detach --all --rootdir /hostfs
 ```
 
-## 🔧 Build From Source
+**From Source**
 
 AppView is not built or distributed like most traditional Linux software.
 

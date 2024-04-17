@@ -1,5 +1,5 @@
 [![Build & Test](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml)
-![GitHub Release](https://img.shields.io/github/v/release/appview-team/appview)
+![GitHub Release](https://img.shields.io/github/v/release/appview-team/appview?label=Release&link=https%3A%2F%2Fgithub.com%2Fappview-team%2Fappview%2Freleases)
 
 # AppView
 

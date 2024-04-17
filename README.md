@@ -1,4 +1,5 @@
 [![Build & Test](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml)
+![GitHub Release](https://img.shields.io/github/v/release/appview-team/appview)
 
 # AppView
 
@@ -112,7 +113,7 @@ appview detach --all
 
 **With Docker**
 ```
-docker run --rm -it -v/:/hostfs:ro --privileged cribl/appview
+docker run --rm -it -v/:/hostfs:ro --privileged appview/appview
 appview <some app> # AppView an app in the container
 appview metrics
 appview events

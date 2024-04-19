@@ -258,7 +258,9 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
 {
     Elf64_Dyn *dyn = NULL;
     char *got = NULL; // TODO; got is not needed, debug, remove
+    bool jmprel = FALSE, pltrelsz = FALSE;
 
+    appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s", __FUNCTION__, __LINE__, lm->l_name);
     for (dyn = lm->l_ld; dyn->d_tag != DT_NULL; dyn++) {
         if (dyn->d_tag == DT_SYMTAB) {
             // Note: using osGetPageProt() to determine if the addr is present in the
@@ -280,18 +282,24 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
             } else {
                 *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
             }
+            jmprel = TRUE;
         } else if (dyn->d_tag == DT_PLTRELSZ) {
             *rsz = dyn->d_un.d_val;
+            pltrelsz = TRUE;
         } else if (dyn->d_tag == DT_PLTGOT) {
             if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
                 got = (char *)(dyn->d_un.d_ptr);
             } else {
                 got = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
+        } else if ((dyn->d_tag == DT_RELA) && (jmprel == FALSE)) {
+            *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
+        } else if ((dyn->d_tag == DT_RELASZ) && (pltrelsz == FALSE)) {
+            *rsz = dyn->d_un.d_val;
         }
     }
 
-    appviewLog(CFG_LOG_TRACE, "%s:%d name: %s dyn %p sym %p rel %p str %p rsz %d got %p laddr 0x%lx\n",
+    appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s dyn %p sym %p rel %p str %p rsz %d got %p laddr 0x%lx\n",
                 __FUNCTION__, __LINE__, lm->l_name, dyn, *sym, *rel, *str, *rsz, got, lm->l_addr);
 
     if (*sym == NULL || *rel == NULL || (*rsz < sizeof(Elf64_Rela))) {

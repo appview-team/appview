@@ -2014,6 +2014,13 @@ isSystemFunc(char *func)
 static int
 inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 {
+    if (!info || !info->dlpi_name) return 0;
+
+    // don't test funcs from libappview, ld.so or main
+    if (appview_strstr(info->dlpi_name, "libappview") ||
+        appview_strstr(info->dlpi_name, "ld-") ||
+        (appview_strstr(info->dlpi_name, "lib") == NULL)) return 0;
+
     void *handle = g_fn.dlopen(info->dlpi_name, RTLD_LAZY);
     if (!handle) return 0;
 
@@ -2024,15 +2031,23 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
     Elf64_Rela *rel = NULL;
     char *str = NULL;
     int rsz = 0;
+
     if (getElfEntries(lm, &rel, &sym, &str, &rsz) == -1) return 0;
+    if (!rel || !sym || !str || (rsz == 0)) return 0;
+
     rsz /= sizeof(Elf64_Rela);
 
     for (int i = 0; i < rsz; i++) {
         // get info that is derived from the link map
         char *fname = sym[ELF64_R_SYM(rel[i].r_info)].st_name + str;
         uint64_t got_addr = rel[i].r_offset + lm->l_addr;
+        if (!got_addr) continue;
+
         uint64_t got_value = *((uint64_t *)got_addr);
         if (!fname || !got_value) continue;
+
+        // when DT_RELA is used in relro execs it's possible that a sym is not found
+        if (!appview_strlen(fname)) continue;
 
         char *file_from_got_value = osFileNameFromAddr(got_value);
         if (!file_from_got_value) goto next;

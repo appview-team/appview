@@ -66,7 +66,7 @@
             "reason"
           ],
           "properties": {
-            "file": {
+            "dns_name": {
               "$ref": "definitions/data.schema.json#/$defs/dns_name"
             },
             "reason": {

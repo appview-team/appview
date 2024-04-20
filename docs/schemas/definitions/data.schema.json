@@ -9,6 +9,11 @@
       "description": "IP address(es) of the domain for which the viewed app sent a DNS request.",
       "type": "array"
     },
+    "address": {
+      "title": "address",
+      "description": "IP address(es) to which the viewed app made a connection.",
+      "type": "string"
+    },
     "allowbinary": {
       "title": "allowbinary",
       "description": "When false, AppView attempts to omit any console writes that contain non-printable characters, while adding 'binary data ignored' to the console event data.",
@@ -94,6 +99,11 @@
     "dir": {
       "title": "dir",
       "description": "Specifies director where payload data should be written. Applies only when payloads are enabled and a backend other than `cribl` is used. See `appview.yml`.",
+      "type": "string"
+    },
+    "dns_name": {
+      "title": "dns_name",
+      "description": "DNS name.",
       "type": "string"
     },
     "domain": {
@@ -182,6 +192,11 @@
       "description": "Specifies the format of metric data. See `appview.yml`. ",
       "type": "string",
       "enum": ["statsd", "ndjson"]
+    },
+    "function": {
+      "title": "function",
+      "description": "The function name in the codebase.",
+      "type": "string"
     },
     "host": {
       "title": "host",
@@ -309,12 +324,12 @@
     "cgroup" : {
       "title": "cgroup",
       "description": "The cgroup for the process.",
-      "type": "string",
+      "type": "string"
     },
     "machine_id" : {
       "title": "machine_id",
       "description": "A unique identifier for a machine.",
-      "type": "string",
+      "type": "string"
     },
     "maxeventpersec": {
       "title": "maxeventpersec",
@@ -521,6 +536,22 @@
       "type": "string",
       "enum": ["HTTP"]
     },
+    "reason": {
+      "title": "reason",
+      "description": "Reason for event.",
+      "type": "string",
+      "examples": ["File not defined in allow list was accessed"]
+    },
+    "redirected_from": {
+      "title": "redirected_from",
+      "description": "Function redirected from.",
+      "type": "string"
+    },
+    "redirected_to": {
+      "title": "redirected_to",
+      "description": "Function redirected to.",
+      "type": "string"
+    },
     "regex": {
       "title": "regex",
       "description": "Specifies the regular expression that AppView should use to detect a protocol. See `appview.yml`.",
@@ -650,7 +681,7 @@
     "uuid" : {
       "title": "uuid",
       "description": "A unique identifier for a process.",
-      "type": "string",
+      "type": "string"
     },
     "validateserver": {
       "title": "validateserver",

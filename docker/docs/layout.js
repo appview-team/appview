@@ -40,6 +40,10 @@ const tocOrder = [
   'event.stderr',
   'event.notice',
   'event.start.msg',
+  'event.sec.file',
+  'event.sec.dns',
+  'event.sec.got',
+  'event.sec.conn',
 
   'metric.fs.open',
   'metric.fs.close',
@@ -83,7 +87,8 @@ const tocHeaders = {
   console: 'Console',
   notice: 'System Notification',
   start: `Start Message`,
-  proc: 'Process'
+  proc: 'Process',
+  sec: 'Security'
 }
 
 module.exports = {

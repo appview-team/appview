@@ -172,7 +172,7 @@ builder: require-docker-buildx-builder
 		--file docker/builder/Dockerfile.$(DIST) \
 		.
 
-image: TAG := cribl/appview:dev
+image: TAG := appview/appview:dev
 image: require-qemu-binfmt
 	@docker buildx build \
 		--tag $(TAG) \
@@ -181,7 +181,7 @@ image: require-qemu-binfmt
 		--load \
 		.
 
-docs-generate: TAG := cribl/appview:docs-$(ARCH)
+docs-generate: TAG := appview/appview:docs-$(ARCH)
 docs-generate: require-docker-buildx-builder
 	@echo Building the AppView docs generator
 	@docker buildx build \
@@ -196,13 +196,13 @@ docs-generate: require-docker-buildx-builder
 	@echo AppView docs generator finished: website/src/pages/docs/schema-reference.md is updated
 
 k8s-test: require-kind require-kubectl image
-	docker tag cribl/appview:dev cribl/appview:$(VERSION)
+	docker tag appview/appview:dev appview/appview:$(VERSION)
 	kind delete cluster
 	kind create cluster
-	kind load docker-image cribl/appview:$(VERSION)
+	kind load docker-image appview/appview:$(VERSION)
 	kubectl create namespace test
 	kubectl create namespace appview
-	docker run -it cribl/appview:$(VERSION) appview k8s -m /tmp/metrics.log -e /tmp/events.log --namespace appview --debug | kubectl apply -f -
+	docker run -it appview/appview:$(VERSION) appview k8s -m /tmp/metrics.log -e /tmp/events.log --namespace appview --debug | kubectl apply -f -
 	kubectl label namespace test appview=enabled
 	kubectl wait --for=condition=available deployment/appview -n appview
 	kubectl run ubuntu --image=ubuntu:20.04 -n test --restart=Never --command -- sleep infinity

@@ -307,6 +307,30 @@
       "type": "string",
       "const": "proc.thread"
     },
+    "sourcesecfile" : {
+      "title": "sec.file",
+      "description": "Indicates that the Source is file security detection.",
+      "type": "string",
+      "const": "sec.file"
+    },
+    "sourcesecdns" : {
+      "title": "sec.dns",
+      "description": "Indicates that the Source is DNS security detection.",
+      "type": "string",
+      "const": "sec.dns"
+    },
+    "sourcesecgot" : {
+      "title": "sec.got",
+      "description": "Indicates that the Source is GOT security detection.",
+      "type": "string",
+      "const": "sec.got"
+    },
+    "sourcesecconn" : {
+      "title": "sec.conn",
+      "description": "Indicates that the Source is connection security detection.",
+      "type": "string",
+      "const": "sec.conn"
+    },
     "sourcetypeconsole": {
       "title": "console",
       "description": "Indicates that the Sourcetype is console.",
@@ -348,6 +372,12 @@
       "description": "Indicates that the Sourcetype is net (meaning network).",
       "type": "string",
       "const": "net"
+    },
+    "sourcetypesec": {
+      "title": "sec",
+      "description": "Indicates that the Sourcetype is sec (meaning security).",
+      "type": "string",
+      "const": "sec"
     },
     "uid": {
       "title": "uid",

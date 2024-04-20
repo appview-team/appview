@@ -37,13 +37,13 @@
       ],
       "properties": {
         "sourcetype": {
-          "$ref": "definitions/body.schema.json#/$defs/sourcetypedns"
+          "$ref": "definitions/body.schema.json#/$defs/sourcetypesec"
         },
         "_time": {
           "$ref": "definitions/body.schema.json#/$defs/_time"
         },
         "source": {
-          "$ref": "definitions/body.schema.json#/$defs/sourcednsreq"
+          "$ref": "definitions/body.schema.json#/$defs/sourcesecgot"
         },
         "host": {
           "$ref": "definitions/data.schema.json#/$defs/host"

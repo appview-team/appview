@@ -2093,7 +2093,16 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
         if (!file_from_got_value) goto next;
 
         // FYI: file_from_link_map is sometimes NULL and that's legit.
-        char *file_from_link_map = appview_realpath(info->dlpi_name, NULL);
+        char *file_from_link_map = NULL;
+        if (g_isgo) {
+            // Try not to create a large stack with Go
+            file_from_link_map = appview_realpath(info->dlpi_name, NULL);
+        } else {
+            char link_map_file[PATH_MAX];
+            if (appview_realpath(info->dlpi_name, link_map_file) != NULL) {
+                file_from_link_map = link_map_file;
+            }
+        }
 
         /*
          * Ignore got values that are resolved within it's own library.
@@ -2163,17 +2172,17 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
             !appview_strcmp(file_from_got_value, "[vdso]")) goto next;
 
 #ifdef DEBUG
-        printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
-               __FUNCTION__, __LINE__, fname, dl_info.dli_sname, got_value, dl_info.dli_saddr);
+        appview_printf("%s:%d fname link map %s fname dladdr1 %s addr GOT 0x%lx addr dladdr1 %p\n",
+                       __FUNCTION__, __LINE__, fname, dl_info.dli_sname, got_value, dl_info.dli_saddr);
 
         if (fname && dl_info.dli_sname &&
             appview_strncmp(fname, dl_info.dli_sname, appview_strlen(dl_info.dli_sname))) {
-            printf("%s:%d len link map %ld dladdr1 %ld\n", __FUNCTION__, __LINE__,
-                   appview_strlen(fname), appview_strlen(dl_info.dli_sname));
+            appview_printf("%s:%d len link map %ld dladdr1 %ld\n", __FUNCTION__, __LINE__,
+                           appview_strlen(fname), appview_strlen(dl_info.dli_sname));
         }
 
         if ((void*)got_value != dl_info.dli_saddr) {
-            printf("%s:%d\n", __FUNCTION__, __LINE__);
+            appview_printf("%s:%d\n", __FUNCTION__, __LINE__);
         }
 #endif
 
@@ -2185,7 +2194,7 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
 
 next:
         appview_free(file_from_got_value);
-        appview_free(file_from_link_map);
+        if (g_isgo) appview_free(file_from_link_map);
     }
 
     dlclose(handle);

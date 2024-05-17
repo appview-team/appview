@@ -45,6 +45,8 @@
 
 #define SSL_FUNC_READ "SSL_read"
 #define SSL_FUNC_WRITE "SSL_write"
+#define SSL_FUNC_READ_EX "SSL_read_ex"
+#define SSL_FUNC_WRITE_EX "SSL_write_ex"
 
 static thread_timing g_thread = {0};
 static config_t *g_staticfg = NULL;
@@ -58,6 +60,8 @@ static rlim_t g_max_fds = 0;
 
 typedef int (*ssl_rdfunc_t)(SSL *, void *, int);
 typedef int (*ssl_wrfunc_t)(SSL *, const void *, int);
+typedef int (*ssl_rdfuncex_t)(SSL *, void *, size_t, size_t *);
+typedef int (*ssl_wrfuncex_t)(SSL *, const void *, size_t, size_t *);
 
 __thread int g_getdelim = 0;
 __thread int g_ssl_fd = -1;
@@ -1329,6 +1333,42 @@ ssl_write_hook(SSL *ssl, void *buf, int num)
 
     return rc;
 }
+
+static int
+ssl_read_ex_hook(SSL *ssl, void *buf, size_t num, size_t *readbytes)
+{
+    int rc;
+
+    WRAP_CHECK(SSL_read_ex, -1);
+    rc = g_fn.SSL_read_ex(ssl, buf, num, readbytes);
+
+    if (rc) {
+        int fd = -1;
+        if (SYMBOL_LOADED(SSL_get_fd)) fd = g_fn.SSL_get_fd(ssl);
+        if ((fd == -1) && (g_ssl_fd != -1)) fd = g_ssl_fd;
+        doProtocol((uint64_t)ssl, fd, buf, *readbytes, TLSRX, BUF);
+    }
+    return rc;
+}
+
+static int
+ssl_write_ex_hook(SSL *ssl, const void *buf, size_t num, size_t *writebytes)
+{
+    int rc;
+
+    WRAP_CHECK(SSL_write_ex, -1);
+
+    rc = g_fn.SSL_write_ex(ssl, buf, num, writebytes);
+
+    if (rc) {
+        int fd = -1;
+        if (SYMBOL_LOADED(SSL_get_fd)) fd = g_fn.SSL_get_fd(ssl);
+        if ((fd == -1) && (g_ssl_fd != -1)) fd = g_ssl_fd;
+        doProtocol((uint64_t)ssl, fd, (void *)buf, *writebytes, TLSTX, BUF);
+    }
+    return rc;
+}
+
 
 static void *
 load_func(const char *module, const char *func)
@@ -6451,5 +6491,7 @@ static got_list_t inject_hook_list[] = {
     {"__register_atfork", __register_atfork, &g_fn.__register_atfork},
     {"setrlimit", setrlimit, &g_fn.setrlimit},
     {"SSL_ImportFD", SSL_ImportFD, &g_fn.SSL_ImportFD},
+    {"SSL_read_ex", ssl_read_ex_hook, &g_fn.SSL_read_ex},
+    {"SSL_write_ex", ssl_write_ex_hook, &g_fn.SSL_write_ex},
     {NULL, NULL, NULL}
 };

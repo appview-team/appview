@@ -30,6 +30,8 @@ typedef struct {
 
 extern int close$NOCANCEL(int);
 extern int guarded_close_np(int, void *);
+extern int SSL_read_ex(SSL *, void *, size_t, size_t *);
+extern int SSL_write_ex(SSL *, const void *, size_t, size_t *);
 
 // struct to hold the next 6 numeric (int/ptr etc) variadic arguments
 // use LOAD_FUNC_ARGS_VALIST to populate this structure

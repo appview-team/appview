@@ -276,14 +276,16 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
             } else {
                 *str = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
-        } else if (dyn->d_tag == DT_JMPREL) {
+        } else if (dyn->d_tag == DT_RELA) {
+            // This is a 'new' tag. Use it if present instead of DT_JMPREL
             if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
                 *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
             } else {
                 *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
             }
             jmprel = TRUE;
-        } else if (dyn->d_tag == DT_PLTRELSZ) {
+        } else if (dyn->d_tag == DT_RELASZ) {
+            // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
             *rsz = dyn->d_un.d_val;
             pltrelsz = TRUE;
         } else if (dyn->d_tag == DT_PLTGOT) {
@@ -292,9 +294,9 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
             } else {
                 got = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
-        } else if ((dyn->d_tag == DT_RELA) && (jmprel == FALSE)) {
+        } else if ((dyn->d_tag == DT_JMPREL) && (jmprel == FALSE)) {
             *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
-        } else if ((dyn->d_tag == DT_RELASZ) && (pltrelsz == FALSE)) {
+        } else if ((dyn->d_tag == DT_PLTRELSZ) && (pltrelsz == FALSE)) {
             *rsz = dyn->d_un.d_val;
         }
     }

@@ -256,9 +256,10 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
 int
 getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str, int *rsz)
 {
+    int pltrsz = 0, relasz = 0;
+    Elf64_Rela *pltrel = NULL, *rela = NULL;
     Elf64_Dyn *dyn = NULL;
     char *got = NULL; // TODO; got is not needed, debug, remove
-    bool jmprel = FALSE, pltrelsz = FALSE;
 
     appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s", __FUNCTION__, __LINE__, lm->l_name);
     for (dyn = lm->l_ld; dyn->d_tag != DT_NULL; dyn++) {
@@ -276,29 +277,58 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
             } else {
                 *str = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
-        } else if (dyn->d_tag == DT_RELA) {
-            // This is a 'new' tag. Use it if present instead of DT_JMPREL
-            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
-                *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
-            } else {
-                *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
-            }
-            jmprel = TRUE;
-        } else if (dyn->d_tag == DT_RELASZ) {
-            // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
-            *rsz = dyn->d_un.d_val;
-            pltrelsz = TRUE;
         } else if (dyn->d_tag == DT_PLTGOT) {
             if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
                 got = (char *)(dyn->d_un.d_ptr);
             } else {
                 got = (char *)(dyn->d_un.d_ptr + lm->l_addr);
             }
-        } else if ((dyn->d_tag == DT_JMPREL) && (jmprel == FALSE)) {
-            *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
-        } else if ((dyn->d_tag == DT_PLTRELSZ) && (pltrelsz == FALSE)) {
-            *rsz = dyn->d_un.d_val;
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_PLTGOT: 0x%lx",
+                       __FUNCTION__, __LINE__, (unsigned long int)got);
+        } else if (dyn->d_tag == DT_JMPREL) {
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+                pltrel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
+            } else {
+                pltrel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
+            }
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_JMPREL: 0x%lx",
+                       __FUNCTION__, __LINE__, (unsigned long int)pltrel);
+        } else if (dyn->d_tag == DT_PLTRELSZ) {
+            pltrsz = dyn->d_un.d_val;
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_PLTRELSZ: %ld %ld",
+                       __FUNCTION__, __LINE__, dyn->d_un.d_val,
+                       dyn->d_un.d_val / sizeof(Elf64_Rela));
+        } else if (dyn->d_tag == DT_RELA) {
+            // This is a 'new' tag. Use it if present instead of DT_JMPREL
+            if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
+                rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
+            } else {
+                rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
+            }
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELA: 0x%lx",
+                       __FUNCTION__, __LINE__, (long unsigned int)rela);
+        } else if (dyn->d_tag == DT_RELASZ) {
+            // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
+            relasz = dyn->d_un.d_val;
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELASZ: %ld %ld",
+                       __FUNCTION__, __LINE__, dyn->d_un.d_val,
+                       dyn->d_un.d_val / sizeof(Elf64_Rela));
+        } else if (dyn->d_tag == DT_RELAENT) {
+            // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
+            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELAENT: %ld %ld",
+                       __FUNCTION__, __LINE__, dyn->d_un.d_val, sizeof(Elf64_Rela));
         }
+    }
+
+    if (pltrel && ((pltrsz / sizeof(Elf64_Rela)) > 10)) {
+        *rel = pltrel;
+        *rsz = pltrsz;
+    } else if (rela && (relasz > sizeof(Elf64_Rela))) {
+        *rel = rela;
+        *rsz = relasz;
+    } else {
+        *rel = NULL;
+        *rsz = 0;
     }
 
     appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s dyn %p sym %p rel %p str %p rsz %d got %p laddr 0x%lx\n",

@@ -3,4 +3,5 @@
     subText: AppView provides application-centric instrumentation and data collection. With one instrumentation approach for all runtimes, AppView offers ubiquitous, unified instrumentation of any unmodified Linux executable for single-user troubleshooting or distributed deployments. 
     ctaText: Read the Docs
     ctaText2: See Examples
+    ctaText3: Blog
 

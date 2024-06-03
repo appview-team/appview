@@ -11,6 +11,7 @@ export default function Hero() {
         hero {
           ctaText
           ctaText2
+          ctaText3
           header
           subText
         }
@@ -50,6 +51,14 @@ export default function Hero() {
               }}
             >
               {data.heroYaml.hero.ctaText2}
+            </Button>
+            &nbsp;
+            <Button
+              onClick={() => {
+                navigate("/docs/crash-analysis");
+              }}
+            >
+              {data.heroYaml.hero.ctaText3}
             </Button>
           </Col>
           <Col xs={{ span: 12, order: 1 }} md={{ span: 6, order: 2 }}>

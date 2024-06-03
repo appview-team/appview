@@ -8,6 +8,9 @@ See the script to understand how to trigger it (usually a tag or a button in git
 Essentially, the script will build the site, and copy the artifact to github self-hosting.
 If the repository settings for 'Pages' is correct, the website will appear at the intended URL.
 
+__Note:__ Sometimes the `deploy` part of the `update-website` workflow fails with some complaint
+about a symbolic link. Appears to be a GitHub Actions bug. Just re-run it a couple times.
+
 ## Build Static files locally
 ```
 website/deploy.sh

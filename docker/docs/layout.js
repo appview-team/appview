@@ -1,13 +1,13 @@
 const documentPreface =
 `In AppView, events are structured according to one pattern, and metrics are structured according to another. These patterns are defined rigorously, in validatable [JSON Schema](https://json-schema.org/). 
 
-Three [definitions schemas](https://github.com/criblio/appview/tree/master/docs/schemas/definitions) govern the basic patterns. Then there is an individual schema for each event and metric, documented below. The definitions schemas define the elements that can be present in individual event and metric schemas, as well as the overall structures into which those elements fit. 
+Three [definitions schemas](https://github.com/appview-team/appview/tree/master/docs/schemas/definitions) govern the basic patterns. Then there is an individual schema for each event and metric, documented below. The definitions schemas define the elements that can be present in individual event and metric schemas, as well as the overall structures into which those elements fit. 
 
-When we say "the AppView schema," we mean the [whole set](https://github.com/criblio/appview/tree/master/docs/schemas/) of schemas. The AppView schema now in use was introduced in AppView 1.0.1.
+When we say "the AppView schema," we mean the [whole set](https://github.com/appview-team/appview/tree/master/docs/schemas/) of schemas. The AppView schema now in use was introduced in AppView 1.0.1.
 
 A few event and metric schema elements, namely \`title\` and \`description\`, have placeholder values. In the future, we might make these more informative. They are essentially "internal documentation" within the schemas and do not affect how the schemas function in AppView. In the event that you develop any code that depends on AppView schemas, be aware that the content of \`title\` and \`description\` fields may evolve.
 
-For more about how events and metrics work in AppView, see [this](working-with#events-and-metrics) overview.`;
+For more about how events and metrics work in AppView, see [this](events-and-metrics) overview.`;
 
 const tocOrder = [
   'event.fs.open',

@@ -42,11 +42,11 @@ AppView can instrument static executables only when they are written in Go.
 
 AppView cannot:
 
-- Unload the libappview library, once loaded.
 - Instrument Go executables built with Go 1.10 or earlier.
 - Instrument static stripped Go executables built with Go 1.12 or earlier.
 - Instrument Java executables that use Open JVM 6 or earlier, or Oracle JVM 6 or earlier.
 - Obtain a core dump either (a) for a Go executable, or (b) in a musl libc environment.
+- Unload the libappview library, once loaded (but a `detach` removes all AppView interpositions and terminates the AppView thread).
 
 When an executable that's being viewed has been [stripped](https://en.wikipedia.org/wiki/Strip_(Unix)), it is not possible for `libappview.so` to obtain a file descriptor for an SSL session, and in turn, AppView cannot include IP and port number fields in HTTP events.
 

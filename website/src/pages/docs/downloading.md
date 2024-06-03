@@ -50,7 +50,7 @@ Now you are ready to explore the CLI:
 - Try some basic CLI commands in [Using the CLI](/docs/cli-using).
 - See the complete [CLI Reference](/docs/cli-reference).
 
-If an application crashes when viewed, you can set the `APPVIEW_ERROR_SIGNAL_HANDLER` environment variable to `true` to turn on backtrace logging. This should provide more informative logs if crashes recur. Feel free to [contact](/docs/community) the AppView team and/or [open a new issue](https://github.com/criblio/appview/issues) if this happens.
+If an application crashes when viewed, you can set the `APPVIEW_ERROR_SIGNAL_HANDLER` environment variable to `true` to turn on backtrace logging. This should provide more informative logs if crashes recur. Feel free to [contact](/docs/community) the AppView team and/or [open a new issue](https://github.com/appview-team/appview/issues) if this happens.
 
 <span id="where-from"> </span>
 

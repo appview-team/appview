@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-Contribution to the project is very welcome and always needed. Please see the below guidelines for contributing to the project. If you have more questions, please feel free to join us on [slack](https://cribl.io/community/#form).
+Contribution to the project is very welcome and always needed. Please see the below guidelines for contributing to the project.
 
 ## :exclamation: Licensing
 
@@ -53,7 +53,7 @@ AppView team members must have MFA on their GitHub account ; and use a GPG key t
 
 ## Coding Style
 
-TBD - Please see the open [discussion](https://github.com/criblio/appview/discussions/1245) on coding style.
+TBD - Please see the open [discussion](https://github.com/appview-team/appview/discussions/1245) on coding style.
 
 ## Testing
 
@@ -139,8 +139,7 @@ See [MAINTAINERS.md](MAINTAINERS.md) for more info.
 ## Container Images
 
 We build and push container images to the
-[`cribl/appview`](https://hub.docker.com/r/cribl/appview) and
-[`cribl/appview-demo`](https://hub.docker.com/r/cribl/appview-demo)
+[`cribl/appview`](https://hub.docker.com/r/appview/appview) 
 repositories at Docker Hub. See [`docker/`](../docker/) for details on how
 those images are built.
 
@@ -148,11 +147,11 @@ We currently build these for release `v*` tags and tag the images to match with
 the leading `v` stripped off.
 
 ```text
-docker run --rm -it cribl/appview:latest
+docker run --rm -it appview/appview:latest
 ```
 or
 ```text
-docker run --rm -it cribl/appview:1.1.3
+docker run --rm -it appview/appview:1.1.3
 ```
 
 ## Tag Usage

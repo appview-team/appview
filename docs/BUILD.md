@@ -78,7 +78,7 @@ In CI, we are caching the contents of these subdirectories to speed up the build
 
 ### Test Containers
 
-The container images for the integration tests are pulled from the project's [package repository](https://github.com/orgs/criblio/packages?repo_name=appview) at GitHub. They're named `appview-test-*` and tagged with either `x86_64` or `aarch64` depending on the architecture they're run on. The image is rebuilt using the current Dockerfile and other content in case anything has changed on the branch being built. The resulting image is pushed back up to GitHub only for `push` actions on the default branch.
+The container images for the integration tests are pulled from the project's [package repository](https://github.com/orgs/appview-team/packages?repo_name=appview) at GitHub. They're named `appview-test-*` and tagged with either `x86_64` or `aarch64` depending on the architecture they're run on. The image is rebuilt using the current Dockerfile and other content in case anything has changed on the branch being built. The resulting image is pushed back up to GitHub only for `push` actions on the default branch.
 
 ## Notes
 

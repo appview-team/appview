@@ -26,6 +26,8 @@
     - name: Application Privacy Report
       path: /docs/privacy-report
 
+- name: AppView Blog
+  child: 
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis
 

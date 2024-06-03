@@ -10,5 +10,8 @@
   #     path: /resources/level2
 
 - name: Examples
+  path: /docs/instrumenting-an-application
+
+- name: Blog
   path: /docs/crash-analysis
 

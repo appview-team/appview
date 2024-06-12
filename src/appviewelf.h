@@ -22,8 +22,10 @@ typedef struct {
 
 void freeElf(char *, size_t);
 elf_buf_t * getElf(char *);
-int doGotcha(struct link_map *, got_list_t *, Elf64_Rela *, Elf64_Sym *, char *, int, bool);
-int getElfEntries(struct link_map *, Elf64_Rela **, Elf64_Sym **, char **, int *rsz);
+int doGotcha(struct link_map *, got_list_t *, Elf64_Sym *, char *,
+             Elf64_Rela *, size_t, Elf64_Rela *, size_t, bool);
+int getElfEntries(struct link_map *, Elf64_Sym **, char **,
+                  Elf64_Rela **, size_t *, Elf64_Rela **, size_t *);
 Elf64_Shdr* getElfSection(char *, const char *);
 void * getSymbol(const char *, char *);
 void * getDynSymbol(const char *, char *);

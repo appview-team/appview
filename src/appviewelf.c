@@ -159,14 +159,8 @@ out:
     return ebuf;
 }
 
-/*
- * Find the GOT ptr as defined in RELA/DYNSYM (.rela.dyn) for symbol & hook it.
- * .rela.dyn section:
- * The address of relocation entries associated solely with the PLT.
- * The relocation table's entries have a one-to-one correspondence with the PLT.
- */
-int
-doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym, char *str, int rsz, bool attach)
+static int
+setGot(struct link_map *lm, got_list_t *hook, Elf64_Sym *sym, char *str, Elf64_Rela *rel, size_t rsz, bool attach)
 {
     int i, match = -1;
     uint64_t prev;
@@ -252,16 +246,50 @@ doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Rela *rel, Elf64_Sym *sym,
     return match;
 }
 
-// Locate the needed elf entries from a given link map.
+/*
+ * Find the GOT ptr as defined in RELA/DYNSYM (.rela.dyn) for symbol & hook it.
+ * .rela.dyn section:
+ * The address of relocation entries associated solely with the PLT.
+ * The relocation table's entries have a one-to-one correspondence with the PLT.
+ *
+ * There are 2 relocation tables potentially used in an Elf object;
+ * 1) relocation rel 2) relocation with addends rela
+ * When one or the other is defined, no question. Use what is defined.
+ * When both rel and rela are defined we need to walk both tables. Some of the symbols we want to
+ * match are in rel and others in rela. Therefore, walk both.
+ *
+ * TODO: we should use a struct for param definition instead of so many passed params.
+ */
 int
-getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str, int *rsz)
+doGotcha(struct link_map *lm, got_list_t *hook, Elf64_Sym *sym, char *str, Elf64_Rela *rel, size_t rsz,
+         Elf64_Rela *rela, size_t rasz, bool attach)
 {
-    int pltrsz = 0, relasz = 0;
-    Elf64_Rela *pltrel = NULL, *rela = NULL;
+    int matchrel = -1, matchrela = -1;
+
+    if (rel && (rsz > sizeof(Elf64_Rela))) {
+        matchrel = setGot(lm, hook, sym, str, rel, rsz, attach);
+    }
+
+    if (rela && (rasz > sizeof(Elf64_Rela))) {
+        matchrela = setGot(lm, hook, sym, str, rela, rasz, attach);
+    }
+
+    if ((matchrel != -1) || (matchrela != -1)) {
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+// Locate the needed elf entries from a given link map.
+// TODO: we should use a struct for param definition instead of so many passed params.
+int
+getElfEntries(struct link_map *lm, Elf64_Sym **sym, char **str,
+              Elf64_Rela **rel, size_t *rsz, Elf64_Rela **rela, size_t *rasz)
+{
     Elf64_Dyn *dyn = NULL;
     char *got = NULL; // TODO; got is not needed, debug, remove
 
-    appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s", __FUNCTION__, __LINE__, lm->l_name);
     for (dyn = lm->l_ld; dyn->d_tag != DT_NULL; dyn++) {
         if (dyn->d_tag == DT_SYMTAB) {
             // Note: using osGetPageProt() to determine if the addr is present in the
@@ -287,54 +315,31 @@ getElfEntries(struct link_map *lm, Elf64_Rela **rel, Elf64_Sym **sym, char **str
                        __FUNCTION__, __LINE__, (unsigned long int)got);
         } else if (dyn->d_tag == DT_JMPREL) {
             if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
-                pltrel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
+                *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
             } else {
-                pltrel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
+                *rel = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
             }
-            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_JMPREL: 0x%lx",
-                       __FUNCTION__, __LINE__, (unsigned long int)pltrel);
         } else if (dyn->d_tag == DT_PLTRELSZ) {
-            pltrsz = dyn->d_un.d_val;
-            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_PLTRELSZ: %ld %ld",
-                       __FUNCTION__, __LINE__, dyn->d_un.d_val,
-                       dyn->d_un.d_val / sizeof(Elf64_Rela));
+            *rsz = dyn->d_un.d_val;
         } else if (dyn->d_tag == DT_RELA) {
             // This is a 'new' tag. Use it if present instead of DT_JMPREL
             if (osGetPageProt((uint64_t)dyn->d_un.d_ptr) != -1) {
-                rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
+                *rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr));
             } else {
-                rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
+                *rela = (Elf64_Rela *)((char *)(dyn->d_un.d_ptr + lm->l_addr));
             }
-            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELA: 0x%lx",
-                       __FUNCTION__, __LINE__, (long unsigned int)rela);
         } else if (dyn->d_tag == DT_RELASZ) {
             // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
-            relasz = dyn->d_un.d_val;
-            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELASZ: %ld %ld",
-                       __FUNCTION__, __LINE__, dyn->d_un.d_val,
-                       dyn->d_un.d_val / sizeof(Elf64_Rela));
-        } else if (dyn->d_tag == DT_RELAENT) {
-            // This is a 'new' tag. Use it if present instead of DT_PLTRELSZ
-            appviewLog(CFG_LOG_DEBUG, "%s:%d DT_RELAENT: %ld %ld",
-                       __FUNCTION__, __LINE__, dyn->d_un.d_val, sizeof(Elf64_Rela));
+            *rasz = dyn->d_un.d_val;
         }
     }
 
-    if (pltrel && ((pltrsz / sizeof(Elf64_Rela)) > 10)) {
-        *rel = pltrel;
-        *rsz = pltrsz;
-    } else if (rela && (relasz > sizeof(Elf64_Rela))) {
-        *rel = rela;
-        *rsz = relasz;
-    } else {
-        *rel = NULL;
-        *rsz = 0;
-    }
+    appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s dyn %p sym %p str %p rel %p rsz %ld rela %p rasz %ld got %p laddr 0x%lx",
+               __FUNCTION__, __LINE__, lm->l_name, dyn, *sym, *str, *rel, *rsz, *rela, *rasz, got, lm->l_addr);
 
-    appviewLog(CFG_LOG_DEBUG, "%s:%d name: %s dyn %p sym %p rel %p str %p rsz %d got %p laddr 0x%lx\n",
-                __FUNCTION__, __LINE__, lm->l_name, dyn, *sym, *rel, *str, *rsz, got, lm->l_addr);
-
-    if (*sym == NULL || *rel == NULL || (*rsz < sizeof(Elf64_Rela))) {
+    // if we have neither rel or rela then we have no entries
+    if ((*sym == NULL) || (((*rel == NULL) || (*rsz < sizeof(Elf64_Rela))) &&
+                           ((*rela == NULL) || (*rasz < sizeof(Elf64_Rela))))) {
         return -1;
     }
 

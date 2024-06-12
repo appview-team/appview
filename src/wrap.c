@@ -287,9 +287,9 @@ hookAll(struct dl_phdr_info *info, size_t size, void *data)
 
     struct link_map *lm;
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
     bool *rules = data;
 
     appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
@@ -314,13 +314,15 @@ hookAll(struct dl_phdr_info *info, size_t size, void *data)
     if (handle == NULL) return FALSE;
 
     // Get the link map and ELF sections in advance of something matching
-    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+        (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
             if (((*rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
-                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
+                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                             rel, rsz, rela, rasz, TRUE) != -1) {
                     appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
                 }
@@ -339,9 +341,9 @@ hookAllAttach(struct dl_phdr_info *info, size_t size, void *data)
 
     struct link_map *lm;
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
     bool *rules = data;
 
     appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
@@ -355,13 +357,15 @@ hookAllAttach(struct dl_phdr_info *info, size_t size, void *data)
     if (handle == NULL) return FALSE;
 
     // Get the link map and ELF sections in advance of something matching
-    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+        (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
             if (((*rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
-                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
+                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                             rel, rsz, rela, rasz, TRUE) != -1) {
                     appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
                 }
@@ -378,21 +382,23 @@ hookMain(bool rules)
 {
     struct link_map *lm;
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
 
     void *handle = g_fn.dlopen(NULL, RTLD_NOW);
     if (handle == NULL) return FALSE;
 
     // Get the link map and ELF sections in advance of something matching
-    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+        (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
             // if the proc passes the rules then GOT hook all else only hook execve
             // TODO; all execv?
             if (((rules == TRUE) || appview_strstr(inject_hook_list[i].symbol, "execve")) &&
                 dlsym(handle, inject_hook_list[i].symbol)) {
-                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1) {
+                if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                             rel, rsz, rela, rasz, TRUE) != -1) {
                     appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from main", inject_hook_list[i].symbol);
                 }
             }
@@ -413,9 +419,9 @@ unHookAll(struct dl_phdr_info *info, size_t size, void *data)
 
     struct link_map *lm;
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
 
     appviewLog(CFG_LOG_DEBUG, "%s: shared obj: %s", __FUNCTION__, info->dlpi_name);
 
@@ -426,9 +432,11 @@ unHookAll(struct dl_phdr_info *info, size_t size, void *data)
     if (handle == NULL) return FALSE;
 
     // Get the link map and ELF sections in advance of something matching
-    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+        (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
-            if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, FALSE) != -1) {
+            if (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                         rel, rsz, rela, rasz, FALSE) != -1) {
                 appviewLog(CFG_LOG_DEBUG, "\tGOT detached %s from shared obj %s",
                          inject_hook_list[i].symbol, info->dlpi_name);
             }
@@ -1480,9 +1488,9 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
 
     struct link_map *lm;
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
     const char *libname = NULL;
 
     // don't attempt to hook libappview.so, libc*.so, ld-*.so
@@ -1502,11 +1510,13 @@ hookSharedObjs(struct dl_phdr_info *info, size_t size, void *data)
     if (handle == NULL) return FALSE;
 
     // Get the link map and ELF sections in advance of something matching
-    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) && (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+    if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
+        (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
         for (int i=0; inject_hook_list[i].symbol; i++) {
 
             if ((dlsym(handle, inject_hook_list[i].symbol)) &&
-                (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1)) {
+                (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                          rel, rsz, rela, rasz, TRUE) != -1)) {
                     appviewLog(CFG_LOG_DEBUG, "\tGOT patched %s from shared obj %s",
                              inject_hook_list[i].symbol, info->dlpi_name);
             }
@@ -2068,15 +2078,16 @@ inspectLib(struct dl_phdr_info *info, size_t size, void *data)
     if (dlinfo(handle, RTLD_DI_LINKMAP, &lm) == -1) return 0;
 
     Elf64_Sym *sym = NULL;
-    Elf64_Rela *rel = NULL;
+    Elf64_Rela *rel = NULL, *rela = NULL;
     char *str = NULL;
-    int rsz = 0;
+    size_t rsz = 0, rasz = 0;
 
-    if (getElfEntries(lm, &rel, &sym, &str, &rsz) == -1) return 0;
+    if (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) == -1) return 0;
     if (!rel || !sym || !str || (rsz == 0)) return 0;
 
     rsz /= sizeof(Elf64_Rela);
 
+    // TODO: we only walk the rel table. Need to update to also walk rela if defined.
     for (int i = 0; i < rsz; i++) {
         // get info that is derived from the link map
         char *fname = sym[ELF64_R_SYM(rel[i].r_info)].st_name + str;
@@ -4538,19 +4549,21 @@ dlopen(const char *filename, int flags)
 
     if (handle) {
         Elf64_Sym *sym = NULL;
-        Elf64_Rela *rel = NULL;
+        Elf64_Rela *rel = NULL, *rela = NULL;
         char *str = NULL;
-        int i, rsz = 0;
+        int i;
+        size_t rsz = 0, rasz = 0;
 
         // Get the link map and ELF sections in advance of something matching
         if ((dlinfo(handle, RTLD_DI_LINKMAP, (void *)&lm) != -1) &&
-            (getElfEntries(lm, &rel, &sym, &str, &rsz) != -1)) {
+            (getElfEntries(lm, &sym, &str, &rel, &rsz, &rela, &rasz) != -1)) {
             appviewLog(CFG_LOG_DEBUG, "\tlibrary:  %s", lm->l_name);
 
             // for each symbol in the list try to hook
             for (i=0; inject_hook_list[i].symbol; i++) {
                 if ((dlsym(handle, inject_hook_list[i].symbol)) &&
-                    (doGotcha(lm, (got_list_t *)&inject_hook_list[i], rel, sym, str, rsz, TRUE) != -1)) {
+                    (doGotcha(lm, (got_list_t *)&inject_hook_list[i], sym, str,
+                              rel, rsz, rela, rasz, TRUE) != -1)) {
                     appviewLog(CFG_LOG_DEBUG, "\tdlopen interposed  %s", inject_hook_list[i].symbol);
                 }
             }

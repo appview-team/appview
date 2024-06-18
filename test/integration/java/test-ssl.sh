@@ -104,7 +104,7 @@ appview -z /opt/tomcat/bin/catalina.sh run &
 evaltest
 
 CURL_MAX_RETRY=10
-until [[ "`curl $CURL_PARAMS -k --silent --connect-timeout 1 -I https://localhost:8443 | grep 'Coyote'`" != "" ]] || [[ "$CURL_MAX_RETRY" -lt 0 ]];
+until [[ "`curl $CURL_PARAMS -k --silent --connect-timeout 1 -I https://127.0.0.1:8443 | grep 'Coyote'`" != "" ]] || [[ "$CURL_MAX_RETRY" -lt 0 ]];
 do
     echo waiting for tomcat...
     sleep 1
@@ -123,7 +123,7 @@ ERR+=$?
 grep http.resp $EVT_FILE > /dev/null
 ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+grep '"net_peer_ip":"::ffff:127.0.0.1"' $EVT_FILE > /dev/null
 ERR+=$?
 
 grep '"net_peer_port":' $EVT_FILE > /dev/null
@@ -145,7 +145,7 @@ ERR+=$?
 grep http.resp $EVT_FILE > /dev/null
 ERR+=$?
 
-grep '"net_peer_ip":"127.0.0.1"' $EVT_FILE > /dev/null
+grep '"net_peer_ip":"::ffff:127.0.0.1"' $EVT_FILE > /dev/null
 ERR+=$?
 
 grep -E '"net_peer_port":' $EVT_FILE > /dev/null

@@ -84,7 +84,7 @@ sleep 30
 # Should get HTTP events from HTTP/1.x traffic
 starttest "HTTP/1.1"
 rm -rf ${DEST}
-appview run -c tcp://localhost:10090 -- curl -Lso /dev/null --http1.1 $H1_URL
+appview run -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http1.1 $H1_URL
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -107,7 +107,7 @@ endtest
 # Should still work when ALL payloads are enabled.
 starttest "HTTP/1.1 + Payloads"
 rm -rf ${DEST}
-appview run -p -c tcp://localhost:10090 -- curl -Lso /dev/null --http1.1 $H1_URL
+appview run -p -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http1.1 $H1_URL
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -130,7 +130,7 @@ endtest
 # Should get HTTP events from HTTP/2 traffic
 starttest "HTTP/2"
 rm -rf ${DEST}
-appview run -c tcp://localhost:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL
+appview run -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -153,7 +153,7 @@ endtest
 # Should still work when ALL payloads are enabled.
 starttest "HTTP/2 + Payloads"
 rm -rf ${DEST}
-appview run -p -c tcp://localhost:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL
+appview run -p -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -229,7 +229,7 @@ endtest
 # Should get HTTP events from HTTP/1.x traffic via HTTPS
 starttest "HTTP/1.1 + HTTPS"
 rm -rf ${DEST}
-appview run -c tcp://localhost:10090 -- curl -Lso /dev/null --http1.1 $H1_URL_HTTPS
+appview run -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http1.1 $H1_URL_HTTPS
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -252,7 +252,7 @@ endtest
 # Should get HTTP events from HTTP/2 traffic via HTTPS
 starttest "HTTP/2 + HTTPS"
 rm -rf ${DEST}
-appview run -c tcp://localhost:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL_HTTPS
+appview run -c tcp://127.0.0.1:10090 -- curl -Lso /dev/null --http2-prior-knowledge $H2_URL_HTTPS
 if [ "$(wait_for_files "${DEST}/CriblOut-*.json")" ]; then
     if grep '"source":"http.req"' ${DEST}/CriblOut-*.json >/dev/null; then
         echo "PASS: http.req found"
@@ -276,7 +276,8 @@ endtest
 # AppView should aggregate http events within the default summary period
 # even when we exit early (before the summary period elapses)
 starttest "HTTP aggregation"
-appview run -m out.txt -- nginx 
+APPVIEW_CRIBL_ENABLE=false appview run -m out.txt -- nginx
+#appview run -m out.txt -- nginx
 sleep 2
 curl 127.0.0.1 >/dev/null 2>&1
 curl 127.0.0.1 >/dev/null 2>&1

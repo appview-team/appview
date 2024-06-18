@@ -16,7 +16,7 @@ COPY logstream/cribl/ /opt/cribl/local/cribl/
 RUN mkdir -p /opt/test-runner/logs/
 
 ENV APPVIEW_CRIBL_ENABLE=false
-ENV APPVIEW_METRIC_DEST=udp://localhost:8125
+ENV APPVIEW_METRIC_DEST=udp://127.0.0.1:8125
 ENV APPVIEW_LOG_LEVEL=info
 ENV APPVIEW_LOG_DEST=file:///opt/test-runner/logs/appview.log
 ENV APPVIEW_METRIC_VERBOSITY=4

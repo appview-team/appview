@@ -79,7 +79,15 @@ else
 	echo "*************** Redis Test Failed ***************"
 fi
 
-if [ "x86_64" = "$(uname -m)" ]; then # x86_64 only
+# mongodb 4.4 can't be downloaded anymore.
+# version 5 & above require the use of the AVX instruction set.
+# without AVX we get an illegal instruction. example: vmovq  -0x80(%rbp),%xmm1
+# given that we can't download a version below 5.0 we need specific hardware.
+# therefore, disable mongo until this can be resolved.
+# probably need to validate the specific CPU type before attempting to start mongod.
+
+#if [ "x86_64" = "$(uname -m)" ]; then # x86_64 only
+if [ "x86_64_tiger_lake_or_above" = "$(uname -m)" ]; then
 
 	MONGO_ERR=0
 	echo

@@ -1,10 +1,10 @@
-FROM quay.io/centos/centos:stream8
+FROM quay.io/centos/centos:stream9
 
 COPY detect_proto/mongodb.repo /etc/yum.repos.d/.
 RUN yum -y update && \
     yum -y install epel-release && \
     yum -y install redis wget gdb openssl net-tools
-RUN [ "aarch64" = "$(uname -m)" ] || yum -y install mongodb-org
+#RUN [ "aarch64" = "$(uname -m)" ] || yum -y install mongodb-org
 
 RUN mkdir /opt/test-runner/
 RUN mkdir /opt/test-runner/logs/

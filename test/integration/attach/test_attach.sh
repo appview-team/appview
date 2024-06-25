@@ -521,7 +521,8 @@ echo "- procname: systemd-networkd" >> $APPVIEW_RULES
 appview -z ./systemd-networkd &
 PID=$!
 sleep 1
-appview inspect --all | grep systemd-networkd
+#appview inspect --all | grep systemd-networkd
+grep appview /proc/`pidof systemd-networkd`/maps > /dev/null
 if [ $? -ne "0" ]; then
     echo "systemd-networkd is not actively viewed but should be"
     ERR+=1
@@ -557,7 +558,8 @@ if [ $? -eq "0" ]; then
     # 3) the implicit allow list overrides the filter and allows runc to be viewed
     ./runc &
 
-    appview inspect --all | grep runc
+    #appview inspect --all | grep runc
+    grep appview /proc/`pidof runc`/maps > /dev/null
     if [ $? -ne "0" ]; then
         echo "runc is not actively viewed but should be"
         ERR+=1

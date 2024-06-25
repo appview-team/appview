@@ -18,6 +18,7 @@ COPY http/conf_1 /opt/test/conf_1
 COPY http/conf_2 /opt/test/conf_2
 
 ENV PATH="/usr/local/appview:/usr/local/appview/bin:${PATH}"
+ENV APPVIEW_CRIBL_ENABLE=true
 COPY appview-profile.sh /etc/profile.d/appview.sh
 COPY gdbinit /root/.gdbinit
 

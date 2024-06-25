@@ -188,6 +188,8 @@ typedef struct {
     int (*SSL_read)(SSL *, void *, int);
     int (*SSL_write)(SSL *, const void *, int);
     int (*SSL_get_fd)(const SSL *);
+    int (*SSL_read_ex)(SSL *, void *, size_t, size_t *);
+    int (*SSL_write_ex)(SSL *, const void *, size_t, size_t *);
     ssize_t (*gnutls_record_recv)(gnutls_session_t, void *, size_t);
     ssize_t (*gnutls_record_send)(gnutls_session_t, const void *, size_t);
     ssize_t (*gnutls_record_recv_early_data)(gnutls_session_t, void *, size_t);

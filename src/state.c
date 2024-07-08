@@ -1326,7 +1326,7 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     // check for spaces at the end of file names
     i = appview_strlen(path);
-    if (appview_isspace(path[i])) {
+    if (appview_isspace(path[i - 1])) {
         char msg[PATH_MAX + 128];
 
         appview_snprintf(msg, sizeof(msg),

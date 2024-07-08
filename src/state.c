@@ -1326,18 +1326,15 @@ doDetectFile(const char *path, fs_info *fs, struct stat *sbuf)
 
     // check for spaces at the end of file names
     i = appview_strlen(path);
-    do {
-        if (appview_isspace(path[i])) {
-            char msg[PATH_MAX + 128];
+    if (appview_isspace(path[i])) {
+        char msg[PATH_MAX + 128];
 
-            appview_snprintf(msg, sizeof(msg),
-                           "spaces at the end of the path name %s representing a potential issue",
-                           path);
-            fileSecurity(path, msg, FALSE, 0);
-            notify(NOTIFY_FILES, msg);
-        }
-        i--;
-    }  while (i > 0);
+        appview_snprintf(msg, sizeof(msg),
+                         "spaces at the end of the path name %s representing a potential issue",
+                         path);
+        fileSecurity(path, msg, FALSE, 0);
+        notify(NOTIFY_FILES, msg);
+    }
 
     // check for several file permission settings that could represent potential issues
     // check for files that have the setuid or setgid bits set

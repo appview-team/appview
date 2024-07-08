@@ -200,6 +200,7 @@ void cfgEvtFormatHeaderSetFromStr(config_t *, const char *);
 void cfgCriblEnableSetFromStr(config_t *, const char *);
 void cfgSnapShotCoredumpEnableSetFomStr(config_t *, const char *);
 void cfgSnapshotBacktraceEnableSetFomStr(config_t *, const char *);
+void cfgIpcEnableSetFomStr(config_t *, const char *);
 static void cfgSetFromFile(config_t *, const char *);
 
 static void processRoot(config_t *, yaml_document_t *, yaml_node_t *);
@@ -471,7 +472,6 @@ processAttach(const char* value)
 static void
 processEnvStyleInput(config_t *cfg, const char *env_line)
 {
-
     if (!cfg || !env_line) return;
 
     char *env_name = NULL;
@@ -653,6 +653,8 @@ processEnvStyleInput(config_t *cfg, const char *env_line)
         cfgSnapShotCoredumpEnableSetFomStr(cfg, value);
     }  else if (startsWith(env_name, "APPVIEW_SNAPSHOT_BACKTRACE")) {
         cfgSnapshotBacktraceEnableSetFomStr(cfg, value);
+    } else if (!appview_strcmp(env_name, "APPVIEW_IPC_ENABLE")) {
+        cfgIpcEnableSetFomStr(cfg, value);
     }
 
 cleanup:
@@ -992,6 +994,13 @@ cfgSnapshotBacktraceEnableSetFomStr(config_t *cfg, const char *value)
 {
     if (!cfg || !value) return;
     cfgSnapshotBacktraceSet(cfg, strToVal(boolMap, value));
+}
+
+void
+cfgIpcEnableSetFomStr(config_t *cfg, const char *value)
+{
+    if (!cfg || !value) return;
+    cfgIpcEnableSet(cfg, strToVal(boolMap, value));
 }
 
 #ifndef NO_YAML

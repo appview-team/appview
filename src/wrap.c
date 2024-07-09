@@ -1106,7 +1106,7 @@ handleExit(void)
     g_exitdone = TRUE;
 
     // detect GOT mods
-    inspectGotTables();
+    //inspectGotTables();
 
     if (!atomicCasU64(&reentrancy_guard, 0ULL, 1ULL)) {
 

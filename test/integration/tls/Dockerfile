@@ -1,14 +1,11 @@
-FROM centos:7
+FROM quay.io/centos/centos:stream9
 
 RUN yum -y update && \
-    yum -y install centos-release-scl && \
-    yum -y install rh-python38 python-virtualenv && \
-    yum -y install epel-release && \
     yum -y groupinstall 'Development Tools' && \
+    yum -y install python pip && \
+    yum -y install epel-release && \
     yum -y install gnutls-devel openssl-devel wget automake python-pip && \
     yum -y install ruby php httpd mod_ssl && \
-    yum -y --enablerepo=centos-sclo-rh-testing install devtoolset-8-gdb && \
-    source scl_source enable devtoolset-8 && \
     curl -sL https://rpm.nodesource.com/setup_12.x | bash - && \
     yum -y install nodejs
 
@@ -45,8 +42,6 @@ COPY ./tls/ruby/server.rb /opt/test-runner/ruby
 COPY ./tls/ruby/client.rb /opt/test-runner/ruby
 RUN chmod u+x /opt/test-runner/ruby/*rb
 
-RUN /opt/rh/rh-python38/root/usr/bin/python3.8 -m pip install --upgrade pip
-RUN /opt/rh/rh-python38/root/usr/local/bin/pip3.8 install pyopenssl
 COPY ./tls/testssl.py /opt/test-runner/bin/testssl.py
 
 RUN mkdir /opt/test-runner/php
@@ -54,6 +49,12 @@ COPY ./tls/php/sslclient.php /opt/test-runner/php
 
 COPY ./tls/alias /root/.alias
 COPY ./tls/gdbinit /root/.gdbinit
+
+RUN openssl genrsa -out ca.key 2048 && \
+    openssl req -new -key ca.key -out ca.csr -subj "/C=US/ST=California/L=San Francisco/O=Cribl/OU=Cribl/CN=localhost" && \
+    openssl x509 -req -days 3650 -in ca.csr -signkey ca.key -out ca.crt && \
+    cp ca.crt /etc/pki/tls/certs/localhost.crt && \
+    cp ca.key /etc/pki/tls/private/localhost.key
 
 ENV APPVIEW_CRIBL_ENABLE=false
 ENV APPVIEW_LOG_LEVEL=info

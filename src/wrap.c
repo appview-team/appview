@@ -502,6 +502,13 @@ ipcCommunication(void) {
     char name[256] = {0};
 
     /*
+     * If IPC is enabled by config continue. It's enabled by default.
+     * Can be disabled with the the env var APPVIEW_IPC_ENABLE = false
+     * Some sandbox envs produce errors if mq system calls are used.
+     */
+    if (cfgIpcEnable(g_staticfg) == FALSE) return;
+
+    /*
     * Handle incoming message queue
     * - check if it exists
     * - check if there are message request on it
@@ -2215,6 +2222,8 @@ next:
 static void
 inspectGotTables(void)
 {
+    if (g_notify_def.libs == FALSE) return;
+
     dl_iterate_phdr(inspectLib, NULL);
 }
 

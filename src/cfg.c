@@ -81,13 +81,14 @@ struct _config_t
     // CFG_MTC, CFG_CTL, or CFG_LOG
     transport_struct_t transport[CFG_WHICH_MAX]; 
 
-    custom_tag_t** tags;
+    custom_tag_t **tags;
     unsigned max_tags;
 
-    char* commanddir;
+    char *commanddir;
     unsigned processstartmsg;
     unsigned enhancefs;
     char *authtoken;
+    unsigned ipcEnable;
 };
 
 static const char* valueFilterDefault[] = {
@@ -249,6 +250,7 @@ cfgCreateDefault(void)
     c->snapshot.coredump = DEFAULT_COREDUMP_ENABLE;
     c->snapshot.backtrace = DEFAULT_BACKTRACE_ENABLE;
 
+    c->ipcEnable = DEFAULT_IPC_ENABLE;
     return c;
 }
 
@@ -1073,4 +1075,15 @@ void
 cfgSnapshotBacktraceSet(config_t *cfg, unsigned val) {
     if (!cfg || val > 1) return;
     cfg->snapshot.backtrace = val;
+}
+
+unsigned
+cfgIpcEnable(config_t *cfg) {
+    return (cfg) ? cfg->ipcEnable : DEFAULT_IPC_ENABLE;
+}
+
+void
+cfgIpcEnableSet(config_t *cfg, unsigned val) {
+    if (!cfg || val > 1) return;
+    cfg->ipcEnable = val;
 }

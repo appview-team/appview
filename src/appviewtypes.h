@@ -197,6 +197,7 @@ typedef struct
 #define DEFAULT_COREDUMP_ENABLE FALSE
 #define DEFAULT_BACKTRACE_ENABLE FALSE
 
+#define DEFAULT_IPC_ENABLE TRUE
 /*
  * This calculation is not what we need in the long run.
  * Not all events are rate limited; only metric events at this point.
@@ -213,7 +214,7 @@ typedef struct
 //    APPVIEW_HOST_WORKDIR_PATH        internal use - informs the attached process in container to create working directory
 //                                   in container mnt namespace, which allows to access data during attach operation initialized from host
 //    APPVIEW_RULES                   "false" disables handling the rules file
-//                                   other values are interpreted a path to a rules file
+//                                     other values are interpreted a path to a rules file
 //    APPVIEW_EXECVE                   "false" disables appview of child procs
 //    APPVIEW_EXEC_PATH                specifies path to appview executable
 //    APPVIEW_CRIBL_NO_BREAKER         adds breaker property to process start message
@@ -231,7 +232,8 @@ typedef struct
 //    APPVIEW_QUEUE_LENGTH             override default circular buffer sizes
 //    APPVIEW_START_NOPROFILE          cause the start command to ignore updates to /etc/profile.d
 //    APPVIEW_START_FORCE_PROFILE      force the start command to update profile.d with a dev version
-//    CRIBL_EDGE_FS_ROOT             define the location of the host root path inside the Cribl Edge container
+//    CRIBL_EDGE_FS_ROOT               define the location of the host root path inside the Cribl Edge container
+//    APPVIEW_IPC_ENABLE               set to true to enable IPC with an appview CLI
 #define APPVIEW_PID_ENV "APPVIEW_PID"
 #define PRESERVE_PERF_REPORTING "APPVIEW_PERF_PRESERVE"
 #define APPVIEW_PAYLOAD_TO_DISK_ENV "APPVIEW_PAYLOAD_TO_DISK"

@@ -14,15 +14,17 @@ The detection mechanisms employed by the library are intended to notify about po
 
 ### Managing AppView Notifications
 
-`APPVIEW\_IPC\_ENABLE=false`
+AppView notifications can be disabled by setting the following environment variables:
+
+`APPVIEW_IPC_ENABLE=false`
 
 Disables any IPC with a CLI and the use of mq\_open.
 
-`APPVIEW\_NOTIFY\_FUNCS=false`
+`APPVIEW_NOTIFY_FUNCS=false`
 
 Firefox increases resource usage of several resources and detection catches this and creates security events. This doesn't hurt anything. Just a notification. If we don't want to notify on this, it can be disabled.
 
-`APPVIEW\_NOTIFY\_LIBS=false`
+`APPVIEW_NOTIFY_LIBS=false`
 
 Chrome replaces many libc functions with its' own version. This activity creates a lot of security events. Assuming we don't want to get overwhelmed by these events, they can be disabled..
 
@@ -31,8 +33,8 @@ Chrome replaces many libc functions with its' own version. This activity creates
 AppView Firefox without the Mozilla sandbox:
 
 ```
-$ export MOZ\_DISABLE\_CONTENT\_SANDBOX=1
-$ export MOZ\_DISABLE\_SOCKET\_PROCESS\_SANDBOX=1
+$ export MOZ_DISABLE_CONTENT_SANDBOX=1
+$ export MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1
 ```
 
 Both should be defined in order to disable the sandbox.
@@ -45,7 +47,7 @@ $ appview firefox
 If setting the sandbox environment variables for all processes in the current shell, as defined above, is undesirable, the following command line can be used to create the same behavior for one Firefox session:
 
 ```
-$ MOZ\_DISABLE\_CONTENT\_SANDBOX=1 MOZ\_DISABLE\_SOCKET\_PROCESS\_SANDBOX=1 appview firefox
+$ MOZ_DISABLE_CONTENT_SANDBOX=1 MOZ_DISABLE_SOCKET_PROCESS_SANDBOX=1 appview firefox
 ```
 
 ### AppView and Chrome

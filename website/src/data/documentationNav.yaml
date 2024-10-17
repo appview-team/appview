@@ -31,6 +31,9 @@
     - name: Analyzing Application Crashes
       path: /docs/crash-analysis
 
+    - name: Inspecting Browser Activity
+      path: /docs/browser-activity
+
 - name: Getting AppView
   child: 
     - name: Requirements 

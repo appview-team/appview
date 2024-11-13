@@ -51,4 +51,5 @@ You could do any of the following with AppView:
 - Run Firefox from the AppView CLI, and view results on a terminal-based dashboard.
 - Run Google Chrome from the AppView CLI, and view results on a terminal-based dashboard. And be surprised.
 - Monitor multiple Apache instances in a server farm, running the data [through Cribl Edge to Cribl Stream](/docs/cribl-integration#scaling-viewed-processes).
+- Generate a footprint of an application in a long running test that can be used to compare future behavior, for example, to guard against dependency chain attacks.
 

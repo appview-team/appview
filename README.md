@@ -47,6 +47,20 @@ graph LR
 - Normalize and forward metrics and events, in real time, to remote systems.
 - Summarize metrics and detect protocols.
 
+## 💡 Use Cases
+
+You could do any of the following with AppView:
+
+- Generate a privacy report for an application like VS Code, to discover what files and remote networks the extensions are accessing.
+- Power a Grafana or Cribl Search dashboard with an application's metric and event data.
+- Generate a report on `npm ci` to capture a list of dependency sources.
+- Send live metrics from nginx to a Datadog server.
+- Run Firefox from the AppView CLI, and view results on a terminal-based dashboard.
+- Configure Slack security alerts when certain resources are accessed, or functions are GOT hooked in your application.
+- Send HTTP events from Slack to a specified Splunk server.
+- Run `appview service sshd` in the AppView CLI, so that the next time the `sshd` service starts, it will be viewed.
+- Generate a footprint of an application in a long running test that can be used to compare future behavior, i.e. to guard against dependency chain attacks.
+
 ## ✨ Example
 
 ```

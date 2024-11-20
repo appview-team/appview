@@ -1,5 +1,6 @@
 [![Build & Test](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/appview-team/appview/actions/workflows/build-and-test.yml)
 ![GitHub Release](https://img.shields.io/github/v/release/appview-team/appview?label=Release&link=https%3A%2F%2Fgithub.com%2Fappview-team%2Fappview%2Freleases)
+[![](https://img.shields.io/github/sponsors/appview-team?label=Sponsors&logo=GitHub)](https://github.com/sponsors/appview-team)
 
 # AppView
 
@@ -178,6 +179,7 @@ _The content on that site is built from the [website/](website/) directory in th
 
 If you're interested in contributing to the project, you can:
 
+- Sponsor development and support via the GitHub [Sponsors](https://github.com/sponsors/appview-team) program.
 - View and add to GitHub [discussions](https://github.com/appview-team/appview/discussions) discussions about future work.
 - View and add GitHub [issues](https://github.com/appview-team/appview/issues) that need to be resolved.
 - See our developer guides in the [docs/](./docs/) directory in this repository.
